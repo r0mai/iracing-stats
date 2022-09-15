@@ -48,7 +48,17 @@ def search_series(s, cust_id, year, quarter):
     })
 
 def get_session_results(s, subsession_id):
-    return get_and_read(s, '/data/results/get/', {'subsession_id': subsession_id})
+    cached_path = 'sessions/{0}.session'.format(subsession_id)
+    if os.path.exists(cached_path):
+        with open(cached_path, 'r') as file:
+            return json.load(file)
+
+    result = get_and_read(s, '/data/results/get/', {'subsession_id': subsession_id})
+
+    with open(cached_path, 'w') as file:
+        json.dump(result, file)
+
+    return result
 
 def get_time_spent_in_session(session_results, cust_id):
     time_spent = 0
