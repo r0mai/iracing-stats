@@ -4,6 +4,7 @@ import requests
 import hashlib
 import base64
 import json
+from beautifultable import BeautifulTable
 
 BASEURL = 'https://members-ng.iracing.com'
 
@@ -105,6 +106,10 @@ def get_full_track_name(track_infos, track_id):
     track = track_infos[track_id]
     return '{0} -- {1}'.format(track['track_name'], track['config_name'])
 
+def get_track_name(track_infos, track_id):
+    track = track_infos[track_id]
+    return track['track_name']
+
 def get_track_price(track_infos, track_id):
     return track_infos[track_id]['price']
 
@@ -113,7 +118,7 @@ def encode_pw(username, password):
     hashInBase64 = base64.b64encode(initialHash).decode('utf-8')
     return hashInBase64
 
-def collect_cumulative_data(series, track_infos, cust_id):
+def collect_cumulative_data(s, series, track_infos, cust_id):
     time_spent = 0
     length_driven = 0
 
@@ -125,13 +130,13 @@ def collect_cumulative_data(series, track_infos, cust_id):
         time = get_time_spent_in_session(session_result, cust_id)
         kms = track_length * get_laps_completed_in_session(session_result, cust_id)
 
-        print('Processing {0} {1} ({2}) -- {3}s | {4}km'.format(
-            get_start_time(session_result),
-            get_series_name(session_result),
-            ser['subsession_id'],
-            time / 10000,
-            kms)
-        )
+        # print('Processing {0} {1} ({2}) -- {3}s | {4}km'.format(
+        #     get_start_time(session_result),
+        #     get_series_name(session_result),
+        #     ser['subsession_id'],
+        #     time / 10000,
+        #     kms)
+        # )
 
         time_spent += time
         length_driven += kms
@@ -140,6 +145,45 @@ def collect_cumulative_data(series, track_infos, cust_id):
     print('Time spent: {0:.1f} hours'.format(hours))
     print('Length driven: {0:.1f}km'.format(length_driven))
     print('Average speed: {0:.1f}km/h'.format(length_driven / hours))
+
+def collect_track_price_data(s, series, track_infos, cust_id):
+    track_times = dict()
+
+    for ser in series:
+        session_result = get_session_results(s, ser['subsession_id'])
+
+        track_id = get_track_id(session_result)
+
+        time = get_time_spent_in_session(session_result, cust_id)
+
+        if track_id in track_times:
+            track_times[track_id] += time
+        else:
+            track_times[track_id] = time
+
+    track_name_times = dict()
+    for track_id, time in track_times.items():
+
+        name = get_track_name(track_infos, track_id)
+
+        if name in track_name_times:
+            track_name_times[name] += time
+        else:
+            track_name_times[name] = time
+
+    
+    table = BeautifulTable()
+    table.column_headers = ['name', 'time']
+    table.set_style(BeautifulTable.STYLE_DOTTED)
+    table.columns.alignment['name'] = BeautifulTable.ALIGN_LEFT
+    table.columns.alignment['time'] = BeautifulTable.ALIGN_LEFT
+
+    for name, time in track_name_times.items():
+        table.append_row([name, time / 10000 / 60 / 60])
+    
+    table.rows.sort('time', reverse=True)
+    print(table)
+
 
 
 def auth(s):
@@ -167,4 +211,5 @@ if __name__ == '__main__':
         for quarter in range(1, 4+1):
             series += search_series(s, cust_id, year, quarter)
 
-    collect_cumulative_data(series, track_infos, cust_id)
+    # collect_cumulative_data(s, series, track_infos, cust_id)
+    collect_track_price_data(s, series, track_infos, cust_id)
