@@ -88,22 +88,58 @@ def get_track_id(session_results):
     return session_results['track']['track_id']
 
 def get_track_infos(s):
-    return get_and_read(s, '/data/track/get', {})
+    data = get_and_read(s, '/data/track/get', {})
+
+    result = {}
+
+    for track_data in data:
+        result[track_data['track_id']] = track_data
+
+    return result
 
 def get_track_length(track_infos, track_id):
-    for track in track_infos:
-        if track['track_id'] == track_id:
-            return track['track_config_length']
+    track = track_infos[track_id]
+    return track['track_config_length']
 
-def get_track_name(track_infos, track_id):
-    for track in track_infos:
-        if track['track_id'] == track_id:
-            return '{0} -- {1}'.format(track['track_name'], track['config_name'])
+def get_full_track_name(track_infos, track_id):
+    track = track_infos[track_id]
+    return '{0} -- {1}'.format(track['track_name'], track['config_name'])
+
+def get_track_price(track_infos, track_id):
+    return track_infos[track_id]['price']
 
 def encode_pw(username, password):
     initialHash = hashlib.sha256((password + username.lower()).encode('utf-8')).digest()
     hashInBase64 = base64.b64encode(initialHash).decode('utf-8')
     return hashInBase64
+
+def collect_cumulative_data(series, track_infos, cust_id):
+    time_spent = 0
+    length_driven = 0
+
+    for ser in series:
+        session_result = get_session_results(s, ser['subsession_id'])
+
+        track_id = get_track_id(session_result)
+        track_length = get_track_length(track_infos, track_id)
+        time = get_time_spent_in_session(session_result, cust_id)
+        kms = track_length * get_laps_completed_in_session(session_result, cust_id)
+
+        print('Processing {0} {1} ({2}) -- {3}s | {4}km'.format(
+            get_start_time(session_result),
+            get_series_name(session_result),
+            ser['subsession_id'],
+            time / 10000,
+            kms)
+        )
+
+        time_spent += time
+        length_driven += kms
+
+    hours = time_spent / 10000 / 60 / 60
+    print('Time spent: {0:.1f} hours'.format(hours))
+    print('Length driven: {0:.1f}km'.format(length_driven))
+    print('Average speed: {0:.1f}km/h'.format(length_driven / hours))
 
 
 def auth(s):
@@ -124,29 +160,11 @@ if __name__ == '__main__':
 
     time_spent = 0
     length_driven = 0
-    for quarter in range(1, 4+1):
-        series = search_series(s, cust_id, 2022, quarter)
 
-        for ser in series:
-            session_result = get_session_results(s, ser['subsession_id'])
+    series = []
 
-            track_id = get_track_id(session_result)
-            track_length = get_track_length(track_infos, track_id)
-            time = get_time_spent_in_session(session_result, cust_id)
-            kms = track_length * get_laps_completed_in_session(session_result, cust_id)
+    for year in range(2022, 2022+1):
+        for quarter in range(1, 4+1):
+            series += search_series(s, cust_id, year, quarter)
 
-            print('Processing {0} {1} ({2}) -- {3}s | {4}km'.format(
-                get_start_time(session_result),
-                get_series_name(session_result),
-                ser['subsession_id'],
-                time / 10000,
-                kms)
-            )
-
-            time_spent += time
-            length_driven += kms
-
-    hours = time_spent / 10000 / 60 / 60
-    print('Time spent: {0:.1f} hours'.format(hours))
-    print('Length driven: {0:.1f}km'.format(length_driven))
-    print('Average speed: {0:.1f}km/h'.format(length_driven / hours))
+    collect_cumulative_data(series, track_infos, cust_id)
