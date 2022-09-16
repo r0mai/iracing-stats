@@ -72,6 +72,9 @@ def get_time_spent_in_session(session_results, cust_id):
 def get_series_name(session_results):
     return session_results['season_name']
 
+def get_start_time(session_results):
+    return session_results['start_time']
+
 def encode_pw(username, password):
     initialHash = hashlib.sha256((password + username.lower()).encode('utf-8')).digest()
     hashInBase64 = base64.b64encode(initialHash).decode('utf-8')
@@ -92,14 +95,23 @@ if __name__ == '__main__':
     s = requests.Session()
     auth(s)
     cust_id = get_cust_id(s, sys.argv[1])
-    series = search_series(s, cust_id, 2022, 3)
 
     time_spent = 0
-    for ser in series:
-        session_result = get_session_results(s, ser['subsession_id'])
+    for quarter in range(1, 4+1):
+        series = search_series(s, cust_id, 2022, quarter)
 
-        print('Processing {0} ({1})'.format(get_series_name(session_result), ser['subsession_id']))
+        for ser in series:
+            session_result = get_session_results(s, ser['subsession_id'])
 
-        time_spent += get_time_spent_in_session(session_result, cust_id)
+            time = get_time_spent_in_session(session_result, cust_id)
+
+            print('Processing {0} {1} ({2}) -- {3}s'.format(
+                get_start_time(session_result),
+                get_series_name(session_result),
+                ser['subsession_id'],
+                time / 10000)
+            )
+
+            time_spent += time
 
     print('Time spent: {0}s'.format(time_spent / 10000))
