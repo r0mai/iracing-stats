@@ -4,7 +4,8 @@ import requests
 import hashlib
 import base64
 import json
-from beautifultable import BeautifulTable
+import matplotlib.pyplot as plt
+import numpy as np
 
 BASEURL = 'https://members-ng.iracing.com'
 
@@ -79,6 +80,15 @@ def get_laps_completed_in_session(session_results, cust_id):
 
     return laps_completed 
 
+def get_car_used_in_session(session_results, cust_id):
+    for session_result in session_results['session_results']:
+        for player in session_result['results']:
+            if player['cust_id'] == cust_id:
+                return player['car_name']
+
+    return 'Unknown car'
+
+
 def get_series_name(session_results):
     return session_results['season_name']
 
@@ -146,44 +156,96 @@ def collect_cumulative_data(s, series, track_infos, cust_id):
     print('Length driven: {0:.1f}km'.format(length_driven))
     print('Average speed: {0:.1f}km/h'.format(length_driven / hours))
 
+
+class TrackCarData:
+    def __init__(self):
+        self._track_set = set()
+        self._car_set = set()
+
+        # data[track_name][car_name]
+        self.data = dict()
+
+    def add_data(self, track_name, car_name, data):
+        self._ensure_track(track_name)
+        self._ensure_car(car_name)
+        self.data[track_name][car_name] += data
+
+    def _ensure_track(self, track_name):
+        if track_name not in self._track_set:
+            self._track_set.add(track_name)
+            self.data[track_name] = dict.fromkeys(self._car_set, 0)
+
+    def _ensure_car(self, car_name):
+        if car_name not in self._car_set:
+            self._car_set.add(car_name)
+            for track_name, cars in self.data.items():
+                cars[car_name] = 0
+
+    def to_table(self):
+        car_indices = dict()
+        track_indices = dict()
+
+        for track_name in self.data.keys():
+            track_indices[track_name] = len(track_indices)
+
+        for car_name in list(self.data.values())[0].keys():
+            car_indices[car_name] = len(car_indices)
+
+        table = []
+        for i in range(0, len(track_indices)):
+            table.append([0] * len(car_indices))
+
+        for track, cars in self.data.items():
+            for car, time in cars.items():
+                table[track_indices[track]][car_indices[car]] = time / 10000 / 60 / 60
+
+        car_labels = [''] * len(car_indices)
+        for car_name, idx in car_indices.items():
+            car_labels[idx] = car_name
+
+        track_labels = [''] * len(track_indices)
+        for track_name, idx in track_indices.items():
+            track_labels[idx] = track_name
+
+
+        return track_labels, car_labels, table
+
+
 def collect_track_price_data(s, series, track_infos, cust_id):
-    track_times = dict()
+    data = TrackCarData()
 
     for ser in series:
         session_result = get_session_results(s, ser['subsession_id'])
 
         track_id = get_track_id(session_result)
 
+        track_name = get_track_name(track_infos, track_id)
+        car_name = get_car_used_in_session(session_result, cust_id)
         time = get_time_spent_in_session(session_result, cust_id)
 
-        if track_id in track_times:
-            track_times[track_id] += time
-        else:
-            track_times[track_id] = time
+        data.add_data(track_name, car_name, time)
 
-    track_name_times = dict()
-    for track_id, time in track_times.items():
+    track_labels, car_labels, table = data.to_table()
 
-        name = get_track_name(track_infos, track_id)
+    fig, ax = plt.subplots(figsize=(10,10))
+    im = ax.imshow(table)
 
-        if name in track_name_times:
-            track_name_times[name] += time
-        else:
-            track_name_times[name] = time
+    ax.set_xticks(np.arange(len(car_labels)))
+    ax.set_yticks(np.arange(len(track_labels)))
 
-    
-    table = BeautifulTable()
-    table.column_headers = ['name', 'time']
-    table.set_style(BeautifulTable.STYLE_DOTTED)
-    table.columns.alignment['name'] = BeautifulTable.ALIGN_LEFT
-    table.columns.alignment['time'] = BeautifulTable.ALIGN_LEFT
+    ax.set_xticklabels(car_labels, fontsize=6)
+    ax.set_yticklabels(track_labels, fontsize=6)
 
-    for name, time in track_name_times.items():
-        table.append_row([name, time / 10000 / 60 / 60])
-    
-    table.rows.sort('time', reverse=True)
-    print(table)
+    plt.setp(ax.get_xticklabels(), rotation=90, ha='right', rotation_mode='anchor')
 
+    for i in range(len(track_labels)):
+        for j in range(len(car_labels)):
+            ax.text(j, i, '{0:.1f}'.format(table[i][j]), ha='center', va='center', color='w', fontsize=4)
+
+    fig.tight_layout()
+
+    # plt.show()
+    plt.savefig('figure.png', dpi=800)
 
 
 def auth(s):
