@@ -65,26 +65,44 @@ def get_session_results(s, subsession_id):
 def get_time_spent_in_session(session_results, cust_id):
     time_spent = 0
     for session_result in session_results['session_results']:
-        for player in session_result['results']:
-            if player['cust_id'] == cust_id:
-                time_spent += player['average_lap'] * player['laps_complete']
+        for participant in session_result['results']:
+            if 'cust_id' in participant:
+                if participant['cust_id'] == cust_id:
+                    time_spent += participant['average_lap'] * participant['laps_complete']
+            else: # team
+                for driver in participant['driver_results']:
+                    if driver['cust_id'] == cust_id:
+                        time_spent += driver['average_lap'] * driver['laps_complete']
 
     return time_spent
 
 def get_laps_completed_in_session(session_results, cust_id):
     laps_completed = 0
     for session_result in session_results['session_results']:
-        for player in session_result['results']:
-            if player['cust_id'] == cust_id:
-                laps_completed += player['laps_complete']
+        for participant in session_result['results']:
+            if 'cust_id' in participant:
+                if participant['cust_id'] == cust_id:
+                    laps_completed += participant['laps_complete']
+            else: # team
+                for driver in participant['driver_results']:
+                    if driver['cust_id'] == cust_id:
+                        laps_completed += driver['laps_complete']
+
 
     return laps_completed 
 
 def get_car_used_in_session(session_results, cust_id):
     for session_result in session_results['session_results']:
-        for player in session_result['results']:
-            if player['cust_id'] == cust_id:
-                return player['car_name']
+        # participant may be a team or a player
+        for participant in session_result['results']:
+            if 'cust_id' in participant:
+                if participant['cust_id'] == cust_id:
+                    return participant['car_name']
+            else: # team
+                for driver in participant['driver_results']:
+                    if driver['cust_id'] == cust_id:
+                        return participant['car_name']
+
 
     return 'Unknown car'
 
@@ -168,18 +186,21 @@ class TrackCarData:
     def add_data(self, track_name, car_name, data):
         self._ensure_track(track_name)
         self._ensure_car(car_name)
-        self.data[track_name][car_name] += data
+        if self.data[track_name][car_name] is not None:
+            self.data[track_name][car_name] += data
+        else:
+            self.data[track_name][car_name] = data
 
     def _ensure_track(self, track_name):
         if track_name not in self._track_set:
             self._track_set.add(track_name)
-            self.data[track_name] = dict.fromkeys(self._car_set, 0)
+            self.data[track_name] = dict.fromkeys(self._car_set, None)
 
     def _ensure_car(self, car_name):
         if car_name not in self._car_set:
             self._car_set.add(car_name)
             for track_name, cars in self.data.items():
-                cars[car_name] = 0
+                cars[car_name] = None 
 
     def to_table(self):
         car_indices = dict()
@@ -193,11 +214,12 @@ class TrackCarData:
 
         table = []
         for i in range(0, len(track_indices)):
-            table.append([0] * len(car_indices))
+            table.append([None] * len(car_indices))
 
         for track, cars in self.data.items():
             for car, time in cars.items():
-                table[track_indices[track]][car_indices[car]] = time / 10000 / 60 / 60
+                if time is not None:
+                    table[track_indices[track]][car_indices[car]] = time / 10000 / 60 / 60
 
         car_labels = [''] * len(car_indices)
         for car_name, idx in car_indices.items():
@@ -210,6 +232,43 @@ class TrackCarData:
 
         return track_labels, car_labels, table
 
+def get_largest_element_of_table(table):
+    largest = 0
+    for a in table:
+        for b in a:
+            if b is not None and b > largest:
+                largest = b
+
+    return largest
+
+def mix_colors(a, b, t):
+    res = [0] * len(a)
+    i = 0
+    for i in range(len(a)):
+        res[i] = t * b[i] + (1-t) * a[i]
+
+    return res
+
+def table_to_colors(table):
+    largest = get_largest_element_of_table(table)
+
+    pixels = []
+
+    color1 = [1, 0, 0]
+    color2 = [0, 1, 0]
+
+    for row in table:
+        pixels.append([])
+        for value in row:
+            c = [1, 1, 1]
+            if value is not None:
+                c = mix_colors(color1, color2, value / largest)
+
+            pixels[-1].append(c)
+
+    return pixels
+
+    
 
 def collect_track_price_data(s, series, track_infos, cust_id):
     data = TrackCarData()
@@ -228,7 +287,7 @@ def collect_track_price_data(s, series, track_infos, cust_id):
     track_labels, car_labels, table = data.to_table()
 
     fig, ax = plt.subplots(figsize=(10,10))
-    im = ax.imshow(table)
+    im = ax.imshow(table_to_colors(table))
 
     ax.set_xticks(np.arange(len(car_labels)))
     ax.set_yticks(np.arange(len(track_labels)))
@@ -240,7 +299,9 @@ def collect_track_price_data(s, series, track_infos, cust_id):
 
     for i in range(len(track_labels)):
         for j in range(len(car_labels)):
-            ax.text(j, i, '{0:.1f}'.format(table[i][j]), ha='center', va='center', color='w', fontsize=4)
+            v = table[i][j]
+            if v is not None:
+                ax.text(j, i, '{0:.1f}'.format(v), ha='center', va='center', color='w', fontsize=4)
 
     fig.tight_layout()
 
