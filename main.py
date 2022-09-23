@@ -37,9 +37,10 @@ def get_and_read_chunked(s, suffix, params):
 
 def get_cust_id(s, search_term):
     res = get_and_read(s, '/data/lookup/drivers', {'search_term': search_term})
-    if len(res) != 1:
-        print('Driver not found')
+    if len(res) == 0:
         raise 'Not found'
+    if len(res) > 1:
+        print('Multple drivers found {0}'.format(len(res)))
     return res[0]['cust_id']
 
 def search_series(s, cust_id, year, quarter):
@@ -55,6 +56,7 @@ def get_session_results(s, subsession_id):
         with open(cached_path, 'r') as file:
             return json.load(file)
 
+    print('Syncing session {0}'.format(subsession_id))
     result = get_and_read(s, '/data/results/get/', {'subsession_id': subsession_id})
 
     with open(cached_path, 'w') as file:
