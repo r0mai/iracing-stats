@@ -184,6 +184,8 @@ class TrackCarData:
 
         # data[track_name][car_name]
         self.data = dict()
+        self.car_sums = dict()
+        self.track_sums = dict()
 
     def add_data(self, track_name, car_name, data):
         self._ensure_track(track_name)
@@ -193,25 +195,33 @@ class TrackCarData:
         else:
             self.data[track_name][car_name] = data
 
+        self.track_sums[track_name] += data
+        self.car_sums[car_name] += data
+
     def _ensure_track(self, track_name):
         if track_name not in self._track_set:
             self._track_set.add(track_name)
             self.data[track_name] = dict.fromkeys(self._car_set, None)
+            self.track_sums[track_name] = 0
 
     def _ensure_car(self, car_name):
         if car_name not in self._car_set:
             self._car_set.add(car_name)
             for track_name, cars in self.data.items():
                 cars[car_name] = None 
+            self.car_sums[car_name] = 0
 
     def to_table(self):
         car_indices = dict()
         track_indices = dict()
 
-        for track_name in self.data.keys():
+        sorted_cars = sorted(self.car_sums.items(), key = lambda p: p[1], reverse=True)
+        sorted_tracks = sorted(self.track_sums.items(), key = lambda p: p[1], reverse=True)
+
+        for track_name, _ in sorted_tracks:
             track_indices[track_name] = len(track_indices)
 
-        for car_name in list(self.data.values())[0].keys():
+        for car_name, _ in sorted_cars:
             car_indices[car_name] = len(car_indices)
 
         table = []
