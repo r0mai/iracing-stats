@@ -190,6 +190,7 @@ class TrackCarData:
         self.data = dict()
         self.car_sums = dict()
         self.track_sums = dict()
+        self.sum_total = 0
 
     def add_data(self, track_name, car_name, data):
         self._ensure_track(track_name)
@@ -201,6 +202,7 @@ class TrackCarData:
 
         self.track_sums[track_name] += data
         self.car_sums[car_name] += data
+        self.sum_total += data
 
     def _ensure_track(self, track_name):
         if track_name not in self._track_set:
@@ -239,13 +241,22 @@ class TrackCarData:
 
         # add Sums
         table.append([None] * len(car_indices))
+        for row in table:
+            row.append(None)
 
         for car, s in sorted_cars:
             table[-1][car_indices[car]] = to_hours(s)
 
+        for track, s in sorted_tracks:
+            table[track_indices[track]][-1] = to_hours(s)
+
+        table[-1][-1] = to_hours(self.sum_total)
+
         car_labels = [''] * len(car_indices)
         for car_name, idx in car_indices.items():
             car_labels[idx] = car_name
+
+        car_labels.append('SUM')
 
         track_labels = [''] * len(track_indices)
         for track_name, idx in track_indices.items():
@@ -257,8 +268,8 @@ class TrackCarData:
 
 def get_largest_element_of_table(table):
     largest = 0
-    for a in table:
-        for b in a:
+    for a in table[:-1]:
+        for b in a[:-1]:
             if b is not None and b > largest:
                 largest = b
 
@@ -288,6 +299,15 @@ def table_to_colors(table):
                 c = mix_colors(color1, color2, value / largest)
 
             pixels[-1].append(c)
+
+    # last column/row
+    for row in pixels:
+        row[-1] = [0.7, 0.7, 0.7]
+
+    for cell in pixels[-1]:
+        cell[0] = 0.7
+        cell[1] = 0.7
+        cell[2] = 0.7
 
     return pixels
 
