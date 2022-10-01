@@ -148,6 +148,9 @@ def encode_pw(username, password):
     hashInBase64 = base64.b64encode(initialHash).decode('utf-8')
     return hashInBase64
 
+def to_hours(interval):
+    return interval / 10000 / 60 / 60
+
 def collect_cumulative_data(s, series, track_infos, cust_id):
     time_spent = 0
     length_driven = 0
@@ -171,10 +174,11 @@ def collect_cumulative_data(s, series, track_infos, cust_id):
         time_spent += time
         length_driven += kms
 
-    hours = time_spent / 10000 / 60 / 60
+    hours = to_hours(time_spent)
     print('Time spent: {0:.1f} hours'.format(hours))
     print('Length driven: {0:.1f}km'.format(length_driven))
     print('Average speed: {0:.1f}km/h'.format(length_driven / hours))
+
 
 
 class TrackCarData:
@@ -231,7 +235,13 @@ class TrackCarData:
         for track, cars in self.data.items():
             for car, time in cars.items():
                 if time is not None:
-                    table[track_indices[track]][car_indices[car]] = time / 10000 / 60 / 60
+                    table[track_indices[track]][car_indices[car]] = to_hours(time)
+
+        # add Sums
+        table.append([None] * len(car_indices))
+
+        for car, s in sorted_cars:
+            table[-1][car_indices[car]] = to_hours(s)
 
         car_labels = [''] * len(car_indices)
         for car_name, idx in car_indices.items():
@@ -241,6 +251,7 @@ class TrackCarData:
         for track_name, idx in track_indices.items():
             track_labels[idx] = track_name
 
+        track_labels.append('SUM')
 
         return track_labels, car_labels, table
 
