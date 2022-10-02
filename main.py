@@ -43,6 +43,10 @@ def get_cust_id(s, search_term):
         print('Multple drivers found {0}'.format(len(res)))
     return res[0]['cust_id']
 
+def get_member_since(s, cust_id):
+    res = get_and_read(s, '/data/member/get', {'cust_ids': cust_id})
+    return res['members'][0]['member_since']
+
 def search_series(s, cust_id, year, quarter):
     return get_and_read_chunked(s, '/data/results/search_series', {
         'cust_id': cust_id,
@@ -367,14 +371,17 @@ if __name__ == '__main__':
     auth(s)
     cust_id = get_cust_id(s, sys.argv[1])
     track_infos = get_track_infos(s)
+    member_since = get_member_since(s, cust_id)
+    member_since_year = int(member_since[0:4])
 
     time_spent = 0
     length_driven = 0
 
     series = []
 
-    for year in range(2022, 2022+1):
+    for year in range(member_since_year, 2022+1):
         for quarter in range(1, 4+1):
+            print('Querying {0}s{1}'.format(year, quarter))
             series += search_series(s, cust_id, year, quarter)
 
     # collect_cumulative_data(s, series, track_infos, cust_id)
