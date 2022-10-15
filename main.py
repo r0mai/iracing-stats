@@ -339,8 +339,8 @@ def collect_track_price_data(s, series, track_infos, cust_id):
     ax.set_xticks(np.arange(len(car_labels)))
     ax.set_yticks(np.arange(len(track_labels)))
 
-    ax.set_xticklabels(car_labels, fontsize=6)
-    ax.set_yticklabels(track_labels, fontsize=6)
+    ax.set_xticklabels(car_labels, fontsize=4)
+    ax.set_yticklabels(track_labels, fontsize=4)
 
     plt.setp(ax.get_xticklabels(), rotation=90, ha='right', rotation_mode='anchor')
 
@@ -348,7 +348,7 @@ def collect_track_price_data(s, series, track_infos, cust_id):
         for j in range(len(car_labels)):
             v = table[i][j]
             if v is not None:
-                ax.text(j, i, '{0:.1f}'.format(v), ha='center', va='center', color='w', fontsize=4)
+                ax.text(j, i, '{0:.1f}'.format(v), ha='center', va='center', color='w', fontsize=2)
 
     fig.tight_layout()
 
