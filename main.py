@@ -320,6 +320,8 @@ def table_to_colors(table):
 def collect_track_price_data(s, series, track_infos, cust_id):
     data = TrackCarData()
 
+    print('Processing {0} series'.format(len(series)))
+
     for ser in series:
         session_result = get_session_results(s, ser['subsession_id'])
 
