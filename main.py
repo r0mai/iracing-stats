@@ -1,6 +1,7 @@
 import os
 import sys
-import requests
+import asyncio
+import aiohttp
 import hashlib
 import base64
 import json
@@ -9,59 +10,57 @@ import numpy as np
 
 BASEURL = 'https://members-ng.iracing.com'
 
-def get(s, suffix, params):
-    res = s.get(BASEURL + suffix, params=params)
-    if res.status_code != 200:
-        print('Request {0} {1} failed'.format(suffix, params), res)
-        print(res.json())
-        raise 'error'
-    return res
+async def get_json(s, suffix, params):
+    async with s.get(BASEURL + suffix, params=params) as res:
+        if res.status != 200:
+            print('Request {0} {1} failed'.format(suffix, params), res)
+            raise 'error'
+        return await res.json()
 
-def get_json(s, suffix, params):
-    return get(s, suffix, params).json()
+async def get_and_read(s, suffix, params):
+    res = await get_json(s, suffix, params)
+    async with s.get(res['link']) as res:
+        return await res.json()
 
-def get_and_read(s, suffix, params):
-    res = get_json(s, suffix, params)
-    return s.get(res['link']).json()
-
-def get_and_read_chunked(s, suffix, params):
-    res = get_json(s, suffix, params)
+async def get_and_read_chunked(s, suffix, params):
+    res = await get_json(s, suffix, params)
     chunk_info = res['data']['chunk_info']
     base_url = chunk_info['base_download_url']
     result_array = []
     for file in chunk_info['chunk_file_names']:
         url = base_url + file
-        result_array += s.get(url).json()
+        async with s.get(url) as res:
+            result_array += await res.json()
 
     return result_array
 
-def get_cust_id(s, search_term):
-    res = get_and_read(s, '/data/lookup/drivers', {'search_term': search_term})
+async def get_cust_id(s, search_term):
+    res = await get_and_read(s, '/data/lookup/drivers', {'search_term': search_term})
     if len(res) == 0:
         raise 'Not found'
     if len(res) > 1:
         print('Multple drivers found {0}'.format(len(res)))
     return res[0]['cust_id']
 
-def get_member_since(s, cust_id):
-    res = get_and_read(s, '/data/member/get', {'cust_ids': cust_id})
+async def get_member_since(s, cust_id):
+    res = await get_and_read(s, '/data/member/get', {'cust_ids': cust_id})
     return res['members'][0]['member_since']
 
-def search_series(s, cust_id, year, quarter):
-    return get_and_read_chunked(s, '/data/results/search_series', {
+async def search_series(s, cust_id, year, quarter):
+    return await get_and_read_chunked(s, '/data/results/search_series', {
         'cust_id': cust_id,
         'season_year': year,
         'season_quarter': quarter
     })
 
-def get_session_results(s, subsession_id):
+async def get_session_results(s, subsession_id):
     cached_path = 'sessions/{0}.session'.format(subsession_id)
     if os.path.exists(cached_path):
         with open(cached_path, 'r') as file:
             return json.load(file)
 
     print('Syncing session {0}'.format(subsession_id))
-    result = get_and_read(s, '/data/results/get/', {'subsession_id': subsession_id})
+    result = await get_and_read(s, '/data/results/get/', {'subsession_id': subsession_id})
 
     with open(cached_path, 'w') as file:
         json.dump(result, file)
@@ -122,8 +121,8 @@ def get_start_time(session_results):
 def get_track_id(session_results):
     return session_results['track']['track_id']
 
-def get_track_infos(s):
-    data = get_and_read(s, '/data/track/get', {})
+async def get_track_infos(s):
+    data = await get_and_read(s, '/data/track/get', {})
 
     result = {}
 
@@ -155,12 +154,12 @@ def encode_pw(username, password):
 def to_hours(interval):
     return interval / 10000 / 60 / 60
 
-def collect_cumulative_data(s, series, track_infos, cust_id):
+async def collect_cumulative_data(s, series, track_infos, cust_id):
     time_spent = 0
     length_driven = 0
 
     for ser in series:
-        session_result = get_session_results(s, ser['subsession_id'])
+        session_result = await get_session_results(s, ser['subsession_id'])
 
         track_id = get_track_id(session_result)
         track_length = get_track_length(track_infos, track_id)
@@ -317,13 +316,13 @@ def table_to_colors(table):
 
     
 
-def collect_track_price_data(s, series, track_infos, cust_id):
+async def collect_track_price_data(s, series, track_infos, cust_id):
     data = TrackCarData()
 
     print('Processing {0} series'.format(len(series)))
 
     for ser in series:
-        session_result = get_session_results(s, ser['subsession_id'])
+        session_result = await get_session_results(s, ser['subsession_id'])
 
         track_id = get_track_id(session_result)
 
@@ -358,33 +357,34 @@ def collect_track_price_data(s, series, track_infos, cust_id):
     plt.savefig('figure.png', dpi=800)
 
 
-def auth(s):
+async def auth(s):
     # token created by encode_pw
     user = os.getenv('IRACING_USER')
     token = os.getenv('IRACING_TOKEN')
 
-    res = s.post(BASEURL + '/auth', data={'email': user, 'password': token})
-    if res.status_code != 200:
-        raise 'auth error'
+    async with s.post(BASEURL + '/auth', data={'email': user, 'password': token}) as res:
+        if res.status != 200:
+            raise 'auth error'
+
+async def main():
+    async with aiohttp.ClientSession() as s:
+        await auth(s)
+        cust_id = await get_cust_id(s, sys.argv[1])
+        track_infos = await get_track_infos(s)
+        member_since = await get_member_since(s, cust_id)
+        member_since_year = int(member_since[0:4])
+
+        series = []
+
+        for year in range(member_since_year, 2022+1):
+            for quarter in range(1, 4+1):
+                print('Querying {0}s{1}'.format(year, quarter))
+                series += await search_series(s, cust_id, year, quarter)
+
+        # collect_cumulative_data(s, series, track_infos, cust_id)
+        await collect_track_price_data(s, series, track_infos, cust_id)
 
 
 if __name__ == '__main__':
-    s = requests.Session()
-    auth(s)
-    cust_id = get_cust_id(s, sys.argv[1])
-    track_infos = get_track_infos(s)
-    member_since = get_member_since(s, cust_id)
-    member_since_year = int(member_since[0:4])
-
-    time_spent = 0
-    length_driven = 0
-
-    series = []
-
-    for year in range(member_since_year, 2022+1):
-        for quarter in range(1, 4+1):
-            print('Querying {0}s{1}'.format(year, quarter))
-            series += search_series(s, cust_id, year, quarter)
-
-    # collect_cumulative_data(s, series, track_infos, cust_id)
-    collect_track_price_data(s, series, track_infos, cust_id)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
