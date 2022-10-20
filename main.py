@@ -321,16 +321,18 @@ async def collect_track_price_data(s, series, track_infos, cust_id):
 
     print('Processing {0} series'.format(len(series)))
 
-    for ser in series:
-        session_result = await get_session_results(s, ser['subsession_id'])
+    parallel_step = 5 
+    for i in range(0, len(series), parallel_step):
+        session_results = await asyncio.gather(*[get_session_results(s, series[k]['subsession_id']) for k in range(i, min(i+parallel_step, len(series)))])
 
-        track_id = get_track_id(session_result)
+        for session_result in session_results:
+            track_id = get_track_id(session_result)
 
-        track_name = get_track_name(track_infos, track_id)
-        car_name = get_car_used_in_session(session_result, cust_id)
-        time = get_time_spent_in_session(session_result, cust_id)
+            track_name = get_track_name(track_infos, track_id)
+            car_name = get_car_used_in_session(session_result, cust_id)
+            time = get_time_spent_in_session(session_result, cust_id)
 
-        data.add_data(track_name, car_name, time)
+            data.add_data(track_name, car_name, time)
 
     track_labels, car_labels, table = data.to_table()
 
