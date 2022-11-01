@@ -5,6 +5,8 @@ import aiohttp
 import hashlib
 import base64
 import json
+import sqlite3
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -373,10 +375,10 @@ async def auth(s):
         if res.status != 200:
             raise 'auth error'
 
-async def main():
+async def legacy_main(driver_name):
     async with aiohttp.ClientSession() as s:
         await auth(s)
-        cust_id = await get_cust_id(s, sys.argv[1])
+        cust_id = await get_cust_id(s, driver_name)
         track_infos = await get_track_infos(s)
         member_since = await get_member_since(s, cust_id)
         member_since_year = int(member_since[0:4])
@@ -391,11 +393,24 @@ async def main():
         # collect_cumulative_data(s, series, track_infos, cust_id)
         await collect_track_price_data(s, series, track_infos, cust_id)
 
+def rebuild_database():
+    con = sqlite3.connect('stats.db')
+    cur = con.cursor()
+
 
 if __name__ == '__main__':
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(main())
-    except KeyboardInterrupt:
-        pass
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--rebuild', action='store_true')
+    parser.add_argument('-l', '--legacy')
+
+    args = parser.parse_args()
+
+    if args.legacy:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(legacy_main(args.legacy))
+        except KeyboardInterrupt:
+            pass
+    elif args.rebuild:
+        rebuild_database()
