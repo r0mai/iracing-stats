@@ -11,11 +11,16 @@ import numpy as np
 BASEURL = 'https://members-ng.iracing.com'
 
 async def get_json(s, suffix, params):
-    async with s.get(BASEURL + suffix, params=params) as res:
-        if res.status != 200:
-            print('Request {0} {1} failed'.format(suffix, params), res)
-            raise 'error'
-        return await res.json()
+    while True:
+        async with s.get(BASEURL + suffix, params=params) as res:
+            if res.status == 429: # we get rate limited
+                print('Rate limited, sleep 5 seconds')
+                await asyncio.sleep(5)
+            elif res.status == 200:
+                return await res.json()
+            else:
+                print('Request {0} {1} failed'.format(suffix, params), res)
+                raise 'error'
 
 async def get_and_read(s, suffix, params):
     res = await get_json(s, suffix, params)
@@ -321,7 +326,7 @@ async def collect_track_price_data(s, series, track_infos, cust_id):
 
     print('Processing {0} series'.format(len(series)))
 
-    parallel_step = 5 
+    parallel_step = 3 
     for i in range(0, len(series), parallel_step):
         session_results = await asyncio.gather(*[get_session_results(s, series[k]['subsession_id']) for k in range(i, min(i+parallel_step, len(series)))])
 
