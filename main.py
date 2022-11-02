@@ -12,6 +12,10 @@ import numpy as np
 
 BASEURL = 'https://members-ng.iracing.com'
 
+SESSIONS_DIR = 'sessions'
+
+SQLITE_DB_FILE = 'stats.db'
+
 async def get_json(s, suffix, params):
     while True:
         async with s.get(BASEURL + suffix, params=params) as res:
@@ -61,7 +65,7 @@ async def search_series(s, cust_id, year, quarter):
     })
 
 async def get_session_results(s, subsession_id):
-    cached_path = 'sessions/{0}.session'.format(subsession_id)
+    cached_path = os.path.join(SESSIONS_DIR, '{0}.session'.format(subsession_id))
     if os.path.exists(cached_path):
         with open(cached_path, 'r') as file:
             return json.load(file)
@@ -393,9 +397,85 @@ async def legacy_main(driver_name):
         # collect_cumulative_data(s, series, track_infos, cust_id)
         await collect_track_price_data(s, series, track_infos, cust_id)
 
-def rebuild_database():
-    con = sqlite3.connect('stats.db')
+def build_db_schema(cur):
+    cur.execute(
+        '''CREATE TABLE drivers(
+            cust_id INTEGER UNIQUE,
+            display_name TEXT
+        )'''
+    )
+    cur.execute(
+        '''CREATE TABLE sessions(
+            session_id INTEGER UNIQUE,
+            series_name TEXT
+        )'''
+    )
+    cur.execute(
+        '''CREATE TABLE subsessions(
+            subsession_id INTEGER UNIQUE,
+            session_id INTEGER
+        )'''
+    )
+    cur.execute(
+        '''CREATE TABLE driver_subsession(
+            cust_id,
+            subsession_id,
+            UNIQUE(cust_id, subsession_id)
+        )'''
+    )
+
+def add_driver_to_db(cur, cust_id, display_name):
+    cur.execute(
+        '''INSERT OR IGNORE INTO drivers VALUES(
+            ?, /* cust_id */
+            ?  /* display_name */
+        )''', (cust_id, display_name)
+    )
+
+def add_session_to_db(cur, subsession):
+    cur.execute(
+        '''INSERT INTO sessions VALUES(
+            ?,  /* session_id */
+            ?   /* series_name */
+        )''', (subsession['session_id'], subsession['series_name'])
+    )
+
+def add_subsession_to_db(cur, subsession):
+    cur.execute(
+        '''INSERT INTO subsessions VALUES(
+            ?, /* subsession_id */
+            ?  /* session_id */
+        )''', (subsession['subsession_id'], subsession['session_id'])
+    )
+
+    add_session_to_db(cur, subsession)
+
+    for session_result in subsession['session_results']:
+        for participant in session_result['results']:
+            if 'cust_id' in participant:
+                add_driver_to_db(cur, participant['cust_id'], participant['display_name'])
+            else: # team
+                for driver in participant['driver_results']:
+                    add_driver_to_db(cur, driver['cust_id'], driver['display_name'])
+
+def rebuild_db():
+    os.remove(SQLITE_DB_FILE)
+
+    con = sqlite3.connect(SQLITE_DB_FILE)
     cur = con.cursor()
+    build_db_schema(cur)
+
+    i = 0
+    for session_file in os.listdir(SESSIONS_DIR):
+        print(i)
+        if i > 100:
+            break
+        i += 1
+        with open(os.path.join(SESSIONS_DIR, session_file), 'r') as file:
+            data = json.load(file)
+            add_subsession_to_db(cur, data)
+
+    con.commit()
 
 
 if __name__ == '__main__':
@@ -413,4 +493,4 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             pass
     elif args.rebuild:
-        rebuild_database()
+        rebuild_db()
