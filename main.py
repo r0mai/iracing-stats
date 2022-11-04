@@ -9,6 +9,7 @@ import sqlite3
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
 
 BASEURL = 'https://members-ng.iracing.com'
 
@@ -397,6 +398,11 @@ async def legacy_main(driver_name):
         # collect_cumulative_data(s, series, track_infos, cust_id)
         await collect_track_price_data(s, series, track_infos, cust_id)
 
+def parse_date(date):
+    dt = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+    return int((dt - datetime.datetime(1970, 1, 1)) / datetime.timedelta(seconds=1))
+
+
 def build_db_schema(cur):
     cur.execute(
         '''CREATE TABLE drivers(
@@ -413,7 +419,8 @@ def build_db_schema(cur):
     cur.execute(
         '''CREATE TABLE subsessions(
             subsession_id INTEGER UNIQUE,
-            session_id INTEGER
+            session_id INTEGER,
+            start_time INTEGER
         )'''
     )
     cur.execute(
@@ -434,7 +441,7 @@ def add_driver_to_db(cur, cust_id, display_name):
 
 def add_session_to_db(cur, subsession):
     cur.execute(
-        '''INSERT INTO sessions VALUES(
+        '''INSERT OR IGNORE INTO sessions VALUES(
             ?,  /* session_id */
             ?   /* series_name */
         )''', (subsession['session_id'], subsession['series_name'])
@@ -444,19 +451,38 @@ def add_subsession_to_db(cur, subsession):
     cur.execute(
         '''INSERT INTO subsessions VALUES(
             ?, /* subsession_id */
-            ?  /* session_id */
-        )''', (subsession['subsession_id'], subsession['session_id'])
+            ?, /* session_id */
+            ?  /* start_time */
+        )''', (
+            subsession['subsession_id'],
+            subsession['session_id'],
+            parse_date(subsession['start_time'])
+        )
     )
 
     add_session_to_db(cur, subsession)
 
+    def handle_driver(driver):
+        add_driver_to_db(cur, driver['cust_id'], driver['display_name'])
+
+        cur.execute(
+            '''INSERT OR IGNORE INTO driver_subsession VALUES(
+                ?, /* cust_id */
+                ?  /* subsession_id */
+            )''', (
+                driver['cust_id'],
+                subsession['subsession_id']
+            )
+        )
+
+
     for session_result in subsession['session_results']:
         for participant in session_result['results']:
             if 'cust_id' in participant:
-                add_driver_to_db(cur, participant['cust_id'], participant['display_name'])
+                handle_driver(participant);
             else: # team
                 for driver in participant['driver_results']:
-                    add_driver_to_db(cur, driver['cust_id'], driver['display_name'])
+                    handle_driver(driver);
 
 def rebuild_db():
     os.remove(SQLITE_DB_FILE)
@@ -466,10 +492,11 @@ def rebuild_db():
     build_db_schema(cur)
 
     i = 0
-    for session_file in os.listdir(SESSIONS_DIR):
-        print(i)
-        if i > 100:
-            break
+    files = os.listdir(SESSIONS_DIR)
+    for session_file in files:
+        if i % 1000 == 0:
+            print('{0}/{1}'.format(i, len(files)))
+            con.commit()
         i += 1
         with open(os.path.join(SESSIONS_DIR, session_file), 'r') as file:
             data = json.load(file)
