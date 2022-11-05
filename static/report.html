@@ -9,6 +9,15 @@
         nameInput = document.getElementById("name-input");
         iratingHistoryDiv = document.getElementById('irating-history');
 
+        let paramString = window.location.search.split('?')[1];
+        let queryString = new URLSearchParams(paramString);
+
+        let urlDriver = queryString.get('driver');
+        if (urlDriver) {
+            nameInput.value = urlDriver;
+            updateDriver(urlDriver);
+        }
+
         function updateDriver(name) {
             if (!name) {
                 console.log("Empty name");
