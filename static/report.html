@@ -3,10 +3,26 @@
     <script src="/static/report.js"></script>
 </head>
 <html>
-    <div id="irating_history" style="width:600px;height:250px;"></div>
+    <input type="text" id="name-input"/>
+    <div id="irating-history" style="width:600px;height:250px;"></div>
     <script>
-        console.log("in html");
-        iratingHistoryDiv = document.getElementById('irating_history');
-        updateIratingHistory(iratingHistoryDiv, 'Andras Kucsma');
+        nameInput = document.getElementById("name-input");
+        iratingHistoryDiv = document.getElementById('irating-history');
+
+        function updateDriver(name) {
+            if (!name) {
+                console.log("Empty name");
+                return;
+            }
+
+            updateIratingHistory(iratingHistoryDiv, name);
+        }
+
+
+        nameInput.onkeypress = function(ev) {
+            if (ev.keyCode == 13) { // enter
+                updateDriver(nameInput.value);
+            }
+        }
     </script>
 </html>
