@@ -429,6 +429,7 @@ def build_db_schema(cur):
             team_id INTEGER,
             subsession_id INTEGER,
             simsession_number INTEGER,
+            newi_rating INTEGER,
             UNIQUE(cust_id, team_id, subsession_id, simsession_number)
         )'''
     )
@@ -470,12 +471,14 @@ def add_driver_result_to_db(cur, subsession_id, simsession_number, team_id, driv
             ?, /* cust_id */
             ?, /* team_id */
             ?, /* subsession_id */
-            ?  /* simsession_number */
+            ?, /* simsession_number */
+            ?  /* newi_rating */
         )''', (
             cust_id,
             team_id,
             subsession_id,
-            simsession_number
+            simsession_number,
+            driver_result['newi_rating']
         )
     )
 
