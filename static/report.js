@@ -5,7 +5,11 @@ async function updateIratingHistory(div, driverName) {
 
     graphData = {
         x: [],
-        y: []
+        y: [],
+        text: [],
+        hovertemplate:
+            'Date: %{x}<br>' +
+            'iRating: %{y}'
     };
 
     result.forEach(race => {
