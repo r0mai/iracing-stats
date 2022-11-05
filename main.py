@@ -526,6 +526,30 @@ def add_subsession_to_db(cur, subsession):
     for simsession in subsession['session_results']:
         add_simsession_to_db(cur, subsession_id, simsession)
 
+def query_db(driver_name):
+    con = sqlite3.connect(SQLITE_DB_FILE)
+    cur = con.cursor()
+
+    rows = cur.execute(
+        '''SELECT subsession.start_time, driver_result.newi_rating FROM
+            driver_result
+            JOIN simsession ON
+                driver_result.subsession_id = simsession.subsession_id AND
+                driver_result.simsession_number = simsession.simsession_number
+            JOIN subsession ON
+                simsession.subsession_id = subsession.subsession_id
+            WHERE
+                driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?) AND
+                driver_result.newi_rating != -1
+            ORDER BY subsession.start_time ASC;
+        ''', (driver_name,)
+    )
+
+    for row in rows:
+        start_time = row[0]
+        irating = row[1]
+        print('{0},{1}'.format(start_time, irating))
+
 
 def rebuild_db():
     os.remove(SQLITE_DB_FILE)
@@ -551,6 +575,7 @@ def rebuild_db():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--rebuild', action='store_true')
+    parser.add_argument('-q', '--query')
     parser.add_argument('-l', '--legacy')
 
     args = parser.parse_args()
@@ -562,5 +587,7 @@ if __name__ == '__main__':
             loop.run_until_complete(legacy_main(args.legacy))
         except KeyboardInterrupt:
             pass
+    elif args.query:
+        query_db(args.query)
     elif args.rebuild:
         rebuild_db()
