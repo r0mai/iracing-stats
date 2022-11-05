@@ -410,6 +410,6 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             pass
     elif args.query:
-        query_db(args.query)
+        print(query_irating_history(args.query))
     elif args.rebuild:
         rebuild_db()

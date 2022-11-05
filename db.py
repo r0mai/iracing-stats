@@ -139,13 +139,15 @@ def query_irating_history(driver_name):
     cur = con.cursor()
 
     rows = cur.execute(
-        '''SELECT subsession.start_time, driver_result.newi_rating FROM
+        '''SELECT subsession.start_time, driver_result.newi_rating, session.series_name FROM
             driver_result
             JOIN simsession ON
                 driver_result.subsession_id = simsession.subsession_id AND
                 driver_result.simsession_number = simsession.simsession_number
             JOIN subsession ON
                 simsession.subsession_id = subsession.subsession_id
+            JOIN session ON
+                subsession.session_id = session.session_id
             WHERE
                 driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?) AND
                 driver_result.newi_rating != -1 AND
@@ -159,7 +161,8 @@ def query_irating_history(driver_name):
     for row in rows:
         result.append(dict(
             start_time = row[0],
-            irating = row[1]
+            irating = row[1],
+            series_name = row[2]
         ))
 
     return result

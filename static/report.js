@@ -9,12 +9,14 @@ async function updateIratingHistory(div, driverName) {
         text: [],
         hovertemplate:
             'Date: %{x}<br>' +
-            'iRating: %{y}'
+            'iRating: %{y}<br>' +
+            '%{text}'
     };
 
     result.forEach(race => {
         graphData.x.push(new Date(race['start_time'] * 1000));
         graphData.y.push(race['irating']);
+        graphData.text.push(race['series_name']);
     });
 
     Plotly.newPlot(iratingHistoryDiv, [graphData], {
