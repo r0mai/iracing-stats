@@ -405,56 +405,114 @@ def parse_date(date):
 
 def build_db_schema(cur):
     cur.execute(
-        '''CREATE TABLE drivers(
+        '''CREATE TABLE driver(
             cust_id INTEGER UNIQUE,
             display_name TEXT
         )'''
     )
     cur.execute(
-        '''CREATE TABLE sessions(
+        '''CREATE TABLE session(
             session_id INTEGER UNIQUE,
             series_name TEXT
         )'''
     )
     cur.execute(
-        '''CREATE TABLE subsessions(
+        '''CREATE TABLE subsession(
             subsession_id INTEGER UNIQUE,
             session_id INTEGER,
             start_time INTEGER
         )'''
     )
     cur.execute(
-        '''CREATE TABLE driver_subsession(
-            cust_id,
-            subsession_id,
-            UNIQUE(cust_id, subsession_id)
+        '''CREATE TABLE driver_result(
+            cust_id INTEGER,
+            team_id INTEGER,
+            subsession_id INTEGER,
+            simsession_number INTEGER,
+            UNIQUE(cust_id, team_id, subsession_id, simsession_number)
+        )'''
+    )
+    cur.execute(
+        '''CREATE TABLE simsession(
+            subsession_id INTEGER,
+            simsession_number INTEGER,
+            simsession_type INTEGER,
+            UNIQUE(subsession_id, simsession_number)
         )'''
     )
 
-def add_driver_to_db(cur, cust_id, display_name):
+def add_driver_to_db(cur, driver_result):
     cur.execute(
-        '''INSERT OR IGNORE INTO drivers VALUES(
+        '''INSERT OR IGNORE INTO driver VALUES(
             ?, /* cust_id */
             ?  /* display_name */
-        )''', (cust_id, display_name)
+        )''', (
+            driver_result['cust_id'],
+            driver_result['display_name'],
+        )
     )
 
 def add_session_to_db(cur, subsession):
     cur.execute(
-        '''INSERT OR IGNORE INTO sessions VALUES(
+        '''INSERT OR IGNORE INTO session VALUES(
             ?,  /* session_id */
             ?   /* series_name */
         )''', (subsession['session_id'], subsession['series_name'])
     )
 
-def add_subsession_to_db(cur, subsession):
+def add_driver_result_to_db(cur, subsession_id, simsession_number, team_id, driver_result):
+    cust_id = driver_result['cust_id']
+
+    add_driver_to_db(cur, driver_result)
+
     cur.execute(
-        '''INSERT INTO subsessions VALUES(
+        '''INSERT INTO driver_result VALUES(
+            ?, /* cust_id */
+            ?, /* team_id */
+            ?, /* subsession_id */
+            ?  /* simsession_number */
+        )''', (
+            cust_id,
+            team_id,
+            subsession_id,
+            simsession_number
+        )
+    )
+
+def add_simsession_to_db(cur, subsession_id, simsession):
+    simsession_number = simsession['simsession_number']
+
+    cur.execute(
+        '''INSERT INTO simsession VALUES(
+            ?, /* subsession_id */
+            ?, /* simsession_number */
+            ?  /* simsession_type */
+        )''', (
+            subsession_id,
+            simsession_number,
+            simsession['simsession_type']
+        )
+    )
+
+    for participant in simsession['results']:
+        if 'cust_id' in participant:
+            add_driver_result_to_db(cur, subsession_id, simsession_number, 0, participant);
+        else: # team
+            team_id = participant['team_id']
+            for driver in participant['driver_results']:
+                add_driver_result_to_db(cur, subsession_id, simsession_number, team_id, driver);
+
+
+def add_subsession_to_db(cur, subsession):
+    subsession_id = subsession['subsession_id']
+
+    cur.execute(
+        '''INSERT INTO subsession VALUES(
             ?, /* subsession_id */
             ?, /* session_id */
             ?  /* start_time */
         )''', (
-            subsession['subsession_id'],
+            subsession_id,
             subsession['session_id'],
             parse_date(subsession['start_time'])
         )
@@ -462,27 +520,9 @@ def add_subsession_to_db(cur, subsession):
 
     add_session_to_db(cur, subsession)
 
-    def handle_driver(driver):
-        add_driver_to_db(cur, driver['cust_id'], driver['display_name'])
+    for simsession in subsession['session_results']:
+        add_simsession_to_db(cur, subsession_id, simsession)
 
-        cur.execute(
-            '''INSERT OR IGNORE INTO driver_subsession VALUES(
-                ?, /* cust_id */
-                ?  /* subsession_id */
-            )''', (
-                driver['cust_id'],
-                subsession['subsession_id']
-            )
-        )
-
-
-    for session_result in subsession['session_results']:
-        for participant in session_result['results']:
-            if 'cust_id' in participant:
-                handle_driver(participant);
-            else: # team
-                for driver in participant['driver_results']:
-                    handle_driver(driver);
 
 def rebuild_db():
     os.remove(SQLITE_DB_FILE)
