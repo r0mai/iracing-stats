@@ -420,7 +420,8 @@ def build_db_schema(cur):
         '''CREATE TABLE subsession(
             subsession_id INTEGER UNIQUE,
             session_id INTEGER,
-            start_time INTEGER
+            start_time INTEGER,
+            license_category_id INTEGER
         )'''
     )
     cur.execute(
@@ -513,11 +514,13 @@ def add_subsession_to_db(cur, subsession):
         '''INSERT INTO subsession VALUES(
             ?, /* subsession_id */
             ?, /* session_id */
-            ?  /* start_time */
+            ?, /* start_time */
+            ?  /* license_category_id */
         )''', (
             subsession_id,
             subsession['session_id'],
-            parse_date(subsession['start_time'])
+            parse_date(subsession['start_time']),
+            subsession['license_category_id']
         )
     )
 
@@ -540,7 +543,8 @@ def query_db(driver_name):
                 simsession.subsession_id = subsession.subsession_id
             WHERE
                 driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?) AND
-                driver_result.newi_rating != -1
+                driver_result.newi_rating != -1 AND
+                subsession.license_category_id = 2
             ORDER BY subsession.start_time ASC;
         ''', (driver_name,)
     )
