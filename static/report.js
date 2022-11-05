@@ -9,7 +9,7 @@ async function updateIratingHistory(div, driverName) {
     };
 
     result.forEach(race => {
-        graphData.x.push(race['start_time']);
+        graphData.x.push(new Date(race['start_time'] * 1000));
         graphData.y.push(race['irating']);
     });
 
