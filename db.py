@@ -134,7 +134,7 @@ def add_subsession_to_db(cur, subsession):
     for simsession in subsession['session_results']:
         add_simsession_to_db(cur, subsession_id, simsession)
 
-def query_db(driver_name):
+def query_irating_history(driver_name):
     con = sqlite3.connect(SQLITE_DB_FILE)
     cur = con.cursor()
 
@@ -154,10 +154,15 @@ def query_db(driver_name):
         ''', (driver_name,)
     )
 
+    result = []
+
     for row in rows:
-        start_time = row[0]
-        irating = row[1]
-        print('{0},{1}'.format(start_time, irating))
+        result.append(dict(
+            start_time = row[0],
+            irating = row[1]
+        ))
+
+    return result
 
 
 def rebuild_db():
