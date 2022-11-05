@@ -3,7 +3,7 @@ from db import *
 
 app = Flask('iracing-charts')
 
-@app.get('/irating-history')
+@app.get('/api/v1/irating-history')
 def get_irating_history():
     driver_name = request.args.get('driver_name')
     if not driver_name:
