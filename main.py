@@ -128,6 +128,13 @@ def get_start_time(session_results):
 def get_track_id(session_results):
     return session_results['track']['track_id']
 
+async def sync_tracks_infos():
+    async with aiohttp.ClientSession() as s:
+        await auth(s)
+        data = await get_and_read(s, '/data/track/get', {})
+        with open(TRACK_DATA_FILE, 'w') as file:
+            json.dump(data, file)
+
 async def get_track_infos(s):
     data = await get_and_read(s, '/data/track/get', {})
 
@@ -398,6 +405,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--rebuild', action='store_true')
     parser.add_argument('-q', '--query')
+    parser.add_argument('-t', '--sync-tracks', action='store_true')
     parser.add_argument('-l', '--legacy')
 
     args = parser.parse_args()
@@ -407,6 +415,13 @@ if __name__ == '__main__':
         asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(legacy_main(args.legacy))
+        except KeyboardInterrupt:
+            pass
+    elif args.sync_tracks:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(sync_tracks_infos())
         except KeyboardInterrupt:
             pass
     elif args.query:

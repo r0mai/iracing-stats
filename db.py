@@ -1,5 +1,7 @@
 import sqlite3
 import datetime
+import json
+import os
 
 from common import *
 
@@ -47,6 +49,21 @@ def build_db_schema(cur):
             UNIQUE(subsession_id, simsession_number)
         )'''
     )
+    cur.execute(
+        '''CREATE TABLE track_config(
+            track_id INTEGER UNIQUE,
+            package_id INTEGER, /* a.k.a track_id */
+            config_name TEXT,
+            track_config_length REAL
+        )'''
+    )
+    cur.execute(
+        '''CREATE TABLE track(
+            package_id INTEGER UNIQUE,
+            track_name TEXT
+        )'''
+    )
+
 
 def add_driver_to_db(cur, driver_result):
     cur.execute(
@@ -134,6 +151,31 @@ def add_subsession_to_db(cur, subsession):
     for simsession in subsession['session_results']:
         add_simsession_to_db(cur, subsession_id, simsession)
 
+def add_track_to_db(cur, track):
+    cur.execute(
+        '''INSERT OR IGNORE INTO track VALUES(
+            ?, /* package_id */
+            ?  /* track_name */
+        )''', (
+            track['package_id'],
+            track['track_name']
+        )
+    )
+
+    cur.execute(
+        '''INSERT INTO track_config VALUES(
+            ?, /* track_id */
+            ?, /* package_id */
+            ?, /* config_name */
+            ?  /* track_config_length */
+        )''', (
+            track['track_id'],
+            track['package_id'],
+            track.get('config_name', ''),
+            track['track_config_length']
+        )
+    )
+
 def query_irating_history(driver_name):
     con = sqlite3.connect(SQLITE_DB_FILE)
     cur = con.cursor()
@@ -167,14 +209,7 @@ def query_irating_history(driver_name):
 
     return result
 
-
-def rebuild_db():
-    os.remove(SQLITE_DB_FILE)
-
-    con = sqlite3.connect(SQLITE_DB_FILE)
-    cur = con.cursor()
-    build_db_schema(cur)
-
+def rebuild_sessions(con, cur):
     i = 0
     files = os.listdir(SESSIONS_DIR)
     for session_file in files:
@@ -185,5 +220,23 @@ def rebuild_db():
         with open(os.path.join(SESSIONS_DIR, session_file), 'r') as file:
             data = json.load(file)
             add_subsession_to_db(cur, data)
+
+def rebuild_tracks(cur):
+    with open(TRACK_DATA_FILE, 'r') as file:
+        tracks = json.load(file)
+
+    for track in tracks:
+        add_track_to_db(cur, track)
+
+
+def rebuild_db():
+    os.remove(SQLITE_DB_FILE)
+
+    con = sqlite3.connect(SQLITE_DB_FILE)
+    cur = con.cursor()
+    build_db_schema(cur)
+
+    rebuild_tracks(cur)
+    rebuild_sessions(con, cur)
 
     con.commit()
