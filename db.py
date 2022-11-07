@@ -38,6 +38,10 @@ def build_db_schema(cur):
             subsession_id INTEGER,
             simsession_number INTEGER,
             newi_rating INTEGER,
+            incidents INTEGER,
+            laps_complete INTEGER,
+            average_lap INTEGER,
+            car_id INTEGER,
             UNIQUE(cust_id, team_id, subsession_id, simsession_number)
         )'''
     )
@@ -102,13 +106,21 @@ def add_driver_result_to_db(cur, subsession_id, simsession_number, team_id, driv
             ?, /* team_id */
             ?, /* subsession_id */
             ?, /* simsession_number */
-            ?  /* newi_rating */
+            ?, /* newi_rating */
+            ?, /* incidents */
+            ?, /* laps_complete */
+            ?, /* average_lap */
+            ?  /* car_id */
         )''', (
             cust_id,
             team_id,
             subsession_id,
             simsession_number,
-            driver_result['newi_rating']
+            driver_result['newi_rating'],
+            driver_result['incidents'],
+            driver_result['laps_complete'],
+            driver_result['average_lap'],
+            driver_result['car_id']
         )
     )
 
