@@ -63,6 +63,13 @@ def build_db_schema(cur):
             track_name TEXT
         )'''
     )
+    cur.execute(
+        '''CREATE TABLE car(
+            car_id INTEGER UNIQUE,
+            car_name TEXT,
+            car_name_abbreviated TEXT
+        )'''
+    )
 
 
 def add_driver_to_db(cur, driver_result):
@@ -176,6 +183,19 @@ def add_track_to_db(cur, track):
         )
     )
 
+def add_car_to_db(cur, car):
+    cur.execute(
+        '''INSERT INTO car VALUES(
+            ?, /* car_id */
+            ?, /* car_name */
+            ?  /* car_name_abbreviated */
+        )''', (
+            car['car_id'],
+            car['car_name'],
+            car['car_name_abbreviated']
+        )
+    )
+
 def query_irating_history(driver_name):
     con = sqlite3.connect(SQLITE_DB_FILE)
     cur = con.cursor()
@@ -228,6 +248,13 @@ def rebuild_tracks(cur):
     for track in tracks:
         add_track_to_db(cur, track)
 
+def rebuild_cars(cur):
+    with open(CAR_DATA_FILE, 'r') as file:
+        cars = json.load(file)
+
+    for car in cars:
+        add_car_to_db(cur, car)
+
 
 def rebuild_db():
     os.remove(SQLITE_DB_FILE)
@@ -237,6 +264,7 @@ def rebuild_db():
     build_db_schema(cur)
 
     rebuild_tracks(cur)
+    rebuild_cars(cur)
     rebuild_sessions(con, cur)
 
     con.commit()

@@ -135,6 +135,13 @@ async def sync_tracks_infos():
         with open(TRACK_DATA_FILE, 'w') as file:
             json.dump(data, file)
 
+async def sync_car_infos():
+    async with aiohttp.ClientSession() as s:
+        await auth(s)
+        data = await get_and_read(s, '/data/car/get', {})
+        with open(CAR_DATA_FILE, 'w') as file:
+            json.dump(data, file)
+
 async def get_track_infos(s):
     data = await get_and_read(s, '/data/track/get', {})
 
@@ -400,15 +407,19 @@ async def legacy_main(driver_name):
         # collect_cumulative_data(s, series, track_infos, cust_id)
         await collect_track_price_data(s, series, track_infos, cust_id)
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-r', '--rebuild', action='store_true')
+    parser.add_argument('-r', '--rebuild-db', action='store_true')
     parser.add_argument('-q', '--query')
     parser.add_argument('-t', '--sync-tracks', action='store_true')
+    parser.add_argument('-c', '--sync-cars', action='store_true')
     parser.add_argument('-l', '--legacy')
 
     args = parser.parse_args()
+
+    if args.rebuild_db:
+        rebuild_db()
+        return
 
     if args.legacy:
         loop = asyncio.new_event_loop()
@@ -417,14 +428,19 @@ if __name__ == '__main__':
             loop.run_until_complete(legacy_main(args.legacy))
         except KeyboardInterrupt:
             pass
-    elif args.sync_tracks:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(sync_tracks_infos())
-        except KeyboardInterrupt:
-            pass
-    elif args.query:
+        return
+
+    if args.query:
         print(query_irating_history(args.query))
-    elif args.rebuild:
-        rebuild_db()
+
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    if args.sync_tracks:
+        loop.run_until_complete(sync_tracks_infos())
+    if args.sync_cars:
+        loop.run_until_complete(sync_car_infos())
+
+if __name__ == '__main__':
+    main()
