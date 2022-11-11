@@ -4,10 +4,12 @@
 </head>
 <html>
     <input type="text" id="name-input"/>
-    <div id="irating-history" style="width:800px;height:450px;"></div>
+    <div id="irating-history-per-date" style="width:800px;height:450px;"></div>
+    <div id="irating-history-per-race" style="width:800px;height:450px;"></div>
     <script>
         nameInput = document.getElementById("name-input");
-        iratingHistoryDiv = document.getElementById('irating-history');
+        iratingHistoryDateDiv = document.getElementById('irating-history-per-date');
+        iratingHistoryRaceDiv = document.getElementById('irating-history-per-race');
 
         let paramString = window.location.search.split('?')[1];
         let queryString = new URLSearchParams(paramString);
@@ -24,7 +26,7 @@
                 return;
             }
 
-            updateIratingHistory(iratingHistoryDiv, name);
+            updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, name);
         }
 
         nameInput.onkeypress = function(ev) {
