@@ -1,5 +1,5 @@
 function populateIratingHistoryDate(dateDiv, data) {
-    graphData = {
+    var graphData = {
         x: [],
         y: [],
         text: [],
@@ -21,7 +21,7 @@ function populateIratingHistoryDate(dateDiv, data) {
 }
 
 function populateIratingHistoryRace(raceDiv, data) {
-    graphData = {
+    var graphData = {
         x: [],
         y: [],
         text: [],
@@ -55,5 +55,27 @@ async function updateCarTrackUsageStats(div, driverName) {
     let resp = await fetch('/api/v1/car-track-usage-stats?driver_name=' + driverName);
     let result = await resp.json()
 
-    console.log(result)
+    var graphData = {
+        x: [],
+        y: [],
+        z: [],
+        type: 'heatmap'
+    };
+
+    graphData.x = result.cars;
+    graphData.y = result.tracks;
+
+    graphData.z = Array.from(Array(graphData.y.length), () => new Array(graphData.x.length));
+
+    for (c = 0; c < result.cars.length; ++c) {
+        for (t = 0; t < result.tracks.length; ++t) {
+            var r = result.matrix[t][c];
+            graphData.z[t][c] = r['time'];
+        }
+    }
+
+
+    Plotly.newPlot(div, [graphData], {
+        margin: { t: 0 }
+    });
 }

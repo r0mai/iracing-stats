@@ -286,7 +286,7 @@ def query_track_car_usage_matrix(driver_name):
         result.append(dict(
             car_name = row[0],
             track_name = row[1],
-            total_time = row[2]
+            time = row[2]
         ))
 
     return result
