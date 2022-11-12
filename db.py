@@ -268,10 +268,8 @@ def query_track_car_usage_matrix(driver_name):
                 track_config.package_id = track.package_id
             JOIN car ON
                 driver_result.car_id = car.car_id
-            JOIN driver ON
-                driver_result.cust_id = driver.cust_id
             WHERE
-                driver.display_name = ?
+                driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?)
             GROUP BY 
                 driver_result.car_id, track.package_id
         ''', (driver_name,)
