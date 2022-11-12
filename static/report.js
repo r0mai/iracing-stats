@@ -50,3 +50,10 @@ async function updateIratingHistory(dateDiv, raceDiv, driverName) {
     populateIratingHistoryDate(dateDiv, result);
     populateIratingHistoryRace(raceDiv, result);
 }
+
+async function updateCarTrackUsageStats(div, driverName) {
+    let resp = await fetch('/api/v1/car-track-usage-stats?driver_name=' + driverName);
+    let result = await resp.json()
+
+    console.log(result)
+}

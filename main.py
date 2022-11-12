@@ -431,7 +431,7 @@ def main():
         return
 
     if args.query:
-        print(query_irating_history(args.query))
+        print(query_track_car_usage_matrix(args.query))
 
 
     loop = asyncio.new_event_loop()

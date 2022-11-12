@@ -244,6 +244,51 @@ def query_irating_history(driver_name):
 
     return result
 
+def query_track_car_usage_matrix(driver_name):
+    con = sqlite3.connect(SQLITE_DB_FILE)
+    cur = con.cursor()
+
+    rows = cur.execute(
+        ''' SELECT
+                car.car_name_abbreviated,
+                track.track_name,
+                driver_result.laps_complete * driver_result.average_lap
+            FROM
+                driver_result
+            JOIN simsession ON
+                driver_result.subsession_id = simsession.subsession_id AND
+                driver_result.simsession_number = simsession.simsession_number
+            JOIN subsession ON
+                simsession.subsession_id = subsession.subsession_id
+            JOIN session ON
+                subsession.session_id = session.session_id
+            JOIN track_config ON
+                subsession.track_id = track_config.track_id
+            JOIN track ON
+                track_config.package_id = track.package_id
+            JOIN car ON
+                driver_result.car_id = car.car_id
+            JOIN driver ON
+                driver_result.cust_id = driver.cust_id
+            WHERE
+                driver.display_name = ?
+            GROUP BY 
+                driver_result.car_id, track.package_id
+        ''', (driver_name,)
+    )
+
+    result = []
+
+    for row in rows:
+        result.append(dict(
+            car_name = row[0],
+            track_name = row[1],
+            total_time = row[2]
+        ))
+
+    return result
+
+
 def rebuild_sessions(con, cur):
     i = 0
     files = os.listdir(SESSIONS_DIR)
