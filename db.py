@@ -17,15 +17,18 @@ def build_db_schema(cur):
             display_name TEXT
         )'''
     )
+    cur.execute('''CREATE UNIQUE INDEX driver_index ON driver(display_name)''')
+            
     cur.execute(
         '''CREATE TABLE session(
-            session_id INTEGER UNIQUE,
+            session_id INTEGER PRIMARY KEY,
             series_name TEXT
         )'''
     )
+
     cur.execute(
         '''CREATE TABLE subsession(
-            subsession_id INTEGER UNIQUE,
+            subsession_id INTEGER PRIMARY KEY,
             session_id INTEGER,
             start_time INTEGER,
             license_category_id INTEGER,
@@ -43,7 +46,7 @@ def build_db_schema(cur):
             laps_complete INTEGER,
             average_lap INTEGER,
             car_id INTEGER,
-            UNIQUE(cust_id, team_id, subsession_id, simsession_number)
+            PRIMARY KEY(cust_id, team_id, subsession_id, simsession_number)
         )'''
     )
     cur.execute(
@@ -51,12 +54,12 @@ def build_db_schema(cur):
             subsession_id INTEGER,
             simsession_number INTEGER,
             simsession_type INTEGER,
-            UNIQUE(subsession_id, simsession_number)
+            PRIMARY KEY(subsession_id, simsession_number)
         )'''
     )
     cur.execute(
         '''CREATE TABLE track_config(
-            track_id INTEGER UNIQUE,
+            track_id INTEGER PRIMARY KEY,
             package_id INTEGER, /* a.k.a track_id */
             config_name TEXT,
             track_config_length REAL
@@ -64,13 +67,13 @@ def build_db_schema(cur):
     )
     cur.execute(
         '''CREATE TABLE track(
-            package_id INTEGER UNIQUE,
+            package_id INTEGER PRIMARY KEY,
             track_name TEXT
         )'''
     )
     cur.execute(
         '''CREATE TABLE car(
-            car_id INTEGER UNIQUE,
+            car_id INTEGER PRIMARY_KEY,
             car_name TEXT,
             car_name_abbreviated TEXT
         )'''
@@ -268,9 +271,11 @@ def query_track_car_usage_matrix(driver_name):
                 track_config.package_id = track.package_id
             JOIN car ON
                 driver_result.car_id = car.car_id
+            JOIN driver ON
+                driver.cust_id = driver_result.cust_id
             WHERE
-                driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?)
-            GROUP BY 
+                driver.display_name = ?
+            GROUP BY
                 driver_result.car_id, track.package_id
         ''', (driver_name,)
     )
