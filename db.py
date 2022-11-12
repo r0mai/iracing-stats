@@ -28,7 +28,8 @@ def build_db_schema(cur):
             subsession_id INTEGER UNIQUE,
             session_id INTEGER,
             start_time INTEGER,
-            license_category_id INTEGER
+            license_category_id INTEGER,
+            track_id INTEGER /* maybe should be in session? */
         )'''
     )
     cur.execute(
@@ -156,12 +157,14 @@ def add_subsession_to_db(cur, subsession):
             ?, /* subsession_id */
             ?, /* session_id */
             ?, /* start_time */
-            ?  /* license_category_id */
+            ?, /* license_category_id */
+            ?  /* track_id */
         )''', (
             subsession_id,
             subsession['session_id'],
             parse_date(subsession['start_time']),
-            subsession['license_category_id']
+            subsession['license_category_id'],
+            subsession['track']['track_id']
         )
     )
 
