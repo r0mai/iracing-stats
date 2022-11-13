@@ -17,7 +17,7 @@ def build_db_schema(cur):
             display_name TEXT
         )'''
     )
-    cur.execute('''CREATE UNIQUE INDEX driver_index ON driver(display_name)''')
+    cur.execute('''CREATE UNIQUE INDEX driver_display_name_index ON driver(display_name)''')
             
     cur.execute(
         '''CREATE TABLE session(
@@ -35,6 +35,7 @@ def build_db_schema(cur):
             track_id INTEGER /* maybe should be in session? */
         )'''
     )
+
     cur.execute(
         '''CREATE TABLE driver_result(
             cust_id INTEGER,
@@ -49,6 +50,7 @@ def build_db_schema(cur):
             PRIMARY KEY(cust_id, team_id, subsession_id, simsession_number)
         )'''
     )
+
     cur.execute(
         '''CREATE TABLE simsession(
             subsession_id INTEGER,
@@ -65,6 +67,7 @@ def build_db_schema(cur):
             track_config_length REAL
         )'''
     )
+
     cur.execute(
         '''CREATE TABLE track(
             package_id INTEGER PRIMARY KEY,
