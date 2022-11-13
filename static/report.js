@@ -60,6 +60,7 @@ async function updateCarTrackUsageStats(div, driverName) {
         y: [],
         z: [],
         type: 'heatmap'
+
     };
 
     graphData.x = result.cars;
@@ -74,8 +75,17 @@ async function updateCarTrackUsageStats(div, driverName) {
         }
     }
 
+    var layout = {
+        // width: result.cars.length * 20,
+        height: result.tracks.length * 20,
+        xaxis: {
+            constrain: 'domain'
+        },
+        yaxis: {
+            scaleanchor: 'x'
+        }
+    };
 
-    Plotly.newPlot(div, [graphData], {
-        margin: { t: 0 }
-    });
+
+    Plotly.newPlot(div, [graphData], layout);
 }
