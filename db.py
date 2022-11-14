@@ -256,9 +256,10 @@ def query_track_car_usage_matrix(driver_name):
 
     rows = cur.execute(
         ''' SELECT
-                car.car_name_abbreviated,
+                car.car_name,
                 track.track_name,
-                driver_result.laps_complete * driver_result.average_lap
+                SUM(driver_result.laps_complete * driver_result.average_lap),
+                SUM(driver_result.laps_complete)
             FROM
                 driver_result
             JOIN simsession ON
@@ -289,7 +290,8 @@ def query_track_car_usage_matrix(driver_name):
         result.append(dict(
             car_name = row[0],
             track_name = row[1],
-            time = row[2]
+            time = row[2],
+            laps = row[3]
         ))
 
     return result
