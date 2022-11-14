@@ -49,7 +49,8 @@ def get_car_track_usage_stats():
         track = car_track['track_name']
 
         obj = dict(
-            time = car_track['time']
+            time = car_track['time'],
+            laps = car_track['laps']
         )
         matrix[track_idxs[track]][car_idxs[car]] = obj
 

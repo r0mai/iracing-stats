@@ -55,10 +55,7 @@ async function updateIratingHistory(dateDiv, raceDiv, driverName) {
     populateIratingHistoryRace(raceDiv, result);
 }
 
-async function updateCarTrackUsageStats(divTime, divLaps, driverName) {
-    let resp = await fetch('/api/v1/car-track-usage-stats?driver_name=' + driverName);
-    let result = await resp.json()
-
+function populateTrackUsageStats(div, data, key, valueMutator) {
     var graphData = {
         x: [],
         y: [],
@@ -72,16 +69,16 @@ async function updateCarTrackUsageStats(divTime, divLaps, driverName) {
     var track_sums = {};
     var full_sum = 0;
 
-    for (var c = 0; c < result.cars.length; ++c) {
-        for (var t = 0; t < result.tracks.length; ++t) {
-            var r = result.matrix[t][c];
-            var value = r['time'];
+    for (var c = 0; c < data.cars.length; ++c) {
+        for (var t = 0; t < data.tracks.length; ++t) {
+            var r = data.matrix[t][c];
+            var value = r[key];
             if (!value) {
                 continue;
             }
 
-            var car = result.cars[c];
-            var track = result.tracks[t];
+            var car = data.cars[c];
+            var track = data.tracks[t];
 
             if (!(car in car_sums)) {
                 car_sums[car] = 0;
@@ -98,37 +95,37 @@ async function updateCarTrackUsageStats(divTime, divLaps, driverName) {
     }
 
     // [0, 1, 2, ... n-1
-    var car_idxs = [...Array(result.cars.length).keys()];
-    var track_idxs = [...Array(result.tracks.length).keys()];
+    var car_idxs = [...Array(data.cars.length).keys()];
+    var track_idxs = [...Array(data.tracks.length).keys()];
 
     car_idxs.sort((lhs, rhs) => {
-       return (car_sums[result.cars[rhs]] ?? 0) - (car_sums[result.cars[lhs]] ?? 0)
+       return (car_sums[data.cars[rhs]] ?? 0) - (car_sums[data.cars[lhs]] ?? 0)
     });
 
     track_idxs.sort((lhs, rhs) => {
-       return (track_sums[result.tracks[lhs]] ?? 0) - (track_sums[result.tracks[rhs]] ?? 0);
+       return (track_sums[data.tracks[lhs]] ?? 0) - (track_sums[data.tracks[rhs]] ?? 0);
     });
 
-    for (var c = 0; c < result.cars.length; ++c) {
-        graphData.x[c] = result.cars[car_idxs[c]];
+    for (var c = 0; c < data.cars.length; ++c) {
+        graphData.x[c] = data.cars[car_idxs[c]];
     }
 
-    for (var t = 0; t < result.tracks.length; ++t) {
-        graphData.y[t] = result.tracks[track_idxs[t]];
+    for (var t = 0; t < data.tracks.length; ++t) {
+        graphData.y[t] = data.tracks[track_idxs[t]];
     }
 
     graphData.z = Array.from(Array(graphData.y.length), () => new Array(graphData.x.length));
 
-    for (var c = 0; c < result.cars.length; ++c) {
-        for (var t = 0; t < result.tracks.length; ++t) {
-            var r = result.matrix[track_idxs[t]][car_idxs[c]];
-            graphData.z[t][c] = toHours(r['time']);
+    for (var c = 0; c < data.cars.length; ++c) {
+        for (var t = 0; t < data.tracks.length; ++t) {
+            var r = data.matrix[track_idxs[t]][car_idxs[c]];
+            graphData.z[t][c] = valueMutator(r[key]);
         }
     }
 
     var layout = {
-        // width: result.cars.length * 20,
-        height: result.tracks.length * 20,
+        // width: data.cars.length * 20,
+        height: data.tracks.length * 20,
         xaxis: {
             constrain: 'domain'
         },
@@ -138,5 +135,13 @@ async function updateCarTrackUsageStats(divTime, divLaps, driverName) {
     };
 
 
-    Plotly.newPlot(divTime, [graphData], layout);
+    Plotly.newPlot(div, [graphData], layout);
+}
+
+async function updateCarTrackUsageStats(divTime, divLaps, driverName) {
+    let resp = await fetch('/api/v1/car-track-usage-stats?driver_name=' + driverName);
+    let result = await resp.json()
+
+    populateTrackUsageStats(divTime, result, 'time', toHours);
+    populateTrackUsageStats(divLaps, result, 'laps', (x) => { return x; });
 }
