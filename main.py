@@ -60,11 +60,17 @@ async def search_series(s, cust_id, year, quarter):
         'season_quarter': quarter
     })
 
-async def get_session_results(s, subsession_id):
-    cached_path = os.path.join(SESSIONS_DIR, '{0}.session'.format(subsession_id))
-    if os.path.exists(cached_path):
-        with open(cached_path, 'r') as file:
-            return json.load(file)
+def get_session_cache_path(subsession_id):
+    return os.path.join(SESSIONS_DIR, '{0}.session'.format(subsession_id))
+
+def is_session_cached(subsession_id):
+    return os.path.exists(get_session_cache_path(subsession_id))
+
+async def sync_subsession(s, subsession_id):
+    if is_session_cached(subsession_id):
+        return
+
+    cached_path = get_session_cache_path(subsession_id)
 
     print('Syncing session {0}'.format(subsession_id))
     result = await get_and_read(s, '/data/results/get/', {'subsession_id': subsession_id})
@@ -72,7 +78,12 @@ async def get_session_results(s, subsession_id):
     with open(cached_path, 'w') as file:
         json.dump(result, file)
 
-    return result
+async def get_session_results(s, subsession_id):
+    await sync_subsession(subsession_id)
+
+    cached_path = get_session_cache_path(subsession_id)
+    with open(cached_path, 'r') as file:
+        return json.load(file)
 
 def get_time_spent_in_session(session_results, cust_id):
     time_spent = 0
@@ -128,19 +139,15 @@ def get_start_time(session_results):
 def get_track_id(session_results):
     return session_results['track']['track_id']
 
-async def sync_tracks_infos():
-    async with aiohttp.ClientSession() as s:
-        await auth(s)
-        data = await get_and_read(s, '/data/track/get', {})
-        with open(TRACK_DATA_FILE, 'w') as file:
-            json.dump(data, file)
+async def sync_tracks_infos(s):
+    data = await get_and_read(s, '/data/track/get', {})
+    with open(TRACK_DATA_FILE, 'w') as file:
+        json.dump(data, file)
 
-async def sync_car_infos():
-    async with aiohttp.ClientSession() as s:
-        await auth(s)
-        data = await get_and_read(s, '/data/car/get', {})
-        with open(CAR_DATA_FILE, 'w') as file:
-            json.dump(data, file)
+async def sync_car_infos(s):
+    data = await get_and_read(s, '/data/car/get', {})
+    with open(CAR_DATA_FILE, 'w') as file:
+        json.dump(data, file)
 
 async def get_track_infos(s):
     data = await get_and_read(s, '/data/track/get', {})
@@ -407,12 +414,81 @@ async def legacy_main(driver_name):
         # collect_cumulative_data(s, series, track_infos, cust_id)
         await collect_track_price_data(s, series, track_infos, cust_id)
 
+async def find_subsessions_for_driver(s, cust_id):
+    member_since = await get_member_since(s, cust_id)
+    member_since_year = int(member_since[0:4])
+
+    series = []
+
+    for year in range(member_since_year, 2022+1):
+        for quarter in range(1, 4+1):
+            print('Querying {0}s{1}'.format(year, quarter))
+            series += await search_series(s, cust_id, year, quarter)
+
+    return [ses['subsession_id'] for ses in series]
+
+async def sync_subsessions(s, subsession_ids):
+    parallel_step = 3 
+    for i in range(0, len(subsession_ids), parallel_step):
+        await asyncio.gather(*[sync_subsession(s, subsession_ids[k]) for k in range(i, min(i+parallel_step, len(subsession_ids)))])
+
+
+async def find_non_cached_subsessions_for_driver(s, cust_id):
+    subsessions = await find_subsessions_for_driver(s, cust_id)
+
+    non_cached = [] 
+    for subsession_id in subsessions:
+        if not is_session_cached(subsession_id):
+            non_cached.append(subsession_id)
+
+    return non_cached
+
+async def sync_driver(s, driver_name):
+    await auth(s)
+    cust_id = await get_cust_id(s, driver_name)
+    subsessions = await find_non_cached_subsessions_for_driver(s, cust_id)
+    await sync_subsessions(s, subsessions)
+
+async def sync_driver_to_db(s, driver_name):
+    await auth(s)
+    cust_id = await get_cust_id(s, driver_name)
+    subsessions = await find_non_cached_subsessions_for_driver(s, cust_id)
+    await sync_subsessions(s, subsessions)
+
+    con = sqlite3.connect(SQLITE_DB_FILE)
+    cur = con.cursor()
+
+    for subsession_id in subsessions:
+        session_file = get_session_cache_path(subsession_id)
+        with open(session_file, 'r') as file:
+            data = json.load(file)
+            add_subsession_to_db(cur, data)
+
+    con.commit()
+
+
+async def sync_stuff_main(args):
+    async with aiohttp.ClientSession() as s:
+        await auth(s)
+
+        if args.sync_tracks:
+            await sync_tracks_infos(s)
+        if args.sync_cars:
+            await sync_car_infos(s)
+        if args.sync_driver:
+            await sync_driver(s, args.sync_driver)
+        if args.sync_driver_to_db:
+            await sync_driver_to_db(s, args.sync_driver_to_db)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--rebuild-db', action='store_true')
     parser.add_argument('-q', '--query')
     parser.add_argument('-t', '--sync-tracks', action='store_true')
     parser.add_argument('-c', '--sync-cars', action='store_true')
+    parser.add_argument('-d', '--sync-driver')
+    parser.add_argument('-D', '--sync-driver-to-db')
     parser.add_argument('-l', '--legacy')
 
     args = parser.parse_args()
@@ -433,14 +509,13 @@ def main():
     if args.query:
         print(query_track_car_usage_matrix(args.query))
 
+    
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    if args.sync_tracks or args.sync_cars or args.sync_driver or args.sync_driver_to_db:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(sync_stuff_main(args))
 
-    if args.sync_tracks:
-        loop.run_until_complete(sync_tracks_infos())
-    if args.sync_cars:
-        loop.run_until_complete(sync_car_infos())
 
 if __name__ == '__main__':
     main()
