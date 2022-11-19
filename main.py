@@ -444,6 +444,7 @@ async def find_non_cached_subsessions_for_driver(s, cust_id):
         if not is_session_cached(subsession_id):
             non_cached.append(subsession_id)
 
+    print('Non-cached sessions {0}/{1}'.format(len(non_cached), len(subsessions)))
     return non_cached
 
 async def sync_driver(s, driver_name):
