@@ -66,13 +66,13 @@ def get_session_cache_path(subsession_id):
 def is_session_cached(subsession_id):
     return os.path.exists(get_session_cache_path(subsession_id))
 
-async def sync_subsession(s, subsession_id):
+async def sync_subsession(s, subsession_id, prefix=''):
     if is_session_cached(subsession_id):
         return
 
     cached_path = get_session_cache_path(subsession_id)
 
-    print('Syncing session {0}'.format(subsession_id))
+    print('{0}Syncing session {1}'.format(prefix, subsession_id))
     result = await get_and_read(s, '/data/results/get/', {'subsession_id': subsession_id})
 
     with open(cached_path, 'w') as file:
@@ -428,9 +428,12 @@ async def find_subsessions_for_driver(s, cust_id):
     return [ses['subsession_id'] for ses in series]
 
 async def sync_subsessions(s, subsession_ids):
+    count = len(subsession_ids)
+    print('Syncing {0} subsessions'.format(count))
     parallel_step = 3 
-    for i in range(0, len(subsession_ids), parallel_step):
-        await asyncio.gather(*[sync_subsession(s, subsession_ids[k]) for k in range(i, min(i+parallel_step, len(subsession_ids)))])
+    for i in range(0, count, parallel_step):
+        await asyncio.gather(*[sync_subsession(s, subsession_ids[k], '{0}/{1} '.format(k, count))
+            for k in range(i, min(i+parallel_step, count))])
 
 
 async def find_non_cached_subsessions_for_driver(s, cust_id):
