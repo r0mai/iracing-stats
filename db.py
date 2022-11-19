@@ -382,4 +382,3 @@ def update_db():
 
     con.commit()
     
-

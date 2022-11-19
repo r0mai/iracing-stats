@@ -448,13 +448,11 @@ async def find_non_cached_subsessions_for_driver(s, cust_id):
     return non_cached
 
 async def sync_driver(s, driver_name):
-    await auth(s)
     cust_id = await get_cust_id(s, driver_name)
     subsessions = await find_non_cached_subsessions_for_driver(s, cust_id)
     await sync_subsessions(s, subsessions)
 
 async def sync_driver_to_db(s, driver_name):
-    await auth(s)
     cust_id = await get_cust_id(s, driver_name)
     subsessions = await find_non_cached_subsessions_for_driver(s, cust_id)
     await sync_subsessions(s, subsessions)
@@ -520,7 +518,9 @@ def main():
 
     
 
-    if args.sync_tracks or args.sync_cars or args.sync_driver or args.sync_driver_to_db:
+    if (args.sync_tracks or args.sync_cars or
+        args.sync_driver or args.sync_driver_to_db):
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(sync_stuff_main(args))
