@@ -488,6 +488,7 @@ async def sync_stuff_main(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--rebuild-db', action='store_true')
+    parser.add_argument('-u', '--update-db', action='store_true', help='Store cached sessions not in db')
     parser.add_argument('-q', '--query')
     parser.add_argument('-t', '--sync-tracks', action='store_true')
     parser.add_argument('-c', '--sync-cars', action='store_true')
@@ -499,6 +500,10 @@ def main():
 
     if args.rebuild_db:
         rebuild_db()
+        return
+
+    if args.update_db:
+        update_db()
         return
 
     if args.legacy:

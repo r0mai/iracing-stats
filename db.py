@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 import json
 import os
+import pathlib
 
 from common import *
 
@@ -297,17 +298,20 @@ def query_track_car_usage_matrix(driver_name):
     return result
 
 
-def rebuild_sessions(con, cur):
+def add_sessions_to_db(con, cur, files):
     i = 0
-    files = os.listdir(SESSIONS_DIR)
     for session_file in files:
         if i % 1000 == 0:
             print('{0}/{1}'.format(i, len(files)))
             con.commit()
         i += 1
-        with open(os.path.join(SESSIONS_DIR, session_file), 'r') as file:
+        with open(session_file, 'r') as file:
             data = json.load(file)
             add_subsession_to_db(cur, data)
+
+
+def rebuild_sessions(con, cur):
+    add_session_to_db([os.path.join(SESSIONS_DIR, session_file) for session_file in os.listdir(SESSIONS_DIR)])
 
 def rebuild_tracks(cur):
     with open(TRACK_DATA_FILE, 'r') as file:
@@ -323,7 +327,6 @@ def rebuild_cars(cur):
     for car in cars:
         add_car_to_db(cur, car)
 
-
 def rebuild_db():
     os.remove(SQLITE_DB_FILE)
 
@@ -336,3 +339,47 @@ def rebuild_db():
     rebuild_sessions(con, cur)
 
     con.commit()
+
+def build_temp_cached_subsession_id_table(con, cur):
+    cur.execute('''DROP TABLE IF EXISTS temp_cached_subsession_id''')
+     
+    cur.execute(
+        '''CREATE TEMP TABLE temp_cached_subsession_id(
+            subsession_id INTEGER UNIQUE
+        )'''
+    )
+    
+    ids = []
+
+    files = os.listdir(SESSIONS_DIR)
+    for session_file in files:
+        ids.append((pathlib.Path(session_file).stem,))
+
+    cur.executemany(
+        '''INSERT INTO temp_cached_subsession_id VALUES(?)''', ids
+    )
+
+    con.commit()
+     
+
+def update_db():
+    con = sqlite3.connect(SQLITE_DB_FILE)
+    cur = con.cursor()
+
+    build_temp_cached_subsession_id_table(con, cur)
+
+
+    rows = cur.execute(
+        '''SELECT temp_cached_subsession_id.subsession_id FROM temp_cached_subsession_id
+            LEFT JOIN subsession ON
+                temp_cached_subsession_id.subsession_id = subsession.subsession_id
+            WHERE
+                subsession.subsession_id IS NULL
+        '''
+    )
+
+    add_sessions_to_db(con, cur, [os.path.join(SESSIONS_DIR, str(row[0]) + '.session') for row in rows])
+
+    con.commit()
+    
+
