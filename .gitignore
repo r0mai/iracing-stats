@@ -3,3 +3,4 @@
 /node_modules
 /stats.db
 /__pycache__
+/.venv
