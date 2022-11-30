@@ -311,7 +311,7 @@ def add_sessions_to_db(con, cur, files):
 
 
 def rebuild_sessions(con, cur):
-    add_session_to_db([os.path.join(SESSIONS_DIR, session_file) for session_file in os.listdir(SESSIONS_DIR)])
+    add_sessions_to_db(con, cur, [os.path.join(SESSIONS_DIR, session_file) for session_file in os.listdir(SESSIONS_DIR)])
 
 def rebuild_tracks(cur):
     with open(TRACK_DATA_FILE, 'r') as file:
