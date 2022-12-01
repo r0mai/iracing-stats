@@ -138,10 +138,45 @@ function populateTrackUsageStats(div, data, key, valueMutator) {
     Plotly.newPlot(div, [graphData], layout);
 }
 
-async function updateCarTrackUsageStats(divTime, divLaps, driverName) {
+function populateTrackUsageStackBar(div, data, key, valueMutator) {
+    var traces = [];
+    for (var t = 0; t < data.tracks.length; ++t) {
+        traces[t] = {
+            x: [],
+            y: [],
+            name: data.tracks[t],
+            type: 'bar'
+        }
+    }
+
+    for (var c = 0; c < data.cars.length; ++c) {
+        for (var t = 0; t < data.tracks.length; ++t) {
+            var r = data.matrix[t][c];
+            var value = r[key];
+            if (!value) {
+                continue;
+            }
+            var car = data.cars[c];
+            var carIdx = traces[t].x.indexOf(car);
+            if (carIdx == -1) {
+                carIdx = traces[t].x.length;
+                traces[t].x.push(car);
+                traces[t].y.push(0);
+            }
+            traces[t].y[carIdx] += valueMutator(value);
+        }
+    }
+
+    var layout = {barmode: 'stack'};
+
+    Plotly.newPlot(div, traces, layout);
+}
+
+async function updateCarTrackUsageStats(divTime, divLaps, divTrackStack, driverName) {
     let resp = await fetch('/api/v1/car-track-usage-stats?driver_name=' + driverName);
     let result = await resp.json()
 
     populateTrackUsageStats(divTime, result, 'time', toHours);
     populateTrackUsageStats(divLaps, result, 'laps', (x) => { return x; });
+    populateTrackUsageStackBar(divTrackStack, result, 'time', toHours);
 }
