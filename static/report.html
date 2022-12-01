@@ -8,14 +8,16 @@
     <div id="irating-history-per-race" style="width:800px;height:450px;"></div>
     <div id="car-track-time-stats"/>
     <div id="car-track-laps-stats"/>
-    <div id="car-track-time-stack-stats"/>
+    <div id="car-time-stack-stats"/>
+    <div id="track-time-stack-stats"/>
     <script>
         nameInput = document.getElementById("name-input");
         iratingHistoryDateDiv = document.getElementById('irating-history-per-date');
         iratingHistoryRaceDiv = document.getElementById('irating-history-per-race');
         carTrackTimeStatsDiv = document.getElementById('car-track-time-stats');
         carTrackLapsStatsDiv = document.getElementById('car-track-laps-stats');
-        carTrackTimeStackStatsDiv = document.getElementById('car-track-time-stack-stats');
+        carTimeStackStatsDiv = document.getElementById('car-time-stack-stats');
+        trackTimeStackStatsDiv = document.getElementById('track-time-stack-stats');
 
         let paramString = window.location.search.split('?')[1];
         let queryString = new URLSearchParams(paramString);
@@ -33,7 +35,11 @@
             }
 
             updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, name);
-            updateCarTrackUsageStats(carTrackTimeStatsDiv, carTrackLapsStatsDiv, carTrackTimeStackStatsDiv, name);
+            updateCarTrackUsageStats(
+                carTrackTimeStatsDiv, carTrackLapsStatsDiv,
+                carTimeStackStatsDiv, trackTimeStackStatsDiv,
+                name
+            );
         }
 
         nameInput.onkeypress = function(ev) {
