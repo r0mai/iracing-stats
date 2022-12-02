@@ -6,6 +6,7 @@ import hashlib
 import base64
 import json
 import argparse
+import zipfile
 
 from common import *
 from db import *
@@ -59,7 +60,7 @@ async def search_series(s, cust_id, year, quarter):
     })
 
 def get_session_cache_path(subsession_id):
-    return os.path.join(SESSIONS_DIR, '{0}.session'.format(subsession_id))
+    return os.path.join(SESSIONS_DIR, '{0}.session.zip'.format(subsession_id))
 
 def is_session_cached(subsession_id):
     return os.path.exists(get_session_cache_path(subsession_id))
@@ -73,8 +74,8 @@ async def sync_subsession(s, subsession_id, prefix=''):
     print('{0}Syncing session {1}'.format(prefix, subsession_id))
     result = await get_and_read(s, '/data/results/get/', {'subsession_id': subsession_id})
 
-    with open(cached_path, 'w') as file:
-        json.dump(result, file)
+    with zipfile.ZipFile(cached_path, 'w') as zip:
+        zip.writestr('session.json', json.dumps(result))
 
 async def sync_tracks_infos(s):
     data = await get_and_read(s, '/data/track/get', {})
@@ -148,8 +149,8 @@ async def sync_driver_to_db(s, driver_name):
 
     for subsession_id in subsessions:
         session_file = get_session_cache_path(subsession_id)
-        with open(session_file, 'r') as file:
-            data = json.load(file)
+        with zipfile.ZipFile(session_file, 'r') as zip:
+            data = zip.read(zip.namelist[0])
             add_subsession_to_db(cur, data)
 
     con.commit()

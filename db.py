@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import pathlib
+import zipfile
 
 from common import *
 
@@ -301,12 +302,14 @@ def query_track_car_usage_matrix(driver_name):
 def add_sessions_to_db(con, cur, files):
     i = 0
     for session_file in files:
+        if not session_file.endswith('.zip'):
+            continue
         if i % 1000 == 0:
             print('{0}/{1}'.format(i, len(files)))
             con.commit()
         i += 1
-        with open(session_file, 'r') as file:
-            data = json.load(file)
+        with zipfile.ZipFile(session_file, 'r') as zip:
+            data = json.loads(zip.read(zip.namelist()[0]))
             add_subsession_to_db(cur, data)
 
 
