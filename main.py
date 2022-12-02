@@ -11,32 +11,34 @@ import zipfile
 from common import *
 from db import *
 
-async def get_json(s, suffix, params):
+async def get_with_retry(s, url, params):
     while True:
-        async with s.get(BASEURL + suffix, params=params) as res:
+        async with s.get(url, params=params) as res:
             if res.status == 429: # we get rate limited
-                print('Rate limited, sleep 5 seconds')
+                print('Rate limited on {0}, sleep 5 seconds'.format(url))
                 await asyncio.sleep(5)
             elif res.status == 200:
-                return await res.json()
+                return await res.text()
             else:
-                print('Request {0} {1} failed'.format(suffix, params), res)
+                print('Request {0} {1} failed'.format(url, params), res)
                 raise 'error'
 
+
+async def get_json(s, url, params):
+    return json.loads(await get_with_retry(s, url, params))
+
 async def get_and_read(s, suffix, params):
-    res = await get_json(s, suffix, params)
-    async with s.get(res['link']) as res:
-        return await res.json()
+    res = await get_json(s, BASEURL + suffix, params)
+    return await get_json(s, res['link'], {})
 
 async def get_and_read_chunked(s, suffix, params):
-    res = await get_json(s, suffix, params)
+    res = await get_json(s, BASEURL + suffix, params)
     chunk_info = res['data']['chunk_info']
     base_url = chunk_info['base_download_url']
     result_array = []
     for file in chunk_info['chunk_file_names']:
         url = base_url + file
-        async with s.get(url) as res:
-            result_array += await res.json()
+        result_array += await get_json(s, url, {})
 
     return result_array
 
@@ -150,7 +152,7 @@ async def sync_driver_to_db(s, driver_name):
     for subsession_id in subsessions:
         session_file = get_session_cache_path(subsession_id)
         with zipfile.ZipFile(session_file, 'r') as zip:
-            data = zip.read(zip.namelist[0])
+            data = zip.read(zip.namelist()[0])
             add_subsession_to_db(cur, data)
 
     con.commit()
