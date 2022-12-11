@@ -152,14 +152,15 @@ async def sync_driver_to_db(s, driver_name):
     for subsession_id in subsessions:
         session_file = get_session_cache_path(subsession_id)
         with zipfile.ZipFile(session_file, 'r') as zip:
-            data = zip.read(zip.namelist()[0])
+            data = json.loads(zip.read(zip.namelist()[0]))
             add_subsession_to_db(cur, data)
 
     con.commit()
 
 
 async def sync_stuff_main(args):
-    async with aiohttp.ClientSession() as s:
+    connector = aiohttp.TCPConnector(force_close=True)
+    async with aiohttp.ClientSession(connector=connector) as s:
         await auth(s)
 
         if args.sync_tracks:
