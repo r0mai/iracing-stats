@@ -109,7 +109,7 @@ async def find_subsessions_for_driver(s, cust_id):
 
     series = []
 
-    for year in range(member_since_year, 2022+1):
+    for year in range(member_since_year, 2023+1):
         for quarter in range(1, 4+1):
             print('Querying {0}s{1}'.format(year, quarter))
             series += await search_series(s, cust_id, year, quarter)
