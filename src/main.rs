@@ -1,5 +1,12 @@
 use std::fs;
 use serde_json;
+use sqlite;
+
+// const SESSIONS_DIR: &str = "data/sessions";
+// const TRACK_DATA_FILE: &str = "data/tracks.json";
+// const CAR_DATA_FILE: &str = "data/cars.json";
+const SQLITE_DB_FILE: &str = "stats.db";
+// const BASEURL: &str = "https://members-ng.iracing.com";
 
 fn read_single_file_zip(file_name: &str) -> String {
     let zip_file = fs::File::open(file_name).unwrap();
@@ -22,5 +29,13 @@ fn parse_session_zip(zip_file: &str) {
 }
 
 fn main() {
+    let con = sqlite::open(SQLITE_DB_FILE).unwrap();
+    let mut statement = con.prepare("SELECT * FROM track").unwrap();
+    while let Ok(sqlite::State::Row) = statement.next() {
+        println!("id = {}, name = {}",
+            statement.read::<i64, _>("package_id").unwrap(),
+            statement.read::<String, _>("track_name").unwrap()
+        );
+    }
     parse_session_zip("data/sessions/10004652.session.zip");
 }
