@@ -1,8 +1,9 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 use serde_json;
 use rusqlite;
+use chrono::{self, TimeZone};
 
-// const SESSIONS_DIR: &str = "data/sessions";
+const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
 const SQLITE_DB_FILE: &str = "stats.db";
@@ -14,6 +15,7 @@ struct DbContext<'a> {
     insert_track_statement: rusqlite::Statement<'a>,
     insert_track_config_statement: rusqlite::Statement<'a>,
     insert_car_statement: rusqlite::Statement<'a>,
+    insert_subsession_statement: rusqlite::Statement<'a>,
 }
 
 fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a> {
@@ -35,13 +37,27 @@ fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a> {
             ?, /* car_name */
             ?  /* car_name_abbreviated */
         );"#).unwrap();
+    let insert_subsession_statement = tx.prepare(r#"
+        INSERT INTO subsession VALUES(
+            ?, /* subsession_id */
+            ?, /* session_id */
+            ?, /* start_time */
+            ?, /* license_category_id */
+            ?  /* track_id */
+        );"#).unwrap();
 
     return DbContext {
         tx,
         insert_track_statement,
         insert_track_config_statement,
         insert_car_statement,
+        insert_subsession_statement
     };
+}
+
+fn parse_date(str: &str) -> chrono::DateTime<chrono::Utc> {
+    let naive = chrono::NaiveDateTime::parse_from_str(str, "%Y-%m-%dT%H:%M:%SZ").unwrap();
+    return chrono::Utc.from_local_datetime(&naive).unwrap();
 }
 
 fn read_single_file_zip(file_name: &str) -> String {
@@ -57,11 +73,11 @@ fn read_single_file_zip(file_name: &str) -> String {
     return std::io::read_to_string(&mut session_file).unwrap();
 }
 
-fn parse_session_zip(zip_file: &str) {
+fn read_json_zip(zip_file: &str) -> serde_json::Value {
     let contents = read_single_file_zip(zip_file);
     let data: serde_json::Value = serde_json::from_str(&contents).unwrap();
 
-    println!("{}", data["subsession_id"]);
+    return data;
 }
 
 fn build_db_schema(tx: &rusqlite::Transaction) {
@@ -90,6 +106,36 @@ fn add_car_to_db(ctx: &mut DbContext, car: &serde_json::Value) {
     )).unwrap();
 }
 
+fn add_subsession_to_db(ctx: &mut DbContext, subsession: &serde_json::Value) {
+    let subsession_id = subsession["subsession_id"].as_u64().unwrap();
+
+    ctx.insert_subsession_statement.execute((
+        subsession_id,
+        subsession["session_id"].as_u64().unwrap(),
+        parse_date(subsession["start_time"].as_str().unwrap()),
+        subsession["license_category_id"].as_u64().unwrap(),
+        subsession["track"]["track_id"].as_u64().unwrap()
+    )).unwrap();
+}
+
+fn add_sessions_to_db<I>(ctx: &mut DbContext, files: I) 
+    where I: Iterator<Item = PathBuf>
+{
+    let mut i = 0;
+    for session_file in files {
+        if session_file.extension().unwrap_or_default() != "zip" {
+            continue;
+        }
+        if i % 1000 == 0 {
+            println!("Progress: {}", i);
+        }
+        i += 1;
+
+        let data = read_json_zip(session_file.to_str().unwrap());
+        add_subsession_to_db(ctx, &data);
+    }
+}
+
 fn rebuild_tracks(ctx: &mut DbContext) {
     let contents = fs::read_to_string(TRACK_DATA_FILE).unwrap();
     let tracks: serde_json::Value = serde_json::from_str(&contents).unwrap();
@@ -108,6 +154,11 @@ fn rebuild_cars(ctx: &mut DbContext) {
     }
 }
 
+fn rebuild_sessions(ctx: &mut DbContext) {
+    let paths = fs::read_dir(SESSIONS_DIR).unwrap();
+    add_sessions_to_db(ctx, paths.map(|e| e.unwrap().path()));
+}
+
 fn rebuild_db() {
     fs::remove_file(SQLITE_DB_FILE).unwrap();
 
@@ -119,6 +170,7 @@ fn rebuild_db() {
         let mut ctx = create_db_context(&mut tx);
         rebuild_tracks(&mut ctx);
         rebuild_cars(&mut ctx);
+        rebuild_sessions(&mut ctx);
     }
 
     tx.commit().unwrap();
