@@ -2,6 +2,7 @@
 /data
 /node_modules
 /stats.db
+/stats.db-journal
 /__pycache__
 /.venv
 
