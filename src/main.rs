@@ -1,10 +1,8 @@
 mod db;
+mod iracing_client;
 
 use tokio;
 use clap::{self, Parser};
-use serde_json;
-
-const BASEURL: &str = "https://members-ng.iracing.com";
 
 #[derive(clap::Parser)]
 struct Args {
@@ -21,18 +19,6 @@ fn has_async(args: &Args) -> bool {
     return args.sync_driver_to_db.is_some();
 }
 
-async fn auth(client: &reqwest::Client) {
-    let user = std::env::var("IRACING_USER").unwrap();
-    let token = std::env::var("IRACING_TOKEN").unwrap();
-
-    let body = serde_json::json!(
-        {"email": user, "password": token}
-    );
-
-    let response = client.post(BASEURL.to_owned() + "/auth").json(&body).send().await.unwrap();
-    assert!(response.status() == reqwest::StatusCode::OK);
-}
-
 fn tokio_main(args: &Args) {
     if !has_async(&args) {
         return;
@@ -43,7 +29,11 @@ fn tokio_main(args: &Args) {
     rt.block_on(async {
         let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
 
-        auth(&client).await;
+        iracing_client::auth(&client).await;
+
+        if let Some(driver_name) = &args.sync_driver_to_db {
+            iracing_client::sync_driver_to_db(&client, &driver_name).await;
+        }
     });
 }
 
