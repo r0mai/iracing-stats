@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use serde_json;
-use reqwest;
+use reqwest::{self, Client};
 
 const BASEURL: &str = "https://members-ng.iracing.com";
 
-async fn get_with_retry(client: &reqwest::Client, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
+async fn get_with_retry(client: &Client, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
     // TODO retry
     let response = client.get(url).query(&params).send().await.unwrap();
     let status = response.status();
@@ -17,16 +17,68 @@ async fn get_with_retry(client: &reqwest::Client, url: String, params: &HashMap<
     return serde_json::from_str(&text).unwrap();
 }
 
-async fn get_and_read(client: &reqwest::Client, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
-    let pointer_json = get_with_retry(client, url, params).await;
+async fn get_and_read(client: &Client, suffix: &str, params: &HashMap<&str, String>) -> serde_json::Value {
+    let pointer_json = get_with_retry(client, format!("{BASEURL}{suffix}"), params).await;
     return get_with_retry(client, String::from(pointer_json["link"].as_str().unwrap()), params).await;
 }
 
-async fn get_cust_id(client: &reqwest::Client, driver_name: &String) -> i64 {
-    let body = HashMap::from([
-        ("search_term", driver_name.clone())
+async fn get_and_read_chunked(client: &Client, suffix: &str, params: &HashMap<&str, String>) -> serde_json::Value {
+    let pointer_json = get_with_retry(client, format!("{BASEURL}{suffix}"), params).await;
+    let chunk_info = &pointer_json["data"]["chunk_info"];
+    let base_url_res= &chunk_info["base_download_url"].as_str();
+
+    let mut result_array = serde_json::Value::Array([].to_vec());
+    if base_url_res.is_none() {
+        return result_array;
+    }
+
+    let base_url = base_url_res.unwrap();
+
+    for file in chunk_info["chunk_file_names"].as_array().unwrap() {
+        let suffix = file.as_str().unwrap();
+        let mut partial_result = get_with_retry(client, format!("{base_url}{suffix}"), &HashMap::new()).await;
+        result_array.as_array_mut().unwrap().append(partial_result.as_array_mut().unwrap());
+    }
+
+    return result_array;
+}
+
+async fn get_member_since_year(client: &Client, cust_id: i64) -> i32 {
+    let params = HashMap::from([
+        ("cust_ids", cust_id.to_string())
     ]);
-    let res = get_and_read(client, format!("{BASEURL}/data/lookup/drivers"), &body).await;
+
+    let res = get_and_read(client, "/data/member/get", &params).await;
+
+    return res["members"][0]["member_since"].as_str().unwrap()[0..4].parse::<i32>().unwrap();
+}
+
+async fn search_series(client: &Client, cust_id: i64, year: i32, quarter: i32) -> serde_json::Value {
+    return get_and_read_chunked(client, "/data/results/search_series", &HashMap::from([
+        ("cust_id", cust_id.to_string()),
+        ("season_year", year.to_string()),
+        ("season_quarter", quarter.to_string()),
+    ])).await;
+}
+
+async fn find_subsessions_for_driver(client: &Client, cust_id: i64) {
+    let member_since_year = get_member_since_year(client, cust_id).await;
+
+    let mut series = serde_json::Value::Array([].to_vec());
+    for year in member_since_year..2023+1 {
+        for quarter in 1..4+1 {
+            println!("Query {year}s{quarter}");
+            let mut series_q = search_series(client, cust_id, year, quarter).await;
+            series.as_array_mut().unwrap().append(series_q.as_array_mut().unwrap());
+        }
+    }
+
+}
+
+async fn get_cust_id(client: &Client, driver_name: &String) -> i64 {
+    let res = get_and_read(client, "/data/lookup/drivers", &HashMap::from([
+        ("search_term", driver_name.clone())
+    ])).await;
     let arr = res.as_array().unwrap();
     let len = arr.len();
     if len == 0 {
@@ -40,12 +92,14 @@ async fn get_cust_id(client: &reqwest::Client, driver_name: &String) -> i64 {
     return arr[0]["cust_id"].as_i64().unwrap();
 }
 
-pub async fn sync_driver_to_db(client: &reqwest::Client, driver_name: &String) {
+pub async fn sync_driver_to_db(client: &Client, driver_name: &String) {
     let cust_id = get_cust_id(client, driver_name).await;
     println!("Cust id {cust_id}");
+
+    find_subsessions_for_driver(client, cust_id).await;
 }
 
-pub async fn auth(client: &reqwest::Client) {
+pub async fn auth(client: &Client) {
     let user = std::env::var("IRACING_USER").unwrap();
     let token = std::env::var("IRACING_TOKEN").unwrap();
 
