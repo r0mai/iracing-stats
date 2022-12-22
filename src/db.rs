@@ -7,10 +7,10 @@ use zip::write::FileOptions;
 const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
-const SQLITE_DB_FILE: &str = "stats.db";
+pub const SQLITE_DB_FILE: &str = "stats.db";
 const SCHEMA_SQL: &str = "schema.sql";
 
-struct DbContext<'a> {
+pub struct DbContext<'a> {
     insert_track_statement: rusqlite::Statement<'a>,
     insert_track_config_statement: rusqlite::Statement<'a>,
     insert_car_statement: rusqlite::Statement<'a>,
@@ -21,7 +21,7 @@ struct DbContext<'a> {
     insert_driver_result_statement: rusqlite::Statement<'a>,
 }
 
-fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a> {
+pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a> {
     let insert_track_statement = tx.prepare(r#"
         INSERT OR IGNORE INTO track VALUES(
             ?, /* package_id */
@@ -94,7 +94,7 @@ fn parse_date(str: &str) -> chrono::DateTime<chrono::Utc> {
     return chrono::Utc.from_local_datetime(&naive).unwrap();
 }
 
-fn read_single_file_zip(file_name: &str) -> String {
+fn read_single_file_zip(file_name: &Path) -> String {
     let zip_file = fs::File::open(file_name).unwrap();
     let mut archive = zip::ZipArchive::new(zip_file).unwrap();
 
@@ -107,7 +107,7 @@ fn read_single_file_zip(file_name: &str) -> String {
     return std::io::read_to_string(&mut session_file).unwrap();
 }
 
-fn read_json_zip(zip_file: &str) -> serde_json::Value {
+fn read_json_zip(zip_file: &Path) -> serde_json::Value {
     let contents = read_single_file_zip(zip_file);
     let data: serde_json::Value = serde_json::from_str(&contents).unwrap();
 
@@ -229,7 +229,7 @@ fn add_sessions_to_db<I>(ctx: &mut DbContext, files: I)
         }
         i += 1;
 
-        let data = read_json_zip(session_file.to_str().unwrap());
+        let data = read_json_zip(session_file.as_path());
         add_subsession_to_db(ctx, &data);
     }
 }
@@ -255,6 +255,14 @@ fn rebuild_cars(ctx: &mut DbContext) {
 fn rebuild_sessions(ctx: &mut DbContext) {
     let paths = fs::read_dir(SESSIONS_DIR).unwrap();
     add_sessions_to_db(ctx, paths.map(|e| e.unwrap().path()));
+}
+
+pub fn add_session_to_db_from_cache(ctx: &mut DbContext, subsession_id: i64) {
+    add_subsession_to_db(ctx, &read_json_zip(get_session_cache_path(subsession_id).as_path()));
+}
+
+pub fn read_cached_session_json(subsession_id: i64) -> serde_json::Value {
+    return read_json_zip(get_session_cache_path(subsession_id).as_path());
 }
 
 pub fn write_cached_session_json(subsession_id: i64, json: &serde_json::Value) {

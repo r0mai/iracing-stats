@@ -118,12 +118,12 @@ async fn sync_subsession(client: &Client, subsession_id: i64, prefix: &str) {
     crate::db::write_cached_session_json(subsession_id, &res);
 }
 
-async fn sync_subsessions(client: &Client, subsession_ids: Vec<i64>) {
+async fn sync_subsessions(client: &Client, subsession_ids: &Vec<i64>) {
     let len = subsession_ids.len();
     println!("Syncing {len} subsessions");
 
     for (i, subsession_id) in subsession_ids.into_iter().enumerate() {
-        sync_subsession(client, subsession_id, format!("{i}/{len} ").as_str()).await;
+        sync_subsession(client, *subsession_id, format!("{i}/{len} ").as_str()).await;
     }
 }
 
@@ -132,8 +132,16 @@ pub async fn sync_driver_to_db(client: &Client, driver_name: &String) {
     let cust_id = get_cust_id(client, driver_name).await;
     println!("Cust id {cust_id}");
 
-    let subsessions = find_non_cached_subsessions_for_driver(client, cust_id).await;
-    sync_subsessions(client, subsessions).await;
+    let subsession_ids = find_non_cached_subsessions_for_driver(client, cust_id).await;
+    sync_subsessions(client, &subsession_ids).await;
+
+    let mut con = rusqlite::Connection::open(crate::db::SQLITE_DB_FILE).unwrap();
+    let mut tx = con.transaction().unwrap();
+    let mut ctx = crate::db::create_db_context(&mut tx);
+
+    for subsession_id in subsession_ids {
+        crate::db::add_session_to_db_from_cache(&mut ctx, subsession_id);
+    }
 }
 
 pub async fn auth(client: &Client) {
