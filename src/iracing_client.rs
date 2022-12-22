@@ -61,7 +61,7 @@ async fn search_series(client: &Client, cust_id: i64, year: i32, quarter: i32) -
     ])).await;
 }
 
-async fn find_subsessions_for_driver(client: &Client, cust_id: i64) {
+async fn find_subsessions_for_driver(client: &Client, cust_id: i64) -> Vec<i64> {
     let member_since_year = get_member_since_year(client, cust_id).await;
 
     let mut series = serde_json::Value::Array([].to_vec());
@@ -73,6 +73,18 @@ async fn find_subsessions_for_driver(client: &Client, cust_id: i64) {
         }
     }
 
+    return series.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
+}
+
+async fn find_non_cached_subsessions_for_driver(client: &Client, cust_id: i64) -> Vec<i64> {
+    let subsessions = find_subsessions_for_driver(client, cust_id).await;
+    let subsessions_len = subsessions.len();
+
+    let non_cached: Vec<i64> = subsessions.into_iter().filter(|ses| !crate::db::is_session_cached(*ses)).collect();
+    let non_cached_len = non_cached.len();
+
+    println!("Non-cached sessions {non_cached_len}/{subsessions_len}");
+    return non_cached;
 }
 
 async fn get_cust_id(client: &Client, driver_name: &String) -> i64 {
@@ -92,11 +104,36 @@ async fn get_cust_id(client: &Client, driver_name: &String) -> i64 {
     return arr[0]["cust_id"].as_i64().unwrap();
 }
 
+async fn sync_subsession(client: &Client, subsession_id: i64, prefix: &str) {
+    if crate::db::is_session_cached(subsession_id) {
+        return;
+    }
+
+    println!("{prefix}Syncing session {subsession_id}");
+
+    let res = get_and_read(client, "/data/results/get", &HashMap::from([
+        ("subsession_id", subsession_id.to_string())
+    ])).await;
+
+    crate::db::write_cached_session_json(subsession_id, &res);
+}
+
+async fn sync_subsessions(client: &Client, subsession_ids: Vec<i64>) {
+    let len = subsession_ids.len();
+    println!("Syncing {len} subsessions");
+
+    for (i, subsession_id) in subsession_ids.into_iter().enumerate() {
+        sync_subsession(client, subsession_id, format!("{i}/{len} ").as_str()).await;
+    }
+}
+
+
 pub async fn sync_driver_to_db(client: &Client, driver_name: &String) {
     let cust_id = get_cust_id(client, driver_name).await;
     println!("Cust id {cust_id}");
 
-    find_subsessions_for_driver(client, cust_id).await;
+    let subsessions = find_non_cached_subsessions_for_driver(client, cust_id).await;
+    sync_subsessions(client, subsessions).await;
 }
 
 pub async fn auth(client: &Client) {

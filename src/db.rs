@@ -1,14 +1,14 @@
-use std::{fs, path::PathBuf};
-use serde_json;
+use std::{fs, path::PathBuf, path::Path, io::Write};
+use serde_json::{self};
 use rusqlite;
 use chrono::{self, TimeZone};
+use zip::write::FileOptions;
 
 const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
 const SQLITE_DB_FILE: &str = "stats.db";
 const SCHEMA_SQL: &str = "schema.sql";
-// const BASEURL: &str = "https://members-ng.iracing.com";
 
 struct DbContext<'a> {
     insert_track_statement: rusqlite::Statement<'a>,
@@ -112,6 +112,14 @@ fn read_json_zip(zip_file: &str) -> serde_json::Value {
     let data: serde_json::Value = serde_json::from_str(&contents).unwrap();
 
     return data;
+}
+
+fn write_single_file_zip(zip_path: &Path, file_name: &str, content: &str) {
+    let file = fs::File::create(zip_path).unwrap();
+    let mut zip = zip::ZipWriter::new(&file);
+    zip.start_file(file_name, FileOptions::default()).unwrap();
+    write!(&mut zip, "{content}").unwrap();
+    zip.finish().unwrap();
 }
 
 fn build_db_schema(tx: &rusqlite::Transaction) {
@@ -247,6 +255,19 @@ fn rebuild_cars(ctx: &mut DbContext) {
 fn rebuild_sessions(ctx: &mut DbContext) {
     let paths = fs::read_dir(SESSIONS_DIR).unwrap();
     add_sessions_to_db(ctx, paths.map(|e| e.unwrap().path()));
+}
+
+pub fn write_cached_session_json(subsession_id: i64, json: &serde_json::Value) {
+    let content = json.to_string();
+    write_single_file_zip(get_session_cache_path(subsession_id).as_path(), "session.zip", &content);
+}
+
+pub fn get_session_cache_path(subsession_id: i64) -> PathBuf {
+    return Path::new(SESSIONS_DIR).join(format!("{subsession_id}.session.zip"));
+}
+
+pub fn is_session_cached(subsession_id: i64) -> bool {
+    return get_session_cache_path(subsession_id).exists();
 }
 
 pub fn rebuild_db() {
