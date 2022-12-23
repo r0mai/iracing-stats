@@ -22,6 +22,7 @@ CREATE TABLE driver_result(
     subsession_id INTEGER,
     simsession_number INTEGER,
     newi_rating INTEGER,
+    new_cpi REAL,
     incidents INTEGER,
     laps_complete INTEGER,
     average_lap INTEGER,

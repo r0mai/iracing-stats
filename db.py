@@ -48,6 +48,7 @@ def add_driver_result_to_db(cur, subsession_id, simsession_number, team_id, driv
             ?, /* subsession_id */
             ?, /* simsession_number */
             ?, /* newi_rating */
+            ?, /* new_cpi */
             ?, /* incidents */
             ?, /* laps_complete */
             ?, /* average_lap */
@@ -58,6 +59,7 @@ def add_driver_result_to_db(cur, subsession_id, simsession_number, team_id, driv
             subsession_id,
             simsession_number,
             driver_result['newi_rating'],
+            driver_result['new_cpi'],
             driver_result['incidents'],
             driver_result['laps_complete'],
             driver_result['average_lap'],
@@ -156,7 +158,7 @@ def query_irating_history(driver_name):
     cur = con.cursor()
 
     rows = cur.execute(
-        '''SELECT subsession.start_time, driver_result.newi_rating, session.series_name FROM
+        '''SELECT subsession.start_time, driver_result.newi_rating, driver_result.new_cpi, session.series_name FROM
             driver_result
             JOIN simsession ON
                 driver_result.subsession_id = simsession.subsession_id AND
@@ -179,7 +181,8 @@ def query_irating_history(driver_name):
         result.append(dict(
             start_time = row[0],
             irating = row[1],
-            series_name = row[2]
+            cpi = row[2],
+            series_name = row[3]
         ))
 
     return result

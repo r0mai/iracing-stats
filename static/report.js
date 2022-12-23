@@ -1,45 +1,98 @@
 function populateIratingHistoryDate(dateDiv, data) {
-    var graphData = {
+    let iratingData = {
         x: [],
         y: [],
         text: [],
+        name: 'iRating',
+        type: 'scatter',
         hovertemplate:
             'Date: %{x}<br>' +
             'iRating: %{y}<br>' +
             '%{text}'
     };
+    let cpiData = {
+        x: [],
+        y: [],
+        text: [],
+        name: 'CPI',
+        type: 'scatter',
+        yaxis: 'y2',
+        hovertemplate:
+            'Date: %{x}<br>' +
+            'CPI: %{y}<br>' +
+            '%{text}'
+    };
 
     data.forEach(race => {
-        graphData.x.push(new Date(race['start_time'] * 1000));
-        graphData.y.push(race['irating']);
-        graphData.text.push(race['series_name']);
+        let start_time = new Date(Date.parse(race['start_time']));
+        iratingData.x.push(start_time);
+        iratingData.y.push(race['irating']);
+        iratingData.text.push(race['series_name']);
+
+        cpiData.x.push(start_time);
+        cpiData.y.push(race['cpi']);
+        cpiData.text.push(race['series_name']);
     });
 
-    Plotly.newPlot(dateDiv, [graphData], {
-        margin: { t: 0 }
+    Plotly.newPlot(dateDiv, [iratingData, cpiData], {
+        margin: { t: 0 },
+        yaxis: {
+            title: 'iRating'
+        },
+        yaxis2: {
+            title: 'CPI',
+            side: 'right',
+            overlaying: 'y',
+        },
     });
 }
 
 function populateIratingHistoryRace(raceDiv, data) {
-    var graphData = {
+    let iratingData = {
         x: [],
         y: [],
         text: [],
+        name: 'iRating',
         hovertemplate:
             'Date: %{x}<br>' +
             'iRating: %{y}<br>' +
             '%{text}'
     };
+    let cpiData = {
+        x: [],
+        y: [],
+        text: [],
+        name: 'CPI',
+        yaxis: 'y2',
+        hovertemplate:
+            'Date: %{x}<br>' +
+            'CPI: %{y}<br>' +
+            '%{text}'
+    };
 
-    var i = 0;
+    let i = 0;
     data.forEach(race => {
-        graphData.x.push(i++);
-        graphData.y.push(race['irating']);
-        graphData.text.push(race['series_name']);
+        iratingData.x.push(i);
+        iratingData.y.push(race['irating']);
+        iratingData.text.push(race['series_name']);
+
+        cpiData.x.push(i);
+        cpiData.y.push(race['cpi']);
+        cpiData.text.push(race['series_name']);
+
+        ++i;
     });
 
-    Plotly.newPlot(raceDiv, [graphData], {
-        margin: { t: 0 }
+    Plotly.newPlot(raceDiv, [iratingData, cpiData], {
+        margin: { t: 0 },
+        yaxis: {
+            title: 'iRating'
+        },
+        yaxis2: {
+            title: 'CPI',
+            side: 'right',
+            overlaying: 'y',
+        },
     });
 }
 
