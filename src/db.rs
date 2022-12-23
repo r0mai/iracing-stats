@@ -294,3 +294,34 @@ pub fn rebuild_db() {
 
     tx.commit().unwrap();
 }
+
+pub fn update_db() {
+    let mut con = rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
+    let mut tx = con.transaction().unwrap();
+    {
+        let mut sessions_not_in_db: Vec<i64> = Vec::new();
+        {
+            tx.execute("DROP TABLE IF EXISTS temp_cached_subsession_id", ()).unwrap();
+            let mut stmt = tx.prepare(
+                r#"SELECT temp_cached_subsession_id.subsession_id FROM temp_cached_subsession_id
+                    LEFT JOIN subsession ON
+                        temp_cached_subsession_id.subsession_id = subsession.subsession_id
+                    WHERE
+                        subsession.subsession_id IS NULL
+                "#).unwrap();
+
+            let mut rows = stmt.query(()).unwrap();
+
+
+            while let Some(row) = rows.next().unwrap() {
+                sessions_not_in_db.push(row.get(0).unwrap());
+            }
+        }
+
+        {
+            let mut ctx = crate::db::create_db_context(&mut tx);
+            add_sessions_to_db(&mut ctx, sessions_not_in_db.into_iter().map(|id| get_session_cache_path(id)));
+        }
+    }
+    tx.commit().unwrap();
+}

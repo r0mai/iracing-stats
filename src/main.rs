@@ -10,6 +10,10 @@ struct Args {
     #[arg(short, long)]
     rebuild_db: bool,
 
+    /// Add missing cached sessions to the database
+    #[arg(short, long)]
+    update_db: bool,
+
     /// Sync driver to db
     #[arg(short = 'D', long)]
     sync_driver_to_db: Option<String>,
@@ -42,6 +46,9 @@ fn main() {
 
     if args.rebuild_db {
         db::rebuild_db();
+    }
+    if args.update_db {
+        db::update_db();
     }
 
     tokio_main(&args);

@@ -137,11 +137,15 @@ pub async fn sync_driver_to_db(client: &Client, driver_name: &String) {
 
     let mut con = rusqlite::Connection::open(crate::db::SQLITE_DB_FILE).unwrap();
     let mut tx = con.transaction().unwrap();
-    let mut ctx = crate::db::create_db_context(&mut tx);
+    {
+        let mut ctx = crate::db::create_db_context(&mut tx);
 
-    for subsession_id in subsession_ids {
-        crate::db::add_session_to_db_from_cache(&mut ctx, subsession_id);
+        for subsession_id in subsession_ids {
+            crate::db::add_session_to_db_from_cache(&mut ctx, subsession_id);
+        }
     }
+
+    tx.commit().unwrap();
 }
 
 pub async fn auth(client: &Client) {
