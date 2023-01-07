@@ -70,7 +70,9 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* team_id */
             ?, /* subsession_id */
             ?, /* simsession_number */
+            ?, /* oldi_rating */
             ?, /* newi_rating */
+            ?, /* old_cpi */
             ?, /* new_cpi */
             ?, /* incidents */
             ?, /* laps_complete */
@@ -166,7 +168,9 @@ fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_n
         team_id,
         subsession_id,
         simsession_number,
+        driver_result["oldi_rating"].as_i64().unwrap(),
         driver_result["newi_rating"].as_i64().unwrap(),
+        driver_result["old_cpi"].as_f64().unwrap(),
         driver_result["new_cpi"].as_f64().unwrap(),
         driver_result["incidents"].as_i64().unwrap(),
         driver_result["laps_complete"].as_i64().unwrap(),

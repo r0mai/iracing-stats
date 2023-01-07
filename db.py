@@ -47,7 +47,9 @@ def add_driver_result_to_db(cur, subsession_id, simsession_number, team_id, driv
             ?, /* team_id */
             ?, /* subsession_id */
             ?, /* simsession_number */
+            ?, /* oldi_rating */
             ?, /* newi_rating */
+            ?, /* old_cpi */
             ?, /* new_cpi */
             ?, /* incidents */
             ?, /* laps_complete */
@@ -58,7 +60,9 @@ def add_driver_result_to_db(cur, subsession_id, simsession_number, team_id, driv
             team_id,
             subsession_id,
             simsession_number,
+            driver_result['oldi_rating'],
             driver_result['newi_rating'],
+            driver_result['old_cpi'],
             driver_result['new_cpi'],
             driver_result['incidents'],
             driver_result['laps_complete'],
