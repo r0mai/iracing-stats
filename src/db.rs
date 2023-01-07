@@ -46,6 +46,7 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* session_id */
             ?, /* start_time */
             ?, /* license_category_id */
+            ?, /* event_type */
             ?  /* track_id */
         );"#).unwrap();
     let insert_session_statement = tx.prepare(r#"
@@ -209,6 +210,7 @@ fn add_subsession_to_db(ctx: &mut DbContext, subsession: &serde_json::Value) {
         session_id,
         parse_date(subsession["start_time"].as_str().unwrap()),
         subsession["license_category_id"].as_i64().unwrap(),
+        subsession["event_type"].as_i64().unwrap(),
         subsession["track"]["track_id"].as_i64().unwrap()
     )).unwrap();
 

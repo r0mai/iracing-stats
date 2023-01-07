@@ -173,7 +173,8 @@ def query_irating_history(driver_name):
                 subsession.session_id = session.session_id
             WHERE
                 driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?) AND
-                driver_result.newi_rating != -1 AND
+                driver_result.newi_rating != -1 AND /* this rules out rookies */
+                subsession.event_type = 5 AND /* race */
                 subsession.license_category_id = 2
             ORDER BY subsession.start_time ASC;
         ''', (driver_name,)
