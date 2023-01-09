@@ -16,11 +16,11 @@ struct Args {
 
     /// Sync driver to db
     #[arg(short = 'D', long)]
-    sync_driver_to_db: Option<String>,
+    sync_drivers_to_db: Vec<String>,
 }
 
 fn has_async(args: &Args) -> bool {
-    return args.sync_driver_to_db.is_some();
+    return !args.sync_drivers_to_db.is_empty();
 }
 
 fn tokio_main(args: &Args) {
@@ -35,8 +35,8 @@ fn tokio_main(args: &Args) {
 
         iracing_client::auth(&client).await;
 
-        if let Some(driver_name) = &args.sync_driver_to_db {
-            iracing_client::sync_driver_to_db(&client, &driver_name).await;
+        if !args.sync_drivers_to_db.is_empty() {
+            iracing_client::sync_drivers_to_db(&client, &args.sync_drivers_to_db).await;
         }
     });
 }

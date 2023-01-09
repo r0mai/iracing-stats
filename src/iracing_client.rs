@@ -137,11 +137,15 @@ async fn sync_subsessions(client: &Client, subsession_ids: &Vec<i64>) {
 }
 
 
-pub async fn sync_driver_to_db(client: &Client, driver_name: &String) {
-    let cust_id = get_cust_id(client, driver_name).await;
-    println!("Cust id {cust_id}");
+pub async fn sync_drivers_to_db(client: &Client, driver_names: &Vec<String>) {
+    let mut subsession_ids = Vec::new();
 
-    let subsession_ids = find_non_cached_subsessions_for_driver(client, cust_id).await;
+    for driver_name in driver_names {
+        let cust_id = get_cust_id(client, driver_name).await;
+        println!("Cust id {cust_id}");
+
+        subsession_ids.append(&mut find_non_cached_subsessions_for_driver(client, cust_id).await);
+    }
     sync_subsessions(client, &subsession_ids).await;
 
     let mut con = rusqlite::Connection::open(crate::db::SQLITE_DB_FILE).unwrap();
