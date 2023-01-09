@@ -6,7 +6,6 @@ use tokio::time::{sleep, Duration};
 const BASEURL: &str = "https://members-ng.iracing.com";
 
 async fn get_with_retry(client: &Client, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
-    let mut timeout_ms = 1000;
     for _ in 0..5 {
         let response = client.get(&url).query(&params).send().await.unwrap();
         let status = response.status();
@@ -18,8 +17,6 @@ async fn get_with_retry(client: &Client, url: String, params: &HashMap<&str, Str
 
         if status.is_server_error() {
             println!("Request to {url} failed with {status}. Retrying...");
-            sleep(Duration::from_millis(timeout_ms)).await;
-            timeout_ms *= 2;
             continue;
         }
         println!("Reponse status {}", status);
