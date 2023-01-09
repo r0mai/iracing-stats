@@ -30,6 +30,8 @@ CREATE TABLE driver_result(
     laps_complete INTEGER,
     average_lap INTEGER,
     car_id INTEGER,
+    finish_position INTEGER,
+    finish_position_in_class INTEGER,
     PRIMARY KEY(cust_id, team_id, subsession_id, simsession_number)
 );
 

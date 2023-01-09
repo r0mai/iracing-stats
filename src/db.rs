@@ -78,7 +78,9 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* incidents */
             ?, /* laps_complete */
             ?, /* average_lap */
-            ?  /* car_id */
+            ?, /* car_id */
+            ?, /* finish_position */
+            ?  /* finish_position_in_class */
     );"#).unwrap();
 
     return DbContext {
@@ -176,7 +178,9 @@ fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_n
         driver_result["incidents"].as_i64().unwrap(),
         driver_result["laps_complete"].as_i64().unwrap(),
         driver_result["average_lap"].as_i64().unwrap(),
-        driver_result["car_id"].as_i64().unwrap()
+        driver_result["car_id"].as_i64().unwrap(),
+        driver_result["finish_position"].as_i64().unwrap(),
+        driver_result["finish_position_in_class"].as_i64().unwrap(),
     )).unwrap();
 }
 
