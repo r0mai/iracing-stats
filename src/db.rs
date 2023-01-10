@@ -1,4 +1,5 @@
 use std::{fs, path::PathBuf, path::Path, io::Write};
+use rocket::serde;
 use serde_json::{self};
 use rusqlite;
 use chrono::{self, TimeZone};
@@ -288,6 +289,47 @@ pub fn get_session_cache_path(subsession_id: i64) -> PathBuf {
 
 pub fn is_session_cached(subsession_id: i64) -> bool {
     return get_session_cache_path(subsession_id).exists();
+}
+
+pub fn query_irating_history(driver_name: &String) -> serde_json::Value {
+    let mut con = rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
+
+    let mut stmt = con.prepare(r#"
+        SELECT subsession.start_time, driver_result.newi_rating, driver_result.new_cpi, session.series_name FROM
+            driver_result
+        JOIN simsession ON
+            driver_result.subsession_id = simsession.subsession_id AND
+            driver_result.simsession_number = simsession.simsession_number
+        JOIN subsession ON
+            simsession.subsession_id = subsession.subsession_id
+        JOIN session ON
+            subsession.session_id = session.session_id
+        WHERE
+            driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?) AND
+            driver_result.newi_rating != -1 AND /* this rules out rookies */
+            subsession.event_type = 5 AND /* race */
+            subsession.license_category_id = 2
+        ORDER BY subsession.start_time ASC;
+    );"#).unwrap();
+
+    let mut rows = stmt.query((driver_name,)).unwrap();
+
+    let mut values = vec![];
+
+    while let Some(row) = rows.next().unwrap() {
+        let start_time: String = row.get(0).unwrap();
+        let irating: i64 = row.get(1).unwrap();
+        let cpi: f32 = row.get(2).unwrap();
+        let series_name: String = row.get(3).unwrap();
+        values.push(serde_json::json!({
+            "start_time": start_time,
+            "irating": irating,
+            "cpi": cpi,
+            "series_name": series_name,
+        }));
+    }
+
+    return serde_json::Value::Array(values);
 }
 
 pub fn rebuild_db() {

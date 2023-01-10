@@ -1,10 +1,13 @@
+#[macro_use] extern crate rocket;
+
+mod server;
 mod db;
 mod iracing_client;
 
 use tokio;
-use clap::{self, Parser};
+use clap::Parser;
 
-#[derive(clap::Parser)]
+#[derive(Parser)]
 struct Args {
     /// Rebuild the database from scratch
     #[arg(short, long)]
@@ -17,6 +20,10 @@ struct Args {
     /// Sync driver to db
     #[arg(short = 'D', long)]
     sync_drivers_to_db: Vec<String>,
+
+    /// Start server
+    #[arg(short = 's', long = "server")]
+    start_server: bool
 }
 
 fn has_async(args: &Args) -> bool {
@@ -41,7 +48,8 @@ fn tokio_main(args: &Args) {
     });
 }
 
-fn main() {
+#[rocket::main]
+async fn main() {
     let args = Args::parse();
 
     if args.rebuild_db {
@@ -50,6 +58,9 @@ fn main() {
     if args.update_db {
         db::update_db();
     }
-
-    tokio_main(&args);
+    if args.start_server {
+        crate::server::start_rocket_server().await;
+    } else {
+        tokio_main(&args);
+    }
 }
