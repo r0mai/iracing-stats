@@ -1,4 +1,4 @@
-use rocket::serde;
+use rocket::fs::FileServer;
 
 use crate::db::query_irating_history;
 use serde_json::Value;
@@ -11,7 +11,8 @@ async fn api_v1_irating_history(driver_name: String) -> Value {
 pub async fn start_rocket_server() {
     let _result = rocket::build()
         .mount("/", routes![
-            api_v1_irating_history
+            api_v1_irating_history,
         ])
+        .mount("/static", FileServer::from("static"))
         .launch().await.unwrap();
 }
