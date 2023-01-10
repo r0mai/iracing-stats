@@ -308,6 +308,7 @@ pub fn query_irating_history(driver_name: &String) -> serde_json::Value {
             driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?) AND
             driver_result.newi_rating != -1 AND /* this rules out rookies */
             subsession.event_type = 5 AND /* race */
+            simsession.simsession_number == 0 AND
             subsession.license_category_id = 2
         ORDER BY subsession.start_time ASC;
     );"#).unwrap();
