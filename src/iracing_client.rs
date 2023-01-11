@@ -1,7 +1,6 @@
-use std::{collections::HashMap, time};
+use std::collections::HashMap;
 use serde_json;
 use reqwest::{self, Client};
-use tokio::time::{sleep, Duration};
 
 const BASEURL: &str = "https://members-ng.iracing.com";
 
