@@ -1,6 +1,5 @@
 use std::{fs, path::PathBuf, path::Path, io::Write};
-use rocket::serde;
-use serde_json::{self};
+use serde_json;
 use rusqlite;
 use chrono::{self, TimeZone};
 use zip::write::FileOptions;
@@ -10,6 +9,10 @@ const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
 pub const SQLITE_DB_FILE: &str = "stats.db";
 const SCHEMA_SQL: &str = "schema.sql";
+
+pub fn create_db_connection() -> rusqlite::Connection {
+    return rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
+}
 
 pub struct DbContext<'a> {
     insert_track_statement: rusqlite::Statement<'a>,
@@ -292,7 +295,7 @@ pub fn is_session_cached(subsession_id: i64) -> bool {
 }
 
 pub fn query_irating_history(driver_name: &String) -> serde_json::Value {
-    let mut con = rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
+    let con = create_db_connection();
 
     let mut stmt = con.prepare(r#"
         SELECT subsession.start_time, driver_result.newi_rating, driver_result.new_cpi, session.series_name FROM
@@ -333,10 +336,69 @@ pub fn query_irating_history(driver_name: &String) -> serde_json::Value {
     return serde_json::Value::Array(values);
 }
 
+pub struct CarTrackUsage {
+    pub car_name: String,
+    pub track_name: String,
+    pub time: i64,
+    pub laps: i64
+}
+
+pub fn query_track_car_usage_matrix(driver_name: &String) -> Vec<CarTrackUsage> {
+    let con = create_db_connection();
+
+    let mut stmt = con.prepare(r#"
+        SELECT
+            car.car_name,
+            track.track_name,
+            SUM(driver_result.laps_complete * driver_result.average_lap),
+            SUM(driver_result.laps_complete)
+        FROM
+            driver_result
+        JOIN simsession ON
+            driver_result.subsession_id = simsession.subsession_id AND
+            driver_result.simsession_number = simsession.simsession_number
+        JOIN subsession ON
+            simsession.subsession_id = subsession.subsession_id
+        JOIN session ON
+            subsession.session_id = session.session_id
+        JOIN track_config ON
+            subsession.track_id = track_config.track_id
+        JOIN track ON
+            track_config.package_id = track.package_id
+        JOIN car ON
+            driver_result.car_id = car.car_id
+        JOIN driver ON
+            driver.cust_id = driver_result.cust_id
+        WHERE
+            driver.display_name = ?
+        GROUP BY
+            driver_result.car_id, track.package_id
+    "#).unwrap();
+
+    let mut rows = stmt.query((driver_name,)).unwrap();
+
+    let mut values = vec![];
+
+    while let Some(row) = rows.next().unwrap() {
+        let car_name: String = row.get(0).unwrap();
+        let track_name: String = row.get(1).unwrap();
+        let time: i64 = row.get(2).unwrap();
+        let laps: i64 = row.get(3).unwrap();
+        values.push(CarTrackUsage{
+            car_name,
+            track_name,
+            time,
+            laps,
+        });
+    }
+
+    return values;
+}
+
 pub fn rebuild_db() {
     fs::remove_file(SQLITE_DB_FILE).unwrap();
 
-    let mut con = rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
+    let mut con = create_db_connection();
     let mut tx = con.transaction().unwrap();
 
     {
@@ -351,7 +413,7 @@ pub fn rebuild_db() {
 }
 
 pub fn update_db() {
-    let mut con = rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
+    let mut con = create_db_connection();
     let mut tx = con.transaction().unwrap();
     {
         let mut sessions_not_in_db: Vec<i64> = Vec::new();

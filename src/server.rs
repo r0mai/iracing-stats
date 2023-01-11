@@ -1,17 +1,72 @@
+use std::collections::HashMap;
+
 use rocket::fs::FileServer;
 
-use crate::db::query_irating_history;
-use serde_json::Value;
+use crate::db::{query_irating_history, query_track_car_usage_matrix};
+use serde_json::{Value, json};
 
 #[get("/api/v1/irating-history?<driver_name>")]
 async fn api_v1_irating_history(driver_name: String) -> Value {
     return query_irating_history(&driver_name);
 }
 
+#[get("/api/v1/car-track-usage-stats?<driver_name>")]
+async fn api_v1_car_track_usage_stats(driver_name: String) -> Value {
+    let raw_data = query_track_car_usage_matrix(&driver_name); 
+
+    let mut car_idxs = HashMap::new();
+    let mut track_idxs = HashMap::new();
+
+    let mut car_idx = 0;
+    let mut track_idx = 0;
+
+    for data in raw_data.iter() {
+        if !car_idxs.contains_key(&data.car_name) {
+            car_idxs.insert(data.car_name.clone(), car_idx);
+            car_idx += 1;
+        }
+        if !track_idxs.contains_key(&data.track_name) {
+            track_idxs.insert(data.track_name.clone(), track_idx);
+            track_idx += 1;
+        }
+    }
+
+    let car_count = car_idxs.len();
+    let track_count = track_idxs.len();
+
+    // matrix[track][car]
+    let mut matrix = vec![vec![json!({}); car_count]; track_count];
+
+    for data in raw_data.into_iter() {
+        matrix[track_idxs[&data.track_name]][car_idxs[&data.car_name]] = json!({
+            "time": data.time,
+            "laps": data.laps
+        });
+    }
+
+    let mut cars = vec![String::new(); car_count];
+    let mut tracks = vec![String::new(); track_count];
+
+    for (name, idx) in car_idxs {
+        cars[idx] = name;
+    }
+
+    for (name, idx) in track_idxs {
+        tracks[idx] = name;
+    }
+
+    return json!({
+        "matrix": matrix,
+        "cars": cars,
+        "tracks": tracks
+    });
+}
+
 pub async fn start_rocket_server() {
     let _result = rocket::build()
         .mount("/", routes![
             api_v1_irating_history,
+            api_v1_car_track_usage_stats,
         ])
         .mount("/static", FileServer::from("static"))
         .launch().await.unwrap();
