@@ -23,18 +23,19 @@
         let queryString = new URLSearchParams(paramString);
 
         let urlDriver = queryString.get('driver');
+        let urlCategory = queryString.get('category') || "";
         if (urlDriver) {
             nameInput.value = urlDriver;
-            updateDriver(urlDriver);
+            updateDriver(urlDriver, urlCategory);
         }
 
-        function updateDriver(name) {
+        function updateDriver(name, category) {
             if (!name) {
                 console.log("Empty name");
                 return;
             }
 
-            updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, name);
+            updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, name, category);
             updateCarTrackUsageStats(
                 carTrackTimeStatsDiv, carTrackLapsStatsDiv,
                 carTimeStackStatsDiv, trackTimeStackStatsDiv,

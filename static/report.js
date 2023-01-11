@@ -100,8 +100,8 @@ function toHours(interval) {
     return interval / 10000 / 60 / 60;
 }
 
-async function updateIratingHistory(dateDiv, raceDiv, driverName) {
-    let resp = await fetch('/api/v1/irating-history?driver_name=' + driverName);
+async function updateIratingHistory(dateDiv, raceDiv, driverName, category) {
+    let resp = await fetch('/api/v1/irating-history?driver_name=' + driverName + "&category=" + category);
     let result = await resp.json()
 
     populateIratingHistoryDate(dateDiv, result);

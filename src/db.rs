@@ -10,6 +10,30 @@ const CAR_DATA_FILE: &str = "data/cars.json";
 pub const SQLITE_DB_FILE: &str = "stats.db";
 const SCHEMA_SQL: &str = "schema.sql";
 
+#[derive(Copy, Clone)]
+pub enum LicenseCategoryType {
+    Oval = 1,
+    Road = 2,
+    DirtOval = 3,
+    DirtRoad = 4
+}
+
+impl LicenseCategoryType {
+    pub fn from_string(str: &str) -> Result<Self, &'static str> {
+        match str.to_lowercase().as_str() {
+            "oval" => Ok(LicenseCategoryType::Oval),
+            "road" => Ok(LicenseCategoryType::Road),
+            "dirtoval" => Ok(LicenseCategoryType::DirtOval),
+            "dirtroad" => Ok(LicenseCategoryType::DirtRoad),
+            _ => Err("invalid category string")
+        }
+    }
+    pub fn to_db_type(&self) -> i32 {
+        return *self as i32;
+    }
+}
+
+
 pub fn create_db_connection() -> rusqlite::Connection {
     return rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
 }
@@ -294,7 +318,7 @@ pub fn is_session_cached(subsession_id: i64) -> bool {
     return get_session_cache_path(subsession_id).exists();
 }
 
-pub fn query_irating_history(driver_name: &String) -> serde_json::Value {
+pub fn query_irating_history(driver_name: &String, category: LicenseCategoryType) -> serde_json::Value {
     let con = create_db_connection();
 
     let mut stmt = con.prepare(r#"
@@ -312,11 +336,14 @@ pub fn query_irating_history(driver_name: &String) -> serde_json::Value {
             driver_result.newi_rating != -1 AND /* this rules out rookies */
             subsession.event_type = 5 AND /* race */
             simsession.simsession_number == 0 AND
-            subsession.license_category_id = 2
+            subsession.license_category_id = ?
         ORDER BY subsession.start_time ASC;
     );"#).unwrap();
 
-    let mut rows = stmt.query((driver_name,)).unwrap();
+    let mut rows = stmt.query((
+        driver_name,
+        category.to_db_type()
+    )).unwrap();
 
     let mut values = vec![];
 
