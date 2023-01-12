@@ -23,23 +23,32 @@ struct Args {
     #[arg(short = 'D', long)]
     sync_drivers_to_db: Vec<String>,
 
+    /// Sync season year to db
+    #[arg(short = 'y', long)]
+    season_year: Option<i32>,
+
+    /// Sync season year to db
+    #[arg(short = 'q', long)]
+    season_quarter: Option<i32>,
+
+    /// Sync season year to db
+    #[arg(short = 'w', long)]
+    season_week: Option<i32>,
+
     /// Start server
     #[arg(short = 's', long = "server")]
     start_server: bool
 }
 
 fn has_async(args: &Args) -> bool {
-    return !args.sync_drivers_to_db.is_empty();
+    return !args.sync_drivers_to_db.is_empty() || args.season_year.is_some();
 }
 
-fn tokio_main(args: &Args) {
+async fn tokio_main(args: &Args) {
     if !has_async(&args) {
         return;
     }
 
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
-    rt.block_on(async {
         let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
 
         iracing_client::auth(&client).await;
@@ -47,7 +56,11 @@ fn tokio_main(args: &Args) {
         if !args.sync_drivers_to_db.is_empty() {
             iracing_client::sync_drivers_to_db(&client, &args.sync_drivers_to_db).await;
         }
-    });
+
+        if args.season_year.is_some() && args.season_quarter.is_some() {
+            iracing_client::sync_season_to_db(&client,
+                args.season_year.unwrap(), args.season_quarter.unwrap(), args.season_week).await;
+        }
 }
 
 #[rocket::main]
@@ -63,6 +76,6 @@ async fn main() {
     if args.start_server {
         crate::server::start_rocket_server().await;
     } else {
-        tokio_main(&args);
+        tokio_main(&args).await;
     }
 }

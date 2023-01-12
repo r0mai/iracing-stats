@@ -61,12 +61,19 @@ async fn get_member_since_year(client: &Client, cust_id: i64) -> i32 {
     return res["members"][0]["member_since"].as_str().unwrap()[0..4].parse::<i32>().unwrap();
 }
 
-async fn search_series(client: &Client, cust_id: i64, year: i32, quarter: i32) -> serde_json::Value {
-    return get_and_read_chunked(client, "/data/results/search_series", &HashMap::from([
-        ("cust_id", cust_id.to_string()),
+async fn search_series(client: &Client, cust_id: Option<i64>, year: i32, quarter: i32, week: Option<i32>) -> serde_json::Value {
+    let mut params = HashMap::from([
         ("season_year", year.to_string()),
         ("season_quarter", quarter.to_string()),
-    ])).await;
+    ]);
+
+    if let Some(cust_id) = cust_id {
+        params.insert("cust_id", cust_id.to_string());
+    }
+    if let Some(week) = week {
+        params.insert("race_week_num", week.to_string());
+    }
+    return get_and_read_chunked(client, "/data/results/search_series", &params).await;
 }
 
 async fn find_subsessions_for_driver(client: &Client, cust_id: i64) -> Vec<i64> {
@@ -76,7 +83,7 @@ async fn find_subsessions_for_driver(client: &Client, cust_id: i64) -> Vec<i64> 
     for year in member_since_year..2023+1 {
         for quarter in 1..4+1 {
             println!("Query {year}s{quarter}");
-            let mut series_q = search_series(client, cust_id, year, quarter).await;
+            let mut series_q = search_series(client, Some(cust_id), year, quarter, None).await;
             series.as_array_mut().unwrap().append(series_q.as_array_mut().unwrap());
         }
     }
@@ -84,15 +91,25 @@ async fn find_subsessions_for_driver(client: &Client, cust_id: i64) -> Vec<i64> 
     return series.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
 }
 
+async fn find_subsessions_for_season(client: &Client, year: i32, quarter: i32, week: Option<i32>) -> Vec<i64> {
+    let series = search_series(client, None, year, quarter, week).await;
+    return series.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
+}
+
+fn filter_non_cached(subsessions: Vec<i64>) -> Vec<i64> {
+    let len1 = subsessions.len();
+    let res: Vec<_> = subsessions.into_iter().filter(|ses| !crate::db::is_session_cached(*ses)).collect();
+    let len2 = res.len();
+    println!("Non-cached sessions {len2}/{len1}");
+    return res;
+}
+
 async fn find_non_cached_subsessions_for_driver(client: &Client, cust_id: i64) -> Vec<i64> {
-    let subsessions = find_subsessions_for_driver(client, cust_id).await;
-    let subsessions_len = subsessions.len();
+    return filter_non_cached(find_subsessions_for_driver(client, cust_id).await);
+}
 
-    let non_cached: Vec<i64> = subsessions.into_iter().filter(|ses| !crate::db::is_session_cached(*ses)).collect();
-    let non_cached_len = non_cached.len();
-
-    println!("Non-cached sessions {non_cached_len}/{subsessions_len}");
-    return non_cached;
+async fn find_non_cached_subsessions_for_season(client: &Client, year: i32, quarter: i32, week: Option<i32>) -> Vec<i64> {
+    return filter_non_cached(find_subsessions_for_season(client, year, quarter, week).await);
 }
 
 async fn get_cust_id(client: &Client, driver_name: &String) -> i64 {
@@ -135,6 +152,19 @@ async fn sync_subsessions(client: &Client, subsession_ids: &Vec<i64>) {
     }
 }
 
+fn add_subsessions_to_db(subsession_ids: &Vec<i64>) {
+    let mut con = rusqlite::Connection::open(crate::db::SQLITE_DB_FILE).unwrap();
+    let mut tx = con.transaction().unwrap();
+    {
+        let mut ctx = crate::db::create_db_context(&mut tx);
+
+        for subsession_id in subsession_ids {
+            crate::db::add_session_to_db_from_cache(&mut ctx, *subsession_id);
+        }
+    }
+
+    tx.commit().unwrap();
+}
 
 pub async fn sync_drivers_to_db(client: &Client, driver_names: &Vec<String>) {
     let mut subsession_ids = Vec::new();
@@ -146,18 +176,13 @@ pub async fn sync_drivers_to_db(client: &Client, driver_names: &Vec<String>) {
         subsession_ids.append(&mut find_non_cached_subsessions_for_driver(client, cust_id).await);
     }
     sync_subsessions(client, &subsession_ids).await;
+    add_subsessions_to_db(&subsession_ids);
+}
 
-    let mut con = rusqlite::Connection::open(crate::db::SQLITE_DB_FILE).unwrap();
-    let mut tx = con.transaction().unwrap();
-    {
-        let mut ctx = crate::db::create_db_context(&mut tx);
-
-        for subsession_id in subsession_ids {
-            crate::db::add_session_to_db_from_cache(&mut ctx, subsession_id);
-        }
-    }
-
-    tx.commit().unwrap();
+pub async fn sync_season_to_db(client: &Client, year: i32, quarter: i32, week: Option<i32>) {
+    let subsession_ids = find_non_cached_subsessions_for_season(client, year, quarter, week).await;
+    sync_subsessions(client, &subsession_ids).await;
+    add_subsessions_to_db(&subsession_ids);
 }
 
 pub async fn auth(client: &Client) {
