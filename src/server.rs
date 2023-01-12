@@ -2,14 +2,15 @@ use std::collections::HashMap;
 
 use rocket::fs::FileServer;
 
-use crate::db::{query_irating_history, query_track_car_usage_matrix, LicenseCategoryType};
+use crate::category_type::CategoryType;
+use crate::db::{query_irating_history, query_track_car_usage_matrix};
 use serde_json::{Value, json};
 
 #[get("/api/v1/irating-history?<driver_name>&<category>")]
 async fn api_v1_irating_history(driver_name: String, category: Option<String>) -> Value {
     let category_type = match category {
-        Some(str) => LicenseCategoryType::from_string(str.as_str()).unwrap_or(LicenseCategoryType::Road),
-        None => LicenseCategoryType::Road
+        Some(str) => CategoryType::from_string(str.as_str()).unwrap_or(CategoryType::Road),
+        None => CategoryType::Road
     };
 
     return query_irating_history(&driver_name, category_type);

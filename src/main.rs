@@ -3,6 +3,8 @@
 mod server;
 mod db;
 mod iracing_client;
+mod category_type;
+mod event_type;
 
 use tokio;
 use clap::Parser;

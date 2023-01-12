@@ -12,7 +12,7 @@ CREATE TABLE subsession(
     subsession_id INTEGER PRIMARY KEY,
     session_id INTEGER,
     start_time INTEGER,
-    license_category_id INTEGER,
+    license_category_id INTEGER, /* 1 -> Oval, 2 -> Road, 3 -> Dirt Oval, 4 -> Dirt Road */
     event_type INTEGER, /* 2 -> Practice, 3 -> Qualify, 4 -> Time Trial, 5 -> Race */
     track_id INTEGER /* maybe should be in session? */
 );
