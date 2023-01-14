@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use serde_json;
 use reqwest::{self, Client};
+use std::time::{Duration, Instant};
 
 const BASEURL: &str = "https://members-ng.iracing.com";
 
@@ -147,8 +148,11 @@ async fn sync_subsessions(client: &Client, subsession_ids: &Vec<i64>) {
     let len = subsession_ids.len();
     println!("Syncing {len} subsessions");
 
+    let start = Instant::now();
     for (i, subsession_id) in subsession_ids.into_iter().enumerate() {
-        sync_subsession(client, *subsession_id, format!("{i}/{len} ").as_str()).await;
+        let elapsed_secs = start.elapsed().as_secs_f32();
+        let rate = i as f32 / elapsed_secs;
+        sync_subsession(client, *subsession_id, format!("{i}/{len} {rate:.2}/s ").as_str()).await;
     }
 }
 
