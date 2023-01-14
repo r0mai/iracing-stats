@@ -284,7 +284,7 @@ pub fn read_cached_session_json(subsession_id: i64) -> serde_json::Value {
 
 pub fn write_cached_session_json(subsession_id: i64, json: &serde_json::Value) {
     let content = json.to_string();
-    write_single_file_zip(get_session_cache_path(subsession_id).as_path(), "session.zip", &content);
+    write_single_file_zip(get_session_cache_path(subsession_id).as_path(), "session.json", &content);
 }
 
 pub fn get_session_cache_path(subsession_id: i64) -> PathBuf {

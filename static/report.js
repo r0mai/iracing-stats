@@ -96,16 +96,64 @@ function populateIratingHistoryRace(raceDiv, data) {
     });
 }
 
+function svgTransform(w, h) {
+    return "translate(" + w + "," + h + ")";
+}
+
+function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
+    // preprocess data: add index field
+    result = result.map((d, idx) => ({...d, index: idx}));
+
+    var margin = {top: 10, right: 30, bottom: 30, left: 60},
+        width = 460 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select(raceD3JSDiv)
+        .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+            .attr("transform", svgTransform(margin.left, margin.top));
+    
+    var x = d3.scaleLinear()
+        .domain([0, result.length])
+        .range([0, width]);
+
+    var y = d3.scaleLinear()
+        .domain(d3.extent(result, e => e["irating"]))
+        .range([height, 0]);
+    
+    svg.append("g")
+        .attr("transform", svgTransform(0, height))
+        .call(d3.axisBottom(x));
+
+    svg.append("g")
+        .call(d3.axisLeft(y));
+
+    var line = d3.line()
+        .x(d => x(d["index"]))
+        .y(d => y(d["irating"]));
+
+    svg.append("path")
+        .datum(result)
+        .attr("fill", "none")
+        .attr("stroke", "red")
+        .attr("stroke-width", 1.5)
+        .attr("d", line);
+}
+
 function toHours(interval) {
     return interval / 10000 / 60 / 60;
 }
 
-async function updateIratingHistory(dateDiv, raceDiv, driverName, category) {
+async function updateIratingHistory(dateDiv, raceDiv, raceD3JSDiv, driverName, category) {
     let resp = await fetch('/api/v1/irating-history?driver_name=' + driverName + "&category=" + category);
     let result = await resp.json()
 
     populateIratingHistoryDate(dateDiv, result);
     populateIratingHistoryRace(raceDiv, result);
+    populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result);
 }
 
 function populateTrackUsageStats(div, data, key, valueMutator) {

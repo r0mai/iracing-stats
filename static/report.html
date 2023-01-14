@@ -1,9 +1,11 @@
 <head>
     <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="/static/report.js"></script>
 </head>
 <html>
     <input type="text" id="name-input"/>
+    <div id="irating-history-per-race-d3js"></div>
     <div id="irating-history-per-date" style="width:800px;height:450px;"></div>
     <div id="irating-history-per-race" style="width:800px;height:450px;"></div>
     <div id="car-track-time-stats"/>
@@ -12,6 +14,7 @@
     <div id="track-time-stack-stats"/>
     <script>
         nameInput = document.getElementById("name-input");
+        iratingHistoryDateDivD3JS = document.getElementById('irating-history-per-race-d3js');
         iratingHistoryDateDiv = document.getElementById('irating-history-per-date');
         iratingHistoryRaceDiv = document.getElementById('irating-history-per-race');
         carTrackTimeStatsDiv = document.getElementById('car-track-time-stats');
@@ -35,7 +38,7 @@
                 return;
             }
 
-            updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, name, category);
+            updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, iratingHistoryDateDivD3JS, name, category);
             updateCarTrackUsageStats(
                 carTrackTimeStatsDiv, carTrackLapsStatsDiv,
                 carTimeStackStatsDiv, trackTimeStackStatsDiv,
