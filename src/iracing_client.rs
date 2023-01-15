@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use serde_json;
 use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
-use futures::{stream, StreamExt};
 
 const BASEURL: &str = "https://members-ng.iracing.com";
 
