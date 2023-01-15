@@ -96,8 +96,12 @@ function populateIratingHistoryRace(raceDiv, data) {
     });
 }
 
-function svgTransform(w, h) {
+function svgTranslate(w, h) {
     return "translate(" + w + "," + h + ")";
+}
+
+function svgPx(v) {
+    return `${v}px`;
 }
 
 function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
@@ -114,7 +118,7 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
         .append("g")
-            .attr("transform", svgTransform(margin.left, margin.top));
+            .attr("transform", svgTranslate(margin.left, margin.top));
     
     var x = d3.scaleLinear()
         .domain([0, result.length])
@@ -125,7 +129,7 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
         .range([height, 0]);
     
     svg.append("g")
-        .attr("transform", svgTransform(0, height))
+        .attr("transform", svgTranslate(0, height))
         .call(d3.axisBottom(x));
 
     svg.append("g")
@@ -141,6 +145,60 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
         .attr("stroke", "red")
         .attr("stroke-width", 1.5)
         .attr("d", line);
+
+    // Tooltip
+    var tooltip = d3.select(raceD3JSDiv)
+        .append("div")
+        .style("visibility", "hidden")
+        .attr("class", "tooltip")
+
+    var marker_id = "marker-cirle";
+    var getMarkerFromEvent = function(event) {
+        return event.currentTarget.parentElement.querySelector(`#${marker_id}`);
+    }
+
+    var mouseover = function(event, d) {
+        var marker = getMarkerFromEvent(event);
+        marker.setAttribute("fill", "blue");
+        marker.setAttribute("r", "2");
+        tooltip
+            .html("IRating: " + d["irating"])
+            .style("left", svgPx(x(d["index"])+10))
+            .style("top", svgPx(y(d["irating"])))
+            .style("visibility", "visible");
+    }
+    var mouseleave = function(event, d) {
+        var marker = getMarkerFromEvent(event);
+        marker.setAttribute("fill", "black");
+        marker.setAttribute("r", "1");
+        tooltip.style("visibility", "hidden");
+    }
+
+    var points = svg.append("g")
+        .selectAll("rects")
+        .data(result)
+        .enter()
+        .append("g");
+    
+    points.append("rect")
+        .attr("x", function(d) { return x(d["index"]); })
+        .attr("y", 0)
+        .attr("width", function(d) { return x(1) - x(0); })
+        .attr("height", height)
+        .attr("opacity", 0)
+        .attr("stroke", "none")
+        .on("mouseover", mouseover)
+        .on("mouseleave", mouseleave);
+
+    points.append("circle")
+        .attr("id", marker_id)
+        .attr("cx", function(d) { return x(d["index"]); })
+        .attr("cy", function(d) { return y(d["irating"]); })
+        .attr("r", 1)
+        .attr("opacity", 1)
+        .attr("stroke", "none")
+        .attr("fill", "black");
+        
 }
 
 function toHours(interval) {

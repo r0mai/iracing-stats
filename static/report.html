@@ -2,6 +2,7 @@
     <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="/static/report.js"></script>
+    <link rel="stylesheet" href="report.css"/>
 </head>
 <html>
     <input type="text" id="name-input"/>
@@ -39,11 +40,11 @@
             }
 
             updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, iratingHistoryDateDivD3JS, name, category);
-            updateCarTrackUsageStats(
-                carTrackTimeStatsDiv, carTrackLapsStatsDiv,
-                carTimeStackStatsDiv, trackTimeStackStatsDiv,
-                name
-            );
+            // updateCarTrackUsageStats(
+            //     carTrackTimeStatsDiv, carTrackLapsStatsDiv,
+            //     carTimeStackStatsDiv, trackTimeStackStatsDiv,
+            //     name
+            // );
         }
 
         nameInput.onkeypress = function(ev) {
