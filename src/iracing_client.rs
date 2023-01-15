@@ -1,18 +1,32 @@
 use std::collections::HashMap;
 use serde_json;
-use reqwest::{self, Client};
-use std::time::{Duration, Instant};
+use reqwest::{self, Client, header::HeaderValue};
+use std::time::Instant;
+use futures::{stream, StreamExt};
 
 const BASEURL: &str = "https://members-ng.iracing.com";
 
+#[derive(Clone)]
 pub struct IRacingClient {
     pub client: Client,
+    pub rate_limit_limit: i64,
+    pub rate_limit_remaining: i64,
+    pub rate_limit_reset: i64
 }
 
 impl IRacingClient {
     pub fn new() -> IRacingClient {
         let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
-        return IRacingClient { client };
+        return IRacingClient {
+            client,
+            rate_limit_limit: 1,
+            rate_limit_remaining: 1,
+            rate_limit_reset: 0
+        };
+    }
+
+    fn header_value_to_i64(v: &HeaderValue) -> i64 {
+        return v.to_str().unwrap().parse::<i64>().unwrap();
     }
 
     async fn get_with_retry(&mut self, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
@@ -25,12 +39,9 @@ impl IRacingClient {
             let rl_remaining = headers.get("x-ratelimit-remaining");
             let rl_reset = headers.get("x-ratelimit-reset");
 
-            if rl_limit.is_some() && rl_remaining.is_some() && rl_reset.is_some() {
-                println!("Ratelimit {}/{}. Reset at {}",
-                    rl_remaining.unwrap().to_str().unwrap(),
-                    rl_limit.unwrap().to_str().unwrap(),
-                    rl_reset.unwrap().to_str().unwrap());
-            }
+            if let Some(x) = rl_limit { self.rate_limit_limit = Self::header_value_to_i64(x); }
+            if let Some(x) = rl_remaining { self.rate_limit_remaining = Self::header_value_to_i64(x); }
+            if let Some(x) = rl_reset { self.rate_limit_reset = Self::header_value_to_i64(x); }
 
             let text = response.text().await.unwrap();
             status.is_server_error();
@@ -186,8 +197,19 @@ async fn sync_subsession(client: &mut IRacingClient, subsession_id: i64, prefix:
 }
 
 async fn sync_subsessions(client: &mut IRacingClient, subsession_ids: &Vec<i64>) {
+
     let len = subsession_ids.len();
     println!("Syncing {len} subsessions");
+
+    // Tried concurent stuff. Failed
+    // let results = stream::iter(subsession_ids).map(|subsession_id| {
+    //     let mut client = client.clone();
+    //     async move {
+    //         sync_subsession(&mut client, *subsession_id, "parallel").await;
+    //     }
+    // }).buffer_unordered(10);
+
+    // results.collect::<Vec<()>>().await;
 
     let start = Instant::now();
     for (i, subsession_id) in subsession_ids.into_iter().enumerate() {
