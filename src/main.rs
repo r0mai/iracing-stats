@@ -49,18 +49,18 @@ async fn tokio_main(args: &Args) {
         return;
     }
 
-        let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
+    let mut client = iracing_client::IRacingClient::new();
 
-        iracing_client::auth(&client).await;
+    client.auth().await;
 
-        if !args.sync_drivers_to_db.is_empty() {
-            iracing_client::sync_drivers_to_db(&client, &args.sync_drivers_to_db).await;
-        }
+    if !args.sync_drivers_to_db.is_empty() {
+        iracing_client::sync_drivers_to_db(&mut client, &args.sync_drivers_to_db).await;
+    }
 
-        if args.season_year.is_some() && args.season_quarter.is_some() {
-            iracing_client::sync_season_to_db(&client,
-                args.season_year.unwrap(), args.season_quarter.unwrap(), args.season_week).await;
-        }
+    if args.season_year.is_some() && args.season_quarter.is_some() {
+        iracing_client::sync_season_to_db(&mut client,
+            args.season_year.unwrap(), args.season_quarter.unwrap(), args.season_week).await;
+    }
 }
 
 #[rocket::main]
