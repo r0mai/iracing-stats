@@ -159,8 +159,7 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
 
     var mouseover = function(event, d) {
         var marker = getMarkerFromEvent(event);
-        marker.setAttribute("fill", "blue");
-        marker.setAttribute("r", "2");
+        marker.setAttribute("opacity", 1)
         tooltip
             .html("IRating: " + d["irating"])
             .style("left", svgPx(x(d["index"])+10))
@@ -169,8 +168,7 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
     }
     var mouseleave = function(event, d) {
         var marker = getMarkerFromEvent(event);
-        marker.setAttribute("fill", "black");
-        marker.setAttribute("r", "1");
+        marker.setAttribute("opacity", 0)
         tooltip.style("visibility", "hidden");
     }
 
@@ -194,8 +192,8 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
         .attr("id", marker_id)
         .attr("cx", function(d) { return x(d["index"]); })
         .attr("cy", function(d) { return y(d["irating"]); })
-        .attr("r", 1)
-        .attr("opacity", 1)
+        .attr("r", 2)
+        .attr("opacity", 0)
         .attr("stroke", "none")
         .attr("fill", "black");
         
