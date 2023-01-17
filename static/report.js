@@ -209,11 +209,15 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
 
 function populateTrackUsageD3JS_Hours(div, result) {
     result.sort((lhs, rhs) => rhs["time"] - lhs["time"]);
+    let format = {
+        xTickFormat: (e => e + "h")
+    };
     verticalBarChart(
         div,
         result,
         e => toHours(e["time"]),
-        e => e["track_name"]
+        e => e["track_name"],
+        format
     );
 }
 
@@ -229,11 +233,15 @@ function populateTrackUsageD3JS_Laps(div, result) {
 
 function populateTrackUsageD3JS_Distance(div, result) {
     result.sort((lhs, rhs) => rhs["distance"] - lhs["distance"]);
+    let format = {
+        xTickFormat: (e => e + "km")
+    };
     verticalBarChart(
         div,
         result,
         e => e["distance"],
-        e => e["track_name"]
+        e => e["track_name"],
+        format
     );
 }
 

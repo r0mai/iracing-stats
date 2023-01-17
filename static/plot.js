@@ -1,6 +1,9 @@
 
 
-function verticalBarChart(div, data, xFunc, yFunc) {
+function verticalBarChart(div, data, xFunc, yFunc, format) {
+    let xTickFormat = format?.xTickFormat ?? (e => e);
+    let yTickFormat = format?.yTickFormat ?? (e => e);
+
     let coreHeight = data.length * 16;
     let margin = {top: 20, right: 30, bottom: 40, left: 200},
         width = 800 - margin.left - margin.right,
@@ -24,13 +27,10 @@ function verticalBarChart(div, data, xFunc, yFunc) {
 
     svg.append("g")
         .attr("transform", svgTranslate(0, height))
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-            .attr("transform", svgTranslate(-10, 0) + svgRotate(-45))
-            .style("text-anchor", "end");
+        .call(d3.axisBottom(x).tickFormat(xTickFormat));
 
     svg.append("g")
-        .call(d3.axisLeft(y));
+        .call(d3.axisLeft(y).tickFormat(yTickFormat));
 
     svg.selectAll("bars")
         .data(data)
