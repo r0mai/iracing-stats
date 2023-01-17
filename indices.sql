@@ -1,0 +1,1 @@
+CREATE INDEX driver_driver_name_index ON driver(display_name);
