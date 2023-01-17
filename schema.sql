@@ -1,5 +1,5 @@
 CREATE TABLE driver(
-    cust_id INTEGER UNIQUE,
+    cust_id PRIMARY KEY,
     display_name TEXT
 );
 
