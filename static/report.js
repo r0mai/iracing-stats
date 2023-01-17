@@ -227,6 +227,16 @@ function populateTrackUsageD3JS_Laps(div, result) {
     );
 }
 
+function populateTrackUsageD3JS_Distance(div, result) {
+    result.sort((lhs, rhs) => rhs["distance"] - lhs["distance"]);
+    verticalBarChart(
+        div,
+        result,
+        e => e["distance"],
+        e => e["track_name"]
+    );
+}
+
 async function updateIratingHistory(dateDiv, raceDiv, raceD3JSDiv, driverName, category) {
     let resp = await fetch('/api/v1/irating-history?driver_name=' + driverName + "&category=" + category);
     let result = await resp.json()
@@ -236,11 +246,12 @@ async function updateIratingHistory(dateDiv, raceDiv, raceD3JSDiv, driverName, c
     populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result);
 }
 
-async function updateTrackUsage(trackUsageTimeD3JSDiv, trackUsageLapsD3JSDiv, driverName, category) {
+async function updateTrackUsage(trackUsageTimeD3JSDiv, trackUsageLapsD3JSDiv, trackUsageDistanceD3JSDiv, driverName, category) {
     let resp = await fetch('/api/v1/track-usage-stats?driver_name=' + driverName);
     let result = await resp.json();
     populateTrackUsageD3JS_Hours(trackUsageTimeD3JSDiv, result);
     populateTrackUsageD3JS_Laps(trackUsageLapsD3JSDiv, result);
+    populateTrackUsageD3JS_Distance(trackUsageDistanceD3JSDiv, result);
 }
 
 function populateTrackUsageStats(div, data, key, valueMutator) {

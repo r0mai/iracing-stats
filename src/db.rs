@@ -349,7 +349,8 @@ pub fn query_irating_history(driver_name: &String, category: CategoryType) -> se
 pub struct TrackUsage {
     pub track_name: String,
     pub time: i64,
-    pub laps: i64
+    pub laps: i64,
+    pub distance: f32,
 }
 
 pub fn query_track_usage(driver_name: &String) -> Vec<TrackUsage> {
@@ -359,7 +360,8 @@ pub fn query_track_usage(driver_name: &String) -> Vec<TrackUsage> {
         SELECT
             track.track_name,
             SUM(driver_result.laps_complete * driver_result.average_lap),
-            SUM(driver_result.laps_complete)
+            SUM(driver_result.laps_complete),
+            SUM(driver_result.laps_complete * track_config.track_config_length)
         FROM
             driver_result
         JOIN simsession ON
@@ -389,10 +391,12 @@ pub fn query_track_usage(driver_name: &String) -> Vec<TrackUsage> {
         let track_name: String = row.get(0).unwrap();
         let time: i64 = row.get(1).unwrap();
         let laps: i64 = row.get(2).unwrap();
+        let distance: f32 = row.get(3).unwrap();
         values.push(TrackUsage{
             track_name,
             time,
             laps,
+            distance,
         });
     }
 

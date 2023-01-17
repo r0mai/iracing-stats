@@ -27,7 +27,8 @@ async fn api_v1_track_usage_stats(driver_name: String) -> Value {
     let values: Vec<Value> = raw_data.iter().map(|data| json!({
         "track_name": data.track_name,
         "time": data.time,
-        "laps": data.laps
+        "laps": data.laps,
+        "distance": data.distance,
     })).collect();
 
     return Value::Array(values);
