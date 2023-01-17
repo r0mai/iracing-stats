@@ -1,6 +1,0 @@
-SESSIONS_DIR = 'data/sessions'
-TRACK_DATA_FILE = 'data/tracks.json'
-CAR_DATA_FILE = 'data/cars.json'
-SQLITE_DB_FILE = 'stats.db'
-BASEURL = 'https://members-ng.iracing.com'
-SCHEMA_SQL = 'schema.sql'
