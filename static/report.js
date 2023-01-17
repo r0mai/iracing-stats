@@ -207,47 +207,24 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
         
 }
 
-function populateTrackUsageD3JS(trackUsageD3JSDiv, result) {
+function populateTrackUsageD3JS_Hours(div, result) {
     result.sort((lhs, rhs) => rhs["time"] - lhs["time"]);
-    let coreHeight = result.length * 16;
-    let margin = {top: 20, right: 30, bottom: 40, left: 200},
-        width = 800 - margin.left - margin.right,
-        height = coreHeight - margin.top - margin.bottom;
+    verticalBarChart(
+        div,
+        result,
+        e => toHours(e["time"]),
+        e => e["track_name"]
+    );
+}
 
-    let svg = d3.select(trackUsageD3JSDiv)
-        .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-            .attr("transform", svgTranslate(margin.left, margin.top));
-
-    let x = d3.scaleLinear()
-        .domain([0, d3.max(result, e => toHours(e["time"]))])
-        .range([0, width]);
-
-    let y = d3.scaleBand()
-        .domain(result.map(d => d["track_name"]))
-        .range([0, height])
-        .padding(0.1);
-
-    svg.append("g")
-        .attr("transform", svgTranslate(0, height))
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-            .attr("transform", svgTranslate(-10, 0) + svgRotate(-45))
-            .style("text-anchor", "end");
-
-    svg.append("g")
-        .call(d3.axisLeft(y));
-
-    svg.selectAll("bars")
-        .data(result)
-        .join("rect")
-        .attr("x", x(0))
-        .attr("y", d => y(d["track_name"]))
-        .attr("width", d => x(toHours(d["time"])))
-        .attr("height", y.bandwidth())
-        .attr("fill", "red");
+function populateTrackUsageD3JS_Laps(div, result) {
+    result.sort((lhs, rhs) => rhs["laps"] - lhs["laps"]);
+    verticalBarChart(
+        div,
+        result,
+        e => e["laps"],
+        e => e["track_name"]
+    );
 }
 
 async function updateIratingHistory(dateDiv, raceDiv, raceD3JSDiv, driverName, category) {
@@ -259,10 +236,11 @@ async function updateIratingHistory(dateDiv, raceDiv, raceD3JSDiv, driverName, c
     populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result);
 }
 
-async function updateTrackUsage(trackUsageD3JSDiv, driverName, category) {
+async function updateTrackUsage(trackUsageTimeD3JSDiv, trackUsageLapsD3JSDiv, driverName, category) {
     let resp = await fetch('/api/v1/track-usage-stats?driver_name=' + driverName);
     let result = await resp.json();
-    populateTrackUsageD3JS(trackUsageD3JSDiv, result);
+    populateTrackUsageD3JS_Hours(trackUsageTimeD3JSDiv, result);
+    populateTrackUsageD3JS_Laps(trackUsageLapsD3JSDiv, result);
 }
 
 function populateTrackUsageStats(div, data, key, valueMutator) {
