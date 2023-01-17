@@ -340,6 +340,59 @@ pub fn query_irating_history(driver_name: &String, category: CategoryType) -> se
     return serde_json::Value::Array(values);
 }
 
+pub struct TrackUsage {
+    pub track_name: String,
+    pub time: i64,
+    pub laps: i64
+}
+
+pub fn query_track_usage(driver_name: &String) -> Vec<TrackUsage> {
+    let con = create_db_connection();
+
+    let mut stmt = con.prepare(r#"
+        SELECT
+            track.track_name,
+            SUM(driver_result.laps_complete * driver_result.average_lap),
+            SUM(driver_result.laps_complete)
+        FROM
+            driver_result
+        JOIN simsession ON
+            driver_result.subsession_id = simsession.subsession_id AND
+            driver_result.simsession_number = simsession.simsession_number
+        JOIN subsession ON
+            simsession.subsession_id = subsession.subsession_id
+        JOIN session ON
+            subsession.session_id = session.session_id
+        JOIN track_config ON
+            subsession.track_id = track_config.track_id
+        JOIN track ON
+            track_config.package_id = track.package_id
+        JOIN driver ON
+            driver.cust_id = driver_result.cust_id
+        WHERE
+            driver.display_name = ?
+        GROUP BY
+            track.package_id
+    "#).unwrap();
+
+    let mut rows = stmt.query((driver_name,)).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        let track_name: String = row.get(0).unwrap();
+        let time: i64 = row.get(1).unwrap();
+        let laps: i64 = row.get(2).unwrap();
+        values.push(TrackUsage{
+            track_name,
+            time,
+            laps,
+        });
+    }
+
+    return values;
+}
+
 pub struct CarTrackUsage {
     pub car_name: String,
     pub track_name: String,
@@ -381,7 +434,7 @@ pub fn query_track_car_usage_matrix(driver_name: &String) -> Vec<CarTrackUsage> 
 
     let mut rows = stmt.query((driver_name,)).unwrap();
 
-    let mut values = vec![];
+    let mut values = Vec::new();
 
     while let Some(row) = rows.next().unwrap() {
         let car_name: String = row.get(0).unwrap();
@@ -403,6 +456,9 @@ pub fn rebuild_db() {
     fs::remove_file(SQLITE_DB_FILE).unwrap();
 
     let mut con = create_db_connection();
+    con.pragma_update(None, "synchronous", "OFF").unwrap();
+    con.pragma_update(None, "journal_mode", "OFF").unwrap();
+
     let mut tx = con.transaction().unwrap();
 
     {

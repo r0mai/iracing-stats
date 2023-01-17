@@ -7,6 +7,7 @@
 <html>
     <input type="text" id="name-input"/>
     <div id="irating-history-per-race-d3js"></div>
+    <div id="track-usage-d3js"></div>
     <div id="irating-history-per-date" style="width:800px;height:450px;"></div>
     <div id="irating-history-per-race" style="width:800px;height:450px;"></div>
     <div id="car-track-time-stats"/>
@@ -15,7 +16,8 @@
     <div id="track-time-stack-stats"/>
     <script>
         nameInput = document.getElementById("name-input");
-        iratingHistoryDateDivD3JS = document.getElementById('irating-history-per-race-d3js');
+        iratingHistoryDateD3JSDiv = document.getElementById('irating-history-per-race-d3js');
+        trackUsageD3JSDiv = document.getElementById('irating-history-per-race-d3js');
         iratingHistoryDateDiv = document.getElementById('irating-history-per-date');
         iratingHistoryRaceDiv = document.getElementById('irating-history-per-race');
         carTrackTimeStatsDiv = document.getElementById('car-track-time-stats');
@@ -39,7 +41,8 @@
                 return;
             }
 
-            updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, iratingHistoryDateDivD3JS, name, category);
+            updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, iratingHistoryDateD3JSDiv, name, category);
+            updateTrackUsage(trackUsageD3JSDiv, name, category);
             // updateCarTrackUsageStats(
             //     carTrackTimeStatsDiv, carTrackLapsStatsDiv,
             //     carTimeStackStatsDiv, trackTimeStackStatsDiv,

@@ -1,3 +1,19 @@
+function toHours(interval) {
+    return interval / 10000 / 60 / 60;
+}
+
+function svgTranslate(w, h) {
+    return "translate(" + w + "," + h + ")";
+}
+
+function svgRotate(angle) {
+    return "rotate(" + angle + ")";
+}
+
+function svgPx(v) {
+    return `${v}px`;
+}
+
 function populateIratingHistoryDate(dateDiv, data) {
     let iratingData = {
         x: [],
@@ -96,35 +112,27 @@ function populateIratingHistoryRace(raceDiv, data) {
     });
 }
 
-function svgTranslate(w, h) {
-    return "translate(" + w + "," + h + ")";
-}
-
-function svgPx(v) {
-    return `${v}px`;
-}
-
 function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
     // preprocess data: add index field
     result = result.map((d, idx) => ({...d, index: idx}));
 
-    var margin = {top: 10, right: 30, bottom: 30, left: 60},
+    let margin = {top: 10, right: 30, bottom: 30, left: 60},
         width = 800 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
-    var svg = d3.select(raceD3JSDiv)
+    let svg = d3.select(raceD3JSDiv)
         .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
         .append("g")
             .attr("transform", svgTranslate(margin.left, margin.top));
     
-    var x = d3.scaleLinear()
+    let x = d3.scaleLinear()
         .domain([0, result.length])
         .range([0, width]);
 
-    var y = d3.scaleLinear()
+    let y = d3.scaleLinear()
         .domain(d3.extent(result, e => e["irating"]))
         .range([height, 0]);
     
@@ -135,7 +143,7 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
     svg.append("g")
         .call(d3.axisLeft(y));
 
-    var line = d3.line()
+    let line = d3.line()
         .x(d => x(d["index"]))
         .y(d => y(d["irating"]));
 
@@ -147,18 +155,18 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
         .attr("d", line);
 
     // Tooltip
-    var tooltip = d3.select(raceD3JSDiv)
+    let tooltip = d3.select(raceD3JSDiv)
         .append("div")
         .style("visibility", "hidden")
         .attr("class", "tooltip")
 
-    var marker_id = "marker-cirle";
-    var getMarkerFromEvent = function(event) {
+    let marker_id = "marker-cirle";
+    let getMarkerFromEvent = function(event) {
         return event.currentTarget.parentElement.querySelector(`#${marker_id}`);
     }
 
-    var mouseover = function(event, d) {
-        var marker = getMarkerFromEvent(event);
+    let mouseover = function(event, d) {
+        let marker = getMarkerFromEvent(event);
         marker.setAttribute("opacity", 1)
         tooltip
             .html("IRating: " + d["irating"])
@@ -166,13 +174,13 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
             .style("top", svgPx(y(d["irating"])))
             .style("visibility", "visible");
     }
-    var mouseleave = function(event, d) {
-        var marker = getMarkerFromEvent(event);
+    let mouseleave = function(event, d) {
+        let marker = getMarkerFromEvent(event);
         marker.setAttribute("opacity", 0)
         tooltip.style("visibility", "hidden");
     }
 
-    var points = svg.append("g")
+    let points = svg.append("g")
         .selectAll("rects")
         .data(result)
         .enter()
@@ -199,8 +207,47 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
         
 }
 
-function toHours(interval) {
-    return interval / 10000 / 60 / 60;
+function populateTrackUsageD3JS(trackUsageD3JSDiv, result) {
+    result.sort((lhs, rhs) => rhs["time"] - lhs["time"]);
+    let coreHeight = result.length * 16;
+    let margin = {top: 20, right: 30, bottom: 40, left: 200},
+        width = 800 - margin.left - margin.right,
+        height = coreHeight - margin.top - margin.bottom;
+
+    let svg = d3.select(trackUsageD3JSDiv)
+        .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+            .attr("transform", svgTranslate(margin.left, margin.top));
+
+    let x = d3.scaleLinear()
+        .domain([0, d3.max(result, e => toHours(e["time"]))])
+        .range([0, width]);
+
+    let y = d3.scaleBand()
+        .domain(result.map(d => d["track_name"]))
+        .range([0, height])
+        .padding(0.1);
+
+    svg.append("g")
+        .attr("transform", svgTranslate(0, height))
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+            .attr("transform", svgTranslate(-10, 0) + svgRotate(-45))
+            .style("text-anchor", "end");
+
+    svg.append("g")
+        .call(d3.axisLeft(y));
+
+    svg.selectAll("bars")
+        .data(result)
+        .join("rect")
+        .attr("x", x(0))
+        .attr("y", d => y(d["track_name"]))
+        .attr("width", d => x(toHours(d["time"])))
+        .attr("height", y.bandwidth())
+        .attr("fill", "red");
 }
 
 async function updateIratingHistory(dateDiv, raceDiv, raceD3JSDiv, driverName, category) {
@@ -210,6 +257,12 @@ async function updateIratingHistory(dateDiv, raceDiv, raceD3JSDiv, driverName, c
     populateIratingHistoryDate(dateDiv, result);
     populateIratingHistoryRace(raceDiv, result);
     populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result);
+}
+
+async function updateTrackUsage(trackUsageD3JSDiv, driverName, category) {
+    let resp = await fetch('/api/v1/track-usage-stats?driver_name=' + driverName);
+    let result = await resp.json();
+    populateTrackUsageD3JS(trackUsageD3JSDiv, result);
 }
 
 function populateTrackUsageStats(div, data, key, valueMutator) {

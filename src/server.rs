@@ -3,7 +3,11 @@ use std::collections::HashMap;
 use rocket::fs::FileServer;
 
 use crate::category_type::CategoryType;
-use crate::db::{query_irating_history, query_track_car_usage_matrix};
+use crate::db::{
+    query_irating_history,
+    query_track_car_usage_matrix,
+    query_track_usage
+};
 use serde_json::{Value, json};
 
 #[get("/api/v1/irating-history?<driver_name>&<category>")]
@@ -14,6 +18,19 @@ async fn api_v1_irating_history(driver_name: String, category: Option<String>) -
     };
 
     return query_irating_history(&driver_name, category_type);
+}
+
+#[get("/api/v1/track-usage-stats?<driver_name>")]
+async fn api_v1_track_usage_stats(driver_name: String) -> Value {
+    let raw_data = query_track_usage(&driver_name); 
+
+    let values: Vec<Value> = raw_data.iter().map(|data| json!({
+        "track_name": data.track_name,
+        "time": data.time,
+        "laps": data.laps
+    })).collect();
+
+    return Value::Array(values);
 }
 
 #[get("/api/v1/car-track-usage-stats?<driver_name>")]
@@ -73,6 +90,7 @@ pub async fn start_rocket_server() {
         .mount("/", routes![
             api_v1_irating_history,
             api_v1_car_track_usage_stats,
+            api_v1_track_usage_stats,
         ])
         .mount("/static", FileServer::from("static"))
         .launch().await.unwrap();
