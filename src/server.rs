@@ -6,7 +6,8 @@ use crate::category_type::CategoryType;
 use crate::db::{
     query_irating_history,
     query_track_car_usage_matrix,
-    query_track_usage
+    query_track_usage,
+    query_car_usage
 };
 use serde_json::{Value, json};
 
@@ -28,6 +29,19 @@ async fn api_v1_track_usage_stats(driver_name: String) -> Value {
         "track_name": data.track_name,
         "time": data.time,
         "laps": data.laps,
+        "distance": data.distance,
+    })).collect();
+
+    return Value::Array(values);
+}
+
+#[get("/api/v1/car-usage-stats?<driver_name>")]
+async fn api_v1_car_usage_stats(driver_name: String) -> Value {
+    let raw_data = query_car_usage(&driver_name); 
+
+    let values: Vec<Value> = raw_data.iter().map(|data| json!({
+        "car_name": data.car_name,
+        "time": data.time,
         "distance": data.distance,
     })).collect();
 
@@ -92,6 +106,7 @@ pub async fn start_rocket_server() {
             api_v1_irating_history,
             api_v1_car_track_usage_stats,
             api_v1_track_usage_stats,
+            api_v1_car_usage_stats,
         ])
         .mount("/static", FileServer::from("static"))
         .launch().await.unwrap();

@@ -251,6 +251,36 @@ function populateTrackUsageD3JS_Distance(div, result) {
     );
 }
 
+function populateCarUsageD3JS_Hours(div, result) {
+    result.sort((lhs, rhs) => rhs["time"] - lhs["time"]);
+    let format = {
+        xTickFormat: (e => e + "h"),
+        barFill: "#6EB5FF"
+    };
+    verticalBarChart(
+        div,
+        result,
+        e => toHours(e["time"]),
+        e => e["car_name"],
+        format
+    );
+}
+
+function populateCarUsageD3JS_Distance(div, result) {
+    result.sort((lhs, rhs) => rhs["distance"] - lhs["distance"]);
+    let format = {
+        xTickFormat: (e => e + "km"),
+        barFill: "#FFABAB"
+    };
+    verticalBarChart(
+        div,
+        result,
+        e => e["distance"],
+        e => e["car_name"],
+        format
+    );
+}
+
 async function updateIratingHistory(dateDiv, raceDiv, raceD3JSDiv, driverName, category) {
     let resp = await fetch('/api/v1/irating-history?driver_name=' + driverName + "&category=" + category);
     let result = await resp.json()
@@ -267,6 +297,14 @@ async function updateTrackUsage(trackUsageTimeD3JSDiv, trackUsageLapsD3JSDiv, tr
     populateTrackUsageD3JS_Laps(trackUsageLapsD3JSDiv, result);
     populateTrackUsageD3JS_Distance(trackUsageDistanceD3JSDiv, result);
 }
+
+async function updateCarUsage(carUsageTimeD3JSDiv, carUsageDistanceD3JSDiv, driverName, category) {
+    let resp = await fetch('/api/v1/car-usage-stats?driver_name=' + driverName);
+    let result = await resp.json();
+    populateCarUsageD3JS_Hours(carUsageTimeD3JSDiv, result);
+    populateCarUsageD3JS_Distance(carUsageDistanceD3JSDiv, result);
+}
+
 
 function populateTrackUsageStats(div, data, key, valueMutator) {
     var graphData = {

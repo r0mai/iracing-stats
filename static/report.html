@@ -11,6 +11,8 @@
     <div id="track-usage-time-d3js"></div>
     <div id="track-usage-laps-d3js"></div>
     <div id="track-usage-distance-d3js"></div>
+    <div id="car-usage-time-d3js"></div>
+    <div id="car-usage-distance-d3js"></div>
     <div id="irating-history-per-date" style="width:800px;height:450px;"></div>
     <div id="irating-history-per-race" style="width:800px;height:450px;"></div>
     <div id="car-track-time-stats"/>
@@ -23,6 +25,8 @@
         trackUsageTimeD3JSDiv = document.getElementById('track-usage-time-d3js');
         trackUsageLapsD3JSDiv = document.getElementById('track-usage-laps-d3js');
         trackUsageDistanceD3JSDiv = document.getElementById('track-usage-distance-d3js');
+        carUsageTimeD3JSDiv = document.getElementById('car-usage-time-d3js');
+        carUsageDistanceD3JSDiv = document.getElementById('car-usage-distance-d3js');
         iratingHistoryDateDiv = document.getElementById('irating-history-per-date');
         iratingHistoryRaceDiv = document.getElementById('irating-history-per-race');
         carTrackTimeStatsDiv = document.getElementById('car-track-time-stats');
@@ -48,11 +52,12 @@
 
             updateIratingHistory(iratingHistoryDateDiv, iratingHistoryRaceDiv, iratingHistoryDateD3JSDiv, name, category);
             updateTrackUsage(trackUsageTimeD3JSDiv, trackUsageLapsD3JSDiv, trackUsageDistanceD3JSDiv, name, category);
-            // updateCarTrackUsageStats(
-            //     carTrackTimeStatsDiv, carTrackLapsStatsDiv,
-            //     carTimeStackStatsDiv, trackTimeStackStatsDiv,
-            //     name
-            // );
+            updateCarUsage(carUsageTimeD3JSDiv, carUsageDistanceD3JSDiv, name, category);
+            updateCarTrackUsageStats(
+                carTrackTimeStatsDiv, carTrackLapsStatsDiv,
+                carTimeStackStatsDiv, trackTimeStackStatsDiv,
+                name
+            );
         }
 
         nameInput.onkeypress = function(ev) {

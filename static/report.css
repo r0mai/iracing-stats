@@ -1,3 +1,7 @@
+body {
+    background-color: #DDDDDD;
+}
+
 .tooltip-circle {
     stroke: #69b3a2;
     fill: white;

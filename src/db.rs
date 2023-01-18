@@ -352,7 +352,6 @@ pub struct TrackUsage {
     pub laps: i64,
     pub distance: f32,
 }
-
 pub fn query_track_usage(driver_name: &String) -> Vec<TrackUsage> {
     let con = create_db_connection();
 
@@ -396,6 +395,61 @@ pub fn query_track_usage(driver_name: &String) -> Vec<TrackUsage> {
             track_name,
             time,
             laps,
+            distance,
+        });
+    }
+
+    return values;
+}
+
+pub struct CarUsage {
+    pub car_name: String,
+    pub time: i64,
+    pub distance: f32,
+}
+
+pub fn query_car_usage(driver_name: &String) -> Vec<CarUsage> {
+    let con = create_db_connection();
+
+    let mut stmt = con.prepare(r#"
+        SELECT
+            car.car_name,
+            SUM(driver_result.laps_complete * driver_result.average_lap),
+            SUM(driver_result.laps_complete * track_config.track_config_length)
+        FROM
+            driver_result
+        JOIN simsession ON
+            driver_result.subsession_id = simsession.subsession_id AND
+            driver_result.simsession_number = simsession.simsession_number
+        JOIN subsession ON
+            simsession.subsession_id = subsession.subsession_id
+        JOIN session ON
+            subsession.session_id = session.session_id
+        JOIN track_config ON
+            subsession.track_id = track_config.track_id
+        JOIN track ON
+            track_config.package_id = track.package_id
+        JOIN car ON
+            driver_result.car_id = car.car_id
+        JOIN driver ON
+            driver.cust_id = driver_result.cust_id
+        WHERE
+            driver.display_name = ?
+        GROUP BY
+            car.car_id
+    "#).unwrap();
+
+    let mut rows = stmt.query((driver_name,)).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        let car_name: String = row.get(0).unwrap();
+        let time: i64 = row.get(1).unwrap();
+        let distance: f32 = row.get(2).unwrap();
+        values.push(CarUsage{
+            car_name,
+            time,
             distance,
         });
     }
