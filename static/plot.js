@@ -3,6 +3,7 @@
 function verticalBarChart(div, data, xFunc, yFunc, format) {
     let xTickFormat = format?.xTickFormat ?? (e => e);
     let yTickFormat = format?.yTickFormat ?? (e => e);
+    let barFill = format?.barFill ?? "red";
 
     let coreHeight = data.length * 16;
     let margin = {top: 20, right: 30, bottom: 40, left: 200},
@@ -39,5 +40,5 @@ function verticalBarChart(div, data, xFunc, yFunc, format) {
         .attr("y", d => y(yFunc(d)))
         .attr("width", d => x(xFunc(d)))
         .attr("height", y.bandwidth())
-        .attr("fill", "red");
+        .attr("fill", barFill)
 }
