@@ -14,6 +14,13 @@ function svgPx(v) {
     return `${v}px`;
 }
 
+// https://stackoverflow.com/a/7343013
+function round(value, precision) {
+    var multiplier = Math.pow(10, precision || 0);
+    return Math.round(value * multiplier) / multiplier;
+}
+
+
 function populateIratingHistoryDate(dateDiv, data) {
     let iratingData = {
         x: [],
@@ -210,7 +217,7 @@ function populateIratingHistoryRaceD3JSDiv(raceD3JSDiv, result) {
 function populateTrackUsageD3JS_Hours(div, result) {
     result.sort((lhs, rhs) => rhs["time"] - lhs["time"]);
     let format = {
-        xTickFormat: (e => e + "h"),
+        xTickFormat: (e => round(e, 1)),
         barFill: "#6EB5FF"
     };
     verticalBarChart(
@@ -239,7 +246,7 @@ function populateTrackUsageD3JS_Laps(div, result) {
 function populateTrackUsageD3JS_Distance(div, result) {
     result.sort((lhs, rhs) => rhs["distance"] - lhs["distance"]);
     let format = {
-        xTickFormat: (e => e + "km"),
+        xTickFormat: (e => round(e, 1) + "km"),
         barFill: "#FFABAB"
     };
     verticalBarChart(
@@ -254,7 +261,7 @@ function populateTrackUsageD3JS_Distance(div, result) {
 function populateCarUsageD3JS_Hours(div, result) {
     result.sort((lhs, rhs) => rhs["time"] - lhs["time"]);
     let format = {
-        xTickFormat: (e => e + "h"),
+        xTickFormat: (e => round(e, 1) + "h"),
         barFill: "#6EB5FF"
     };
     verticalBarChart(
@@ -269,7 +276,7 @@ function populateCarUsageD3JS_Hours(div, result) {
 function populateCarUsageD3JS_Distance(div, result) {
     result.sort((lhs, rhs) => rhs["distance"] - lhs["distance"]);
     let format = {
-        xTickFormat: (e => e + "km"),
+        xTickFormat: (e => round(e, 1) + "km"),
         barFill: "#FFABAB"
     };
     verticalBarChart(
