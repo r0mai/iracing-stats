@@ -7,7 +7,7 @@ use crate::db::{
     query_irating_history,
     query_track_car_usage_matrix,
     query_track_usage,
-    query_car_usage
+    query_car_usage, query_driver_stats
 };
 use serde_json::{Value, json};
 
@@ -100,6 +100,11 @@ async fn api_v1_car_track_usage_stats(driver_name: String) -> Value {
     });
 }
 
+#[get("/api/v1/driver-stats?<driver_name>")]
+async fn api_v1_driver_stats(driver_name: String) -> Value {
+    return query_driver_stats(&driver_name);
+}
+
 pub async fn start_rocket_server() {
     let _result = rocket::build()
         .mount("/", routes![
@@ -107,6 +112,7 @@ pub async fn start_rocket_server() {
             api_v1_car_track_usage_stats,
             api_v1_track_usage_stats,
             api_v1_car_usage_stats,
+            api_v1_driver_stats,
         ])
         .mount("/static", FileServer::from("static"))
         .launch().await.unwrap();

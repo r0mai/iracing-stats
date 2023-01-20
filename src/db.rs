@@ -1,5 +1,5 @@
 use std::{fs, path::PathBuf, path::Path, io::Write};
-use serde_json;
+use serde_json::{self, json};
 use rusqlite;
 use chrono::{self, TimeZone};
 use zip::write::FileOptions;
@@ -514,6 +514,43 @@ pub fn query_track_car_usage_matrix(driver_name: &String) -> Vec<CarTrackUsage> 
     }
 
     return values;
+}
+
+pub fn query_driver_stats(driver_name: &String) -> serde_json::Value {
+    let con = create_db_connection();
+
+    let mut stmt = con.prepare(r#"
+        SELECT
+            SUM(driver_result.laps_complete * driver_result.average_lap),
+            SUM(driver_result.laps_complete),
+            SUM(driver_result.laps_complete * track_config.track_config_length)
+        FROM
+            driver_result
+        JOIN simsession ON
+            driver_result.subsession_id = simsession.subsession_id AND
+            driver_result.simsession_number = simsession.simsession_number
+        JOIN subsession ON
+            simsession.subsession_id = subsession.subsession_id
+        JOIN track_config ON
+            subsession.track_id = track_config.track_id
+        JOIN driver ON
+            driver.cust_id = driver_result.cust_id
+        WHERE
+            driver.display_name = ?
+    "#).unwrap();
+
+    let (time, laps, distance) = stmt.query_row((driver_name,), |row| {
+        let time: i64 = row.get(0).unwrap();
+        let laps: i64 = row.get(1).unwrap();
+        let distance: f32 = row.get(2).unwrap();
+        return Ok((time, laps, distance));
+    }).unwrap();
+
+    return json!({
+        "time": time,
+        "laps": laps,
+        "distance": distance,
+    });
 }
 
 pub fn rebuild_db() {

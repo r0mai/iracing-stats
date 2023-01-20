@@ -7,6 +7,28 @@
 </head>
 <html>
     <input type="text" id="name-input"/>
+    <div id="driver-stats">
+        <table class="driver-stats-table">
+            <tbody>
+                <tr>
+                    <td>Name:</td>
+                    <td id="driver-name-value"></td>
+                </tr>
+                <tr>
+                    <td>Total laps:</td>
+                    <td id="total-laps-value"></td>
+                </tr>
+                <tr>
+                    <td>Total time:</td>
+                    <td id="total-time-value"></td>
+                </tr>
+                <tr>
+                    <td>Total distance:</td>
+                    <td id="total-distance-value"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     <div id="irating-history-per-race-d3js"></div>
     <div id="track-usage-time-d3js"></div>
     <div id="track-usage-laps-d3js"></div>
@@ -21,6 +43,7 @@
     <div id="track-time-stack-stats"/>
     <script>
         nameInput = document.getElementById("name-input");
+        driverStatsDiv = document.getElementById("driver-stats");
         iratingHistoryDateD3JSDiv = document.getElementById('irating-history-per-race-d3js');
         trackUsageTimeD3JSDiv = document.getElementById('track-usage-time-d3js');
         trackUsageLapsD3JSDiv = document.getElementById('track-usage-laps-d3js');
@@ -58,6 +81,7 @@
                 carTimeStackStatsDiv, trackTimeStackStatsDiv,
                 name
             );
+            updateDriverStats(driverStatsDiv, name);
         }
 
         nameInput.onkeypress = function(ev) {

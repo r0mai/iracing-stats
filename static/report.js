@@ -473,3 +473,18 @@ async function updateCarTrackUsageStats(divTime, divLaps, divTrackStack, divCarS
     populateTrackUsageStackBar(divTrackStack, result, 'time', toHours);
     populateCarUsageStackBar(divCarStack, result, 'time', toHours);
 }
+
+async function updateDriverStats(div, driverName) {
+    let resp = await fetch('/api/v1/driver-stats?driver_name=' + driverName);
+    let result = await resp.json()
+
+    let driverNameDiv = div.querySelector("#driver-name-value");
+    let totalLapsDiv = div.querySelector("#total-laps-value");
+    let totalTimeDiv = div.querySelector("#total-time-value");
+    let totalDistanceDiv = div.querySelector("#total-distance-value");
+
+    driverNameDiv.innerHTML = driverName;
+    totalLapsDiv.innerHTML = result["laps"];
+    totalTimeDiv.innerHTML = round(toHours(result["time"]), 1) + "h";
+    totalDistanceDiv.innerHTML = round(result["distance"], 1) + "km";
+}
