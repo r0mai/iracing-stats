@@ -29,7 +29,7 @@ impl IRacingClient {
     }
 
     async fn get_with_retry(&mut self, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
-        for _ in 0..5 {
+        for _ in 0..10 {
             let response = self.client.get(&url).query(&params).send().await.unwrap();
             let status = response.status();
             let headers = response.headers();
