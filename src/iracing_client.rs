@@ -52,6 +52,13 @@ impl IRacingClient {
                 println!("Request to {url} failed with {status}. Retrying...");
                 continue;
             }
+
+            // rate limit
+            if status.as_u16() == 429 {
+                println!("Request to {url} got rate limited");
+                tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
+                continue;
+            }
             println!("Reponse status {}", status);
             println!("Response body {}", text);
             panic!("Failed a request :(");
