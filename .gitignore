@@ -5,6 +5,8 @@
 /stats.db-journal
 /__pycache__
 /.venv
+/repo-key
+/repo-key.pub
 
 
 # Added by cargo
