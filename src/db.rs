@@ -5,7 +5,7 @@ use chrono::{self, TimeZone};
 use zip::write::FileOptions;
 use crate::category_type::CategoryType;
 
-const SESSIONS_DIR: &str = "data/sessions";
+pub const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
 pub const SQLITE_DB_FILE: &str = "stats.db";

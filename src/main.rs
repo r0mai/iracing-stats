@@ -7,6 +7,7 @@ mod category_type;
 mod event_type;
 
 use clap::Parser;
+use std::fs;
 
 #[derive(Parser)]
 struct Args {
@@ -65,6 +66,8 @@ async fn tokio_main(args: &Args) {
 #[rocket::main]
 async fn main() {
     let args = Args::parse();
+
+    fs::create_dir_all(crate::db::SESSIONS_DIR).unwrap();
 
     if args.rebuild_db {
         db::rebuild_db();
