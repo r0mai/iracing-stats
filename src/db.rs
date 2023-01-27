@@ -6,8 +6,8 @@ use zip::write::FileOptions;
 use crate::category_type::CategoryType;
 
 pub const SESSIONS_DIR: &str = "data/sessions";
-const TRACK_DATA_FILE: &str = "data/tracks.json";
-const CAR_DATA_FILE: &str = "data/cars.json";
+pub const TRACK_DATA_FILE: &str = "data/tracks.json";
+pub const CAR_DATA_FILE: &str = "data/cars.json";
 pub const SQLITE_DB_FILE: &str = "stats.db";
 const SCHEMA_SQL: &str = "schema.sql";
 const INDICES_SQL: &str = "indices.sql";
@@ -291,6 +291,20 @@ pub fn read_cached_session_json(subsession_id: i64) -> serde_json::Value {
 pub fn write_cached_session_json(subsession_id: i64, json: &serde_json::Value) {
     let content = json.to_string();
     write_single_file_zip(get_session_cache_path(subsession_id).as_path(), "session.json", &content);
+}
+
+pub fn write_cached_car_infos_json(json: &serde_json::Value) {
+    fs::write(
+        CAR_DATA_FILE,
+        serde_json::to_string(&json).unwrap()
+    ).unwrap();
+}
+
+pub fn write_cached_track_infos_json(json: &serde_json::Value) {
+    fs::write(
+        TRACK_DATA_FILE,
+        serde_json::to_string(&json).unwrap()
+    ).unwrap();
 }
 
 pub fn get_session_cache_path(subsession_id: i64) -> PathBuf {

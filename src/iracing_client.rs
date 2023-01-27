@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 use serde_json;
 use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
@@ -237,6 +237,16 @@ fn add_subsessions_to_db(subsession_ids: &Vec<i64>) {
     }
 
     tx.commit().unwrap();
+}
+
+pub async fn sync_track_infos(client: &mut IRacingClient) {
+    let data = client.get_and_read("/data/track/get", &HashMap::new()).await;
+    crate::db::write_cached_track_infos_json(&data);
+}
+
+pub async fn sync_car_infos(client: &mut IRacingClient) {
+    let data = client.get_and_read("/data/car/get", &HashMap::new()).await;
+    crate::db::write_cached_car_infos_json(&data);
 }
 
 pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<String>) {

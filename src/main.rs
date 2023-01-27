@@ -23,6 +23,14 @@ struct Args {
     #[arg(short = 'D', long)]
     sync_drivers_to_db: Vec<String>,
 
+    /// Sync car infos
+    #[arg(short = 'c', long)]
+    sync_car_infos: bool,
+
+    /// Sync track infos
+    #[arg(short = 't', long)]
+    sync_track_infos: bool,
+
     /// Sync season year to db
     #[arg(short = 'y', long)]
     season_year: Option<i32>,
@@ -41,7 +49,11 @@ struct Args {
 }
 
 fn has_async(args: &Args) -> bool {
-    return !args.sync_drivers_to_db.is_empty() || args.season_year.is_some();
+    return
+        !args.sync_drivers_to_db.is_empty() ||
+        args.season_year.is_some() ||
+        args.sync_car_infos ||
+        args.sync_track_infos;
 }
 
 async fn tokio_main(args: &Args) {
@@ -60,6 +72,14 @@ async fn tokio_main(args: &Args) {
     if args.season_year.is_some() && args.season_quarter.is_some() {
         iracing_client::sync_season_to_db(&mut client,
             args.season_year.unwrap(), args.season_quarter.unwrap(), args.season_week).await;
+    }
+
+    if args.sync_car_infos {
+        iracing_client::sync_car_infos(&mut client).await;
+    }
+
+    if args.sync_track_infos {
+        iracing_client::sync_track_infos(&mut client).await;
     }
 }
 
