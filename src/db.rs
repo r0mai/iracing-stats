@@ -9,8 +9,6 @@ pub const SESSIONS_DIR: &str = "data/sessions";
 pub const TRACK_DATA_FILE: &str = "data/tracks.json";
 pub const CAR_DATA_FILE: &str = "data/cars.json";
 pub const SQLITE_DB_FILE: &str = "stats.db";
-const SCHEMA_SQL: &str = "schema.sql";
-const INDICES_SQL: &str = "indices.sql";
 
 pub fn create_db_connection() -> rusqlite::Connection {
     return rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
@@ -135,13 +133,13 @@ fn write_single_file_zip(zip_path: &Path, file_name: &str, content: &str) {
 }
 
 fn build_db_schema(tx: &rusqlite::Transaction) {
-    let schema_sql = fs::read_to_string(SCHEMA_SQL).unwrap();
-    tx.execute_batch(&schema_sql).unwrap();
+    let schema_sql = include_str!("schema.sql");
+    tx.execute_batch(schema_sql).unwrap();
 }
 
 fn build_db_indices(tx: &rusqlite::Transaction) {
-    let indicies_sql = fs::read_to_string(INDICES_SQL).unwrap();
-    tx.execute_batch(&indicies_sql).unwrap();
+    let indicies_sql = include_str!("indices.sql");
+    tx.execute_batch(indicies_sql).unwrap();
 }
 
 fn add_track_to_db(ctx: &mut DbContext, track: &serde_json::Value) {
