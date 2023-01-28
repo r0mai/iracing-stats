@@ -1,17 +1,59 @@
-use std::{fs, path::PathBuf, path::Path, io::Write};
+use std::{fs, path::PathBuf, path::Path, io::Write, env};
 use serde_json::{self, json};
 use rusqlite;
 use chrono::{self, TimeZone};
 use zip::write::FileOptions;
+use lazy_static::lazy_static;
 use crate::category_type::CategoryType;
 
-pub const SESSIONS_DIR: &str = "data/sessions";
-pub const TRACK_DATA_FILE: &str = "data/tracks.json";
-pub const CAR_DATA_FILE: &str = "data/cars.json";
-pub const SQLITE_DB_FILE: &str = "stats.db";
+const SESSIONS_DIR: &str = "data/sessions";
+const TRACK_DATA_FILE: &str = "data/tracks.json";
+const CAR_DATA_FILE: &str = "data/cars.json";
+const SQLITE_DB_FILE: &str = "stats.db";
+const BASE_DIR_ENV_VAR: &str = "IRACING_STATS_BASE_DIR";
+
+fn get_base_dir() -> &'static Path {
+    lazy_static! {
+        static ref BASE_DIR: PathBuf = PathBuf::from(
+            match env::var(BASE_DIR_ENV_VAR) {
+                Ok(value) => value,
+                Err(_error) => ".".to_owned()
+            }
+        );
+    }
+    return BASE_DIR.as_path();
+}
+
+pub fn get_sqlite_db_file() -> &'static Path {
+    lazy_static! {
+        static ref FILE: PathBuf = get_base_dir().join(SQLITE_DB_FILE);
+    }
+    return FILE.as_path();
+}
+
+pub fn get_track_data_file() -> &'static Path {
+    lazy_static! {
+        static ref FILE: PathBuf = get_base_dir().join(TRACK_DATA_FILE);
+    }
+    return FILE.as_path();
+}
+
+pub fn get_car_data_file() -> &'static Path {
+    lazy_static! {
+        static ref FILE: PathBuf = get_base_dir().join(CAR_DATA_FILE);
+    }
+    return FILE.as_path();
+}
+
+pub fn get_sessions_dir() -> &'static Path {
+    lazy_static! {
+        static ref DIR: PathBuf = get_base_dir().join(SESSIONS_DIR);
+    }
+    return DIR.as_path();
+}
 
 pub fn create_db_connection() -> rusqlite::Connection {
-    return rusqlite::Connection::open(SQLITE_DB_FILE).unwrap();
+    return rusqlite::Connection::open(get_sqlite_db_file()).unwrap();
 }
 
 pub struct DbContext<'a> {
@@ -256,7 +298,7 @@ fn add_sessions_to_db<I>(ctx: &mut DbContext, files: I)
 }
 
 fn rebuild_tracks(ctx: &mut DbContext) {
-    let contents = fs::read_to_string(TRACK_DATA_FILE).unwrap();
+    let contents = fs::read_to_string(get_track_data_file()).unwrap();
     let tracks: serde_json::Value = serde_json::from_str(&contents).unwrap();
 
     for track in tracks.as_array().unwrap() {
@@ -265,7 +307,7 @@ fn rebuild_tracks(ctx: &mut DbContext) {
 }
 
 fn rebuild_cars(ctx: &mut DbContext) {
-    let contents = fs::read_to_string(CAR_DATA_FILE).unwrap();
+    let contents = fs::read_to_string(get_car_data_file()).unwrap();
     let cars: serde_json::Value = serde_json::from_str(&contents).unwrap();
 
     for car in cars.as_array().unwrap() {
@@ -274,7 +316,7 @@ fn rebuild_cars(ctx: &mut DbContext) {
 }
 
 fn rebuild_sessions(ctx: &mut DbContext) {
-    let paths = fs::read_dir(SESSIONS_DIR).unwrap();
+    let paths = fs::read_dir(get_sessions_dir()).unwrap();
     add_sessions_to_db(ctx, paths.map(|e| e.unwrap().path()));
 }
 
@@ -293,20 +335,20 @@ pub fn write_cached_session_json(subsession_id: i64, json: &serde_json::Value) {
 
 pub fn write_cached_car_infos_json(json: &serde_json::Value) {
     fs::write(
-        CAR_DATA_FILE,
+        get_car_data_file(),
         serde_json::to_string(&json).unwrap()
     ).unwrap();
 }
 
 pub fn write_cached_track_infos_json(json: &serde_json::Value) {
     fs::write(
-        TRACK_DATA_FILE,
+        get_track_data_file(),
         serde_json::to_string(&json).unwrap()
     ).unwrap();
 }
 
 pub fn get_session_cache_path(subsession_id: i64) -> PathBuf {
-    return Path::new(SESSIONS_DIR).join(format!("{subsession_id}.session.zip"));
+    return Path::new(get_sessions_dir()).join(format!("{subsession_id}.session.zip"));
 }
 
 pub fn is_session_cached(subsession_id: i64) -> bool {
@@ -566,7 +608,7 @@ pub fn query_driver_stats(driver_name: &String) -> serde_json::Value {
 }
 
 pub fn rebuild_db() {
-    fs::remove_file(SQLITE_DB_FILE).unwrap();
+    fs::remove_file(get_sqlite_db_file()).unwrap();
 
     let mut con = create_db_connection();
     con.pragma_update(None, "synchronous", "OFF").unwrap();

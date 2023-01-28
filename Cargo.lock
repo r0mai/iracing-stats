@@ -1001,6 +1001,7 @@ dependencies = [
  "chrono",
  "clap",
  "futures",
+ "lazy_static",
  "reqwest",
  "rocket",
  "rusqlite",

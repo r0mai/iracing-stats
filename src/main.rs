@@ -87,7 +87,7 @@ async fn tokio_main(args: &Args) {
 async fn main() {
     let args = Args::parse();
 
-    fs::create_dir_all(crate::db::SESSIONS_DIR).unwrap();
+    fs::create_dir_all(crate::db::get_sessions_dir()).unwrap();
 
     if args.rebuild_db {
         db::rebuild_db();

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 use serde_json;
 use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
@@ -226,7 +226,7 @@ async fn sync_subsessions(client: &mut IRacingClient, subsession_ids: &Vec<i64>)
 }
 
 fn add_subsessions_to_db(subsession_ids: &Vec<i64>) {
-    let mut con = rusqlite::Connection::open(crate::db::SQLITE_DB_FILE).unwrap();
+    let mut con = crate::db::create_db_connection();
     let mut tx = con.transaction().unwrap();
     {
         let mut ctx = crate::db::create_db_context(&mut tx);
