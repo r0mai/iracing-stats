@@ -608,7 +608,7 @@ pub fn query_driver_stats(driver_name: &String) -> serde_json::Value {
 }
 
 pub fn rebuild_db() {
-    fs::remove_file(get_sqlite_db_file()).unwrap();
+    fs::remove_file(get_sqlite_db_file()).ok(); // ignore error
 
     let mut con = create_db_connection();
     con.pragma_update(None, "synchronous", "OFF").unwrap();
