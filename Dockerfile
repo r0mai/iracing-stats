@@ -20,4 +20,6 @@ FROM debian:bullseye-slim
 # RUN apt-get update && apt-get install -y extra-runtime-dependencies && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
 
-CMD iracing-stats --help
+ENV IRACING_STATS_BASE_DIR=/iracing-stats-dir
+
+CMD iracing-stats --help && ls /*
