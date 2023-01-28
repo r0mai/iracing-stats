@@ -28,4 +28,4 @@ ENV IRACING_TOKEN=${IRACING_TOKEN}
 
 ENV IRACING_STATS_BASE_DIR=/iracing-stats-dir
 
-CMD echo "${IRACING_USER}" && RUST_BACKTRACE=1 iracing-stats -D 'Andras Kucsma'
+CMD tail -f /dev/null
