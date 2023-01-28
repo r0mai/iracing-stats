@@ -18,8 +18,11 @@ RUN cargo install --debug --path . --root /app
 FROM debian:bullseye-slim
 # no clue what this does, but it doesn't work
 # RUN apt-get update && apt-get install -y extra-runtime-dependencies && rm -rf /var/lib/apt/lists/*
-RUN apt-get update && apt-get install -y ca-certificates
+RUN apt-get update && apt-get install -y ca-certificates curl
+
+# TODO it's a bit ugly to copy this to /usr/local
 COPY --from=builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
+COPY static /static
 
 ARG IRACING_USER
 ENV IRACING_USER=${IRACING_USER}
@@ -28,4 +31,4 @@ ENV IRACING_TOKEN=${IRACING_TOKEN}
 
 ENV IRACING_STATS_BASE_DIR=/iracing-stats-dir
 
-CMD tail -f /dev/null
+CMD pwd && ls . && iracing-stats --server
