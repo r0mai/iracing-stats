@@ -3,15 +3,19 @@ FROM rust:latest AS builder
 WORKDIR /
 
 # https://stackoverflow.com/questions/23391839/clone-private-git-repo-with-dockerfile
-ADD repo-key /
-RUN \
-    chmod 600 /repo-key && \
-    echo "IdentityFile /repo-key" >> /etc/ssh/ssh_config && \  
-    echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config && \ 
-    git clone git@github.com:r0mai/iracing-stats.git
+# ADD repo-key /
+# RUN \
+#     chmod 600 /repo-key && \
+#     echo "IdentityFile /repo-key" >> /etc/ssh/ssh_config && \  
+#     echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config && \ 
+#     git clone git@github.com:r0mai/iracing-stats.git
+
+COPY src /iracing-stats/src
+COPY Cargo.toml /iracing-stats/
+COPY Cargo.lock /iracing-stats/
 
 WORKDIR /iracing-stats
-RUN cargo install --debug --path . --root /app
+RUN cargo install --path . --root /app
 
 # -----
 
@@ -31,4 +35,6 @@ ENV IRACING_TOKEN=${IRACING_TOKEN}
 
 ENV IRACING_STATS_BASE_DIR=/iracing-stats-dir
 
-CMD pwd && ls . && iracing-stats --server
+EXPOSE 8000
+
+CMD echo "Starting server" && iracing-stats --server
