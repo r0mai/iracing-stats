@@ -37,4 +37,4 @@ ENV IRACING_STATS_BASE_DIR=/iracing-stats-dir
 
 EXPOSE 8000
 
-CMD echo "Starting server" && iracing-stats --server
+CMD echo "Starting server" && ROCKET_ADDRESS=0.0.0.0 iracing-stats --server
