@@ -1,5 +1,5 @@
 use std::{fs, path::PathBuf, path::Path, io::Write, env};
-use serde_json::{self, json};
+use serde_json::{self, json, Value};
 use rusqlite;
 use chrono::{self, TimeZone};
 use zip::write::FileOptions;
@@ -159,9 +159,9 @@ fn read_single_file_zip(file_name: &Path) -> String {
     return std::io::read_to_string(&mut session_file).unwrap();
 }
 
-fn read_json_zip(zip_file: &Path) -> serde_json::Value {
+fn read_json_zip(zip_file: &Path) -> Value {
     let contents = read_single_file_zip(zip_file);
-    let data: serde_json::Value = serde_json::from_str(&contents).unwrap();
+    let data: Value = serde_json::from_str(&contents).unwrap();
 
     return data;
 }
@@ -184,7 +184,7 @@ fn build_db_indices(tx: &rusqlite::Transaction) {
     tx.execute_batch(indicies_sql).unwrap();
 }
 
-fn add_track_to_db(ctx: &mut DbContext, track: &serde_json::Value) {
+fn add_track_to_db(ctx: &mut DbContext, track: &Value) {
     ctx.insert_track_statement.execute((
         track["package_id"].as_i64().unwrap(),
         track["track_name"].as_str().unwrap()
@@ -197,7 +197,7 @@ fn add_track_to_db(ctx: &mut DbContext, track: &serde_json::Value) {
     )).unwrap();
 }
 
-fn add_car_to_db(ctx: &mut DbContext, car: &serde_json::Value) {
+fn add_car_to_db(ctx: &mut DbContext, car: &Value) {
     ctx.insert_car_statement.execute((
         car["car_id"].as_i64().unwrap(),
         car["car_name"].as_str().unwrap(),
@@ -205,14 +205,14 @@ fn add_car_to_db(ctx: &mut DbContext, car: &serde_json::Value) {
     )).unwrap();
 }
 
-fn add_driver_to_db(ctx: &mut DbContext, driver_result: &serde_json::Value) {
+fn add_driver_to_db(ctx: &mut DbContext, driver_result: &Value) {
     ctx.insert_driver_statement.execute((
         driver_result["cust_id"].as_i64().unwrap(),
         driver_result["display_name"].as_str().unwrap(),
     )).unwrap();
 }
 
-fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_number: i64, team_id: i64, driver_result: &serde_json::Value) {
+fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_number: i64, team_id: i64, driver_result: &Value) {
     add_driver_to_db(ctx, driver_result);
 
     // TODO cust_id could be factored out
@@ -235,7 +235,7 @@ fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_n
     )).unwrap();
 }
 
-fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &serde_json::Value) {
+fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value) {
     let simsession_number = simsession["simsession_number"].as_i64().unwrap();
 
     ctx.insert_simsession_statement.execute((
@@ -256,7 +256,7 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &serde
     }
 }
 
-fn add_subsession_to_db(ctx: &mut DbContext, subsession: &serde_json::Value) {
+fn add_subsession_to_db(ctx: &mut DbContext, subsession: &Value) {
     let subsession_id = subsession["subsession_id"].as_i64().unwrap();
     let session_id = subsession["session_id"].as_i64().unwrap();
 
@@ -299,7 +299,7 @@ fn add_sessions_to_db<I>(ctx: &mut DbContext, files: I)
 
 fn rebuild_tracks(ctx: &mut DbContext) {
     let contents = fs::read_to_string(get_track_data_file()).unwrap();
-    let tracks: serde_json::Value = serde_json::from_str(&contents).unwrap();
+    let tracks: Value = serde_json::from_str(&contents).unwrap();
 
     for track in tracks.as_array().unwrap() {
         add_track_to_db(ctx, &track);
@@ -308,7 +308,7 @@ fn rebuild_tracks(ctx: &mut DbContext) {
 
 fn rebuild_cars(ctx: &mut DbContext) {
     let contents = fs::read_to_string(get_car_data_file()).unwrap();
-    let cars: serde_json::Value = serde_json::from_str(&contents).unwrap();
+    let cars: Value = serde_json::from_str(&contents).unwrap();
 
     for car in cars.as_array().unwrap() {
         add_car_to_db(ctx, &car);
@@ -324,23 +324,23 @@ pub fn add_session_to_db_from_cache(ctx: &mut DbContext, subsession_id: i64) {
     add_subsession_to_db(ctx, &read_json_zip(get_session_cache_path(subsession_id).as_path()));
 }
 
-pub fn read_cached_session_json(subsession_id: i64) -> serde_json::Value {
+pub fn read_cached_session_json(subsession_id: i64) -> Value {
     return read_json_zip(get_session_cache_path(subsession_id).as_path());
 }
 
-pub fn write_cached_session_json(subsession_id: i64, json: &serde_json::Value) {
+pub fn write_cached_session_json(subsession_id: i64, json: &Value) {
     let content = json.to_string();
     write_single_file_zip(get_session_cache_path(subsession_id).as_path(), "session.json", &content);
 }
 
-pub fn write_cached_car_infos_json(json: &serde_json::Value) {
+pub fn write_cached_car_infos_json(json: &Value) {
     fs::write(
         get_car_data_file(),
         serde_json::to_string(&json).unwrap()
     ).unwrap();
 }
 
-pub fn write_cached_track_infos_json(json: &serde_json::Value) {
+pub fn write_cached_track_infos_json(json: &Value) {
     fs::write(
         get_track_data_file(),
         serde_json::to_string(&json).unwrap()
@@ -355,7 +355,7 @@ pub fn is_session_cached(subsession_id: i64) -> bool {
     return get_session_cache_path(subsession_id).exists();
 }
 
-pub fn query_irating_history(driver_name: &String, category: CategoryType) -> serde_json::Value {
+pub fn query_irating_history(driver_name: &String, category: CategoryType) -> Value {
     let con = create_db_connection();
 
     let mut stmt = con.prepare(r#"
@@ -397,7 +397,7 @@ pub fn query_irating_history(driver_name: &String, category: CategoryType) -> se
         }));
     }
 
-    return serde_json::Value::Array(values);
+    return Value::Array(values);
 }
 
 pub struct TrackUsage {
@@ -570,7 +570,7 @@ pub fn query_track_car_usage_matrix(driver_name: &String) -> Vec<CarTrackUsage> 
     return values;
 }
 
-pub fn query_driver_stats(driver_name: &String) -> serde_json::Value {
+pub fn query_driver_stats(driver_name: &String) -> Value {
     let con = create_db_connection();
 
     let mut stmt = con.prepare(r#"
