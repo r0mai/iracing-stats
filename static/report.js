@@ -483,7 +483,7 @@ async function updateDriverStats(div, driverName) {
     let totalTimeDiv = div.querySelector("#total-time-value");
     let totalDistanceDiv = div.querySelector("#total-distance-value");
 
-    driverNameDiv.innerHTML = driverName;
+    driverNameDiv.innerHTML = result["name"];
     totalLapsDiv.innerHTML = result["laps"];
     totalTimeDiv.innerHTML = round(toHours(result["time"]), 1) + "h";
     totalDistanceDiv.innerHTML = round(result["distance"], 1) + "km";

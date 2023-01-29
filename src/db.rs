@@ -575,6 +575,7 @@ pub fn query_driver_stats(driver_name: &String) -> serde_json::Value {
 
     let mut stmt = con.prepare(r#"
         SELECT
+            driver.display_name,
             SUM(driver_result.laps_complete * driver_result.average_lap),
             SUM(driver_result.laps_complete),
             SUM(driver_result.laps_complete * track_config.track_config_length)
@@ -593,14 +594,16 @@ pub fn query_driver_stats(driver_name: &String) -> serde_json::Value {
             driver.display_name = ?
     "#).unwrap();
 
-    let (time, laps, distance) = stmt.query_row((driver_name,), |row| {
-        let time: i64 = row.get(0).unwrap();
-        let laps: i64 = row.get(1).unwrap();
-        let distance: f32 = row.get(2).unwrap();
-        return Ok((time, laps, distance));
+    let (name, time, laps, distance) = stmt.query_row((driver_name,), |row| {
+        let name: String = row.get(0).unwrap();
+        let time: i64 = row.get(1).unwrap();
+        let laps: i64 = row.get(2).unwrap();
+        let distance: f32 = row.get(3).unwrap();
+        return Ok((name, time, laps, distance));
     }).unwrap();
 
     return json!({
+        "name": name,
         "time": time,
         "laps": laps,
         "distance": distance,
