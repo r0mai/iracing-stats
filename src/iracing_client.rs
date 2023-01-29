@@ -154,6 +154,12 @@ impl IRacingClient {
         return arr[0]["cust_id"].as_i64().unwrap();
     }
 
+    async fn get_member_profile(&mut self, cust_id: i64) -> serde_json::Value {
+        return self.get_and_read("/data/lookup/drivers", &HashMap::from([
+            ("cust_id", cust_id.to_string())
+        ])).await;
+    }
+
     pub async fn get_subsession(&mut self, subsession_id: i64) -> serde_json::Value {
         return self.get_and_read("/data/results/get", &HashMap::from([
             ("subsession_id", subsession_id.to_string())
