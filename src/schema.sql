@@ -1,61 +1,61 @@
 CREATE TABLE driver(
-    cust_id PRIMARY KEY,
-    display_name TEXT
+    cust_id INTEGER PRIMARY KEY NOT NULL,
+    display_name TEXT NOT NULL
 );
 
 CREATE TABLE session(
-    session_id INTEGER PRIMARY KEY,
-    series_name TEXT
+    session_id INTEGER PRIMARY KEY NOT NULL,
+    series_name TEXT NOT NULL
 );
 
 CREATE TABLE subsession(
-    subsession_id INTEGER PRIMARY KEY,
-    session_id INTEGER,
-    start_time INTEGER,
-    license_category_id INTEGER, /* 1 -> Oval, 2 -> Road, 3 -> Dirt Oval, 4 -> Dirt Road */
-    event_type INTEGER, /* 2 -> Practice, 3 -> Qualify, 4 -> Time Trial, 5 -> Race */
-    track_id INTEGER /* maybe should be in session? */
+    subsession_id INTEGER PRIMARY KEY NOT NULL,
+    session_id INTEGER NOT NULL,
+    start_time INTEGER NOT NULL,
+    license_category_id INTEGER NOT NULL, /* 1 -> Oval, 2 -> Road, 3 -> Dirt Oval, 4 -> Dirt Road */
+    event_type INTEGER NOT NULL, /* 2 -> Practice, 3 -> Qualify, 4 -> Time Trial, 5 -> Race */
+    track_id INTEGER NOT NULL /* maybe should be in session? */
 );
 
 CREATE TABLE driver_result(
-    cust_id INTEGER,
-    team_id INTEGER,
-    subsession_id INTEGER,
-    simsession_number INTEGER,
-    oldi_rating INTEGER,
-    newi_rating INTEGER,
-    old_cpi REAL,
-    new_cpi REAL,
-    incidents INTEGER,
-    laps_complete INTEGER,
-    average_lap INTEGER,
-    car_id INTEGER,
-    finish_position INTEGER, /* 0 based! */
-    finish_position_in_class INTEGER, /* 0 based! */
+    cust_id INTEGER NOT NULL,
+    team_id INTEGER NOT NULL,
+    subsession_id INTEGER NOT NULL,
+    simsession_number INTEGER NOT NULL,
+    oldi_rating INTEGER NOT NULL,
+    newi_rating INTEGER NOT NULL,
+    old_cpi REAL NOT NULL,
+    new_cpi REAL NOT NULL,
+    incidents INTEGER NOT NULL,
+    laps_complete INTEGER NOT NULL,
+    average_lap INTEGER NOT NULL,
+    car_id INTEGER NOT NULL,
+    finish_position INTEGER NOT NULL, /* 0 based! */
+    finish_position_in_class INTEGER NOT NULL, /* 0 based! */
     PRIMARY KEY(cust_id, team_id, subsession_id, simsession_number)
 );
 
 CREATE TABLE simsession(
-    subsession_id INTEGER,
-    simsession_number INTEGER,
-    simsession_type INTEGER,
+    subsession_id INTEGER NOT NULL,
+    simsession_number INTEGER NOT NULL,
+    simsession_type INTEGER NOT NULL,
     PRIMARY KEY(subsession_id, simsession_number)
 );
 
 CREATE TABLE track_config(
-    track_id INTEGER PRIMARY KEY,
-    package_id INTEGER, /* a.k.a track_id */
-    config_name TEXT,
-    track_config_length REAL
+    track_id INTEGER PRIMARY KEY NOT NULL,
+    package_id INTEGER NOT NULL, /* a.k.a track_id */
+    config_name TEXT NOT NULL,
+    track_config_length REAL NOT NULL
 );
 
 CREATE TABLE track(
-    package_id INTEGER PRIMARY KEY,
-    track_name TEXT
+    package_id INTEGER PRIMARY KEY NOT NULL,
+    track_name TEXT NOT NULL
 );
 
 CREATE TABLE car(
-    car_id INTEGER PRIMARY_KEY,
-    car_name TEXT,
-    car_name_abbreviated TEXT
+    car_id INTEGER PRIMARY KEY NOT NULL,
+    car_name TEXT NOT NULL,
+    car_name_abbreviated TEXT NOT NULL
 )
