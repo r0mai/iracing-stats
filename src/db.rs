@@ -610,6 +610,18 @@ pub fn query_driver_stats(driver_name: &String) -> Value {
     });
 }
 
+pub fn rebuild_db_schema() {
+    fs::remove_file(get_sqlite_db_file()).ok(); // ignore error
+
+    let mut con = create_db_connection();
+    let tx = con.transaction().unwrap();
+
+    build_db_schema(&tx);
+    build_db_indices(&tx);
+
+    tx.commit().unwrap();
+}
+
 pub fn rebuild_db() {
     fs::remove_file(get_sqlite_db_file()).ok(); // ignore error
 

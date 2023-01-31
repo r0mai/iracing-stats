@@ -15,6 +15,10 @@ struct Args {
     #[arg(short, long)]
     rebuild_db: bool,
 
+    /// Rebuild the database, but only the schema
+    #[arg(long)]
+    rebuild_db_schema: bool,
+
     /// Add missing cached sessions to the database
     #[arg(short, long)]
     update_db: bool,
@@ -89,6 +93,9 @@ async fn main() {
 
     fs::create_dir_all(crate::db::get_sessions_dir()).unwrap();
 
+    if args.rebuild_db_schema {
+        db::rebuild_db_schema();
+    }
     if args.rebuild_db {
         db::rebuild_db();
     }
