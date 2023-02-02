@@ -4,21 +4,32 @@ use rocket::fs::FileServer;
 
 use crate::category_type::CategoryType;
 use crate::db::{
+    DriverId,
     query_irating_history,
     query_track_car_usage_matrix,
     query_track_usage,
-    query_car_usage, query_driver_stats
+    query_car_usage,
+    query_driver_stats,
 };
 use serde_json::{Value, json};
 
-#[get("/api/v1/irating-history?<driver_name>&<category>")]
-async fn api_v1_irating_history(driver_name: String, category: Option<String>) -> Value {
+#[get("/api/v1/irating-history?<driver_name>&<cust_id>&<category>")]
+async fn api_v1_irating_history(
+    driver_name: Option<String>,
+    cust_id: Option<i64>,
+    category: Option<String>) -> Option<Value>
+{
     let category_type = match category {
         Some(str) => CategoryType::from_string(str.as_str()).unwrap_or(CategoryType::Road),
         None => CategoryType::Road
     };
 
-    return query_irating_history(&driver_name, category_type);
+    if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
+        return Some(query_irating_history(&driver_id, category_type));
+    } else {
+        return None;
+    }
+
 }
 
 #[get("/api/v1/track-usage-stats?<driver_name>")]

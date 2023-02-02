@@ -4,6 +4,25 @@ use rusqlite;
 use chrono::{self, TimeZone};
 use zip::write::FileOptions;
 use lazy_static::lazy_static;
+use sea_query_rusqlite::RusqliteBinder;
+use sea_query::{
+    Query,
+    Expr,
+    Order,
+    SqliteQueryBuilder,
+    all,
+};
+use crate::schema::{
+    Driver,
+    Session,
+    Subsession,
+    DriverResult,
+    Simsession,
+    TrackConfig,
+    Track,
+    Car,
+};
+
 use crate::category_type::CategoryType;
 
 const SESSIONS_DIR: &str = "data/sessions";
@@ -54,6 +73,37 @@ pub fn get_sessions_dir() -> &'static Path {
 
 pub fn create_db_connection() -> rusqlite::Connection {
     return rusqlite::Connection::open(get_sqlite_db_file()).unwrap();
+}
+
+pub enum DriverId {
+    Name(String),
+    CustId(i64)
+}
+
+impl DriverId {
+    pub fn from_params(driver_name: Option<String>, cust_id: Option<i64>) -> Option<Self> {
+        if let Some(cust_id) = cust_id {
+            return Some(DriverId::CustId(cust_id));
+        }
+        if let Some(driver_name) = driver_name {
+            return Some(DriverId::Name(driver_name));
+        }
+        return None;
+    }
+
+    pub fn to_db_query(&self) -> &str {
+        match self {
+            Self::Name(_) => "(SELECT cust_id FROM driver WHERE display_name = ?)",
+            Self::CustId(_) => "cust_id = ?"
+        }
+    }
+
+    pub fn to_db_query_param(&self) -> String {
+        match self {
+            Self::Name(name) => name.clone(),
+            Self::CustId(cust_id) => cust_id.to_string()
+        }
+    }
 }
 
 pub struct DbContext<'a> {
@@ -355,35 +405,57 @@ pub fn is_session_cached(subsession_id: i64) -> bool {
     return get_session_cache_path(subsession_id).exists();
 }
 
-pub fn query_irating_history(driver_name: &String, category: CategoryType) -> Value {
+pub fn query_irating_history(driver_id: &DriverId, category: CategoryType) -> Value {
     let con = create_db_connection();
 
-    let mut stmt = con.prepare(r#"
-        SELECT subsession.start_time, driver_result.newi_rating, driver_result.new_cpi, session.series_name FROM
-            driver_result
-        JOIN simsession ON
-            driver_result.subsession_id = simsession.subsession_id AND
-            driver_result.simsession_number = simsession.simsession_number
-        JOIN subsession ON
-            simsession.subsession_id = subsession.subsession_id
-        JOIN session ON
-            subsession.session_id = session.session_id
-        WHERE
-            driver_result.cust_id = (SELECT cust_id FROM driver WHERE display_name = ?) AND
-            driver_result.newi_rating != -1 AND /* this rules out rookies */
-            subsession.event_type = 5 AND /* race */
-            simsession.simsession_number == 0 AND
-            subsession.license_category_id = ?
-        ORDER BY subsession.start_time ASC;
-    );"#).unwrap();
+    let mut select = Query::select();
+    let mut query = select 
+        .column(Subsession::StartTime)
+        .column(DriverResult::NewiRating)
+        .column(DriverResult::NewCpi)
+        .column(Session::SeriesName)
+        .from(DriverResult::Table)
+        .inner_join(Simsession::Table, all![
+            Expr::col((DriverResult::Table, DriverResult::SubsessionId)).equals((Simsession::Table, Simsession::SubsessionId)),
+            Expr::col((DriverResult::Table, DriverResult::SimsessionNumber)).equals((Simsession::Table, Simsession::SimsessionNumber)),
+        ])
+        .inner_join(Subsession::Table,
+            Expr::col((Simsession::Table, Simsession::SubsessionId)).equals((Subsession::Table, Subsession::SubsessionId))
+        )
+        .inner_join(Session::Table,
+            Expr::col((Session::Table, Session::SessionId)).equals((Subsession::Table, Subsession::SessionId))
+        );
 
-    let mut rows = stmt.query((
-        driver_name,
-        category.to_db_type()
-    )).unwrap();
+    match driver_id {
+        DriverId::CustId(cust_id) => {
+            query = query
+                .and_where(Expr::col((DriverResult::Table, DriverResult::CustId)).eq(*cust_id))
+                ;
+        } 
+        DriverId::Name(name) => {
+            query = query
+                .inner_join(Driver::Table,
+                    Expr::col((Driver::Table, Driver::CustId)).equals((DriverResult::Table, DriverResult::CustId))
+                )
+                .and_where(Expr::col((Driver::Table, Driver::DisplayName)).eq(name))
+                ;
+        }
+    };
+
+    query = query
+        .and_where(Expr::col(DriverResult::NewiRating).ne(-1))
+        .and_where(Expr::col(Subsession::EventType).eq(5))
+        .and_where(Expr::col((Simsession::Table, Simsession::SimsessionNumber)).eq(0))
+        .and_where(Expr::col(Subsession::LicenseCategoryId).eq(category.to_db_type()))
+        .order_by(Subsession::StartTime, Order::Asc)
+        ;
+
+    let (sql, params) = query.build_rusqlite(SqliteQueryBuilder);
+    println!("{}", sql);
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
 
     let mut values = vec![];
-
     while let Some(row) = rows.next().unwrap() {
         let start_time: String = row.get(0).unwrap();
         let irating: i64 = row.get(1).unwrap();

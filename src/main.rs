@@ -1,6 +1,7 @@
 #[macro_use] extern crate rocket;
 
 mod server;
+mod schema;
 mod db;
 mod iracing_client;
 mod category_type;
