@@ -22,7 +22,7 @@ RUN cargo install --path . --root /app
 FROM debian:bullseye-slim
 # no clue what this does, but it doesn't work
 # RUN apt-get update && apt-get install -y extra-runtime-dependencies && rm -rf /var/lib/apt/lists/*
-RUN apt-get update && apt-get install -y ca-certificates curl
+RUN apt-get update && apt-get install -y ca-certificates curl procps
 
 # TODO it's a bit ugly to copy this to /usr/local
 COPY --from=builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
