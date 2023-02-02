@@ -1,5 +1,6 @@
 use sea_query::{
     Iden,
+    Func,
     Expr,
     SimpleExpr,
     SelectStatement,
@@ -88,9 +89,13 @@ pub enum Car {
 }
 
 pub trait SchemaUtils {
+    fn select_total_time(&mut self) -> &mut Self;
+    fn select_laps_complete(&mut self) -> &mut Self;
+    fn select_total_distance(&mut self) -> &mut Self;
     fn join_driver_result_to_simsession(&mut self) -> &mut Self;
     fn join_driver_result_to_subsession(&mut self) -> &mut Self;
     fn join_driver_result_to_driver(&mut self) -> &mut Self;
+    fn join_driver_result_to_car(&mut self) -> &mut Self;
     fn join_subsession_to_session(&mut self) -> &mut Self;
     fn join_subsession_to_track_config(&mut self) -> &mut Self;
     fn join_track_config_to_track(&mut self) -> &mut Self;
@@ -98,6 +103,18 @@ pub trait SchemaUtils {
 }
 
 impl SchemaUtils for SelectStatement {
+    fn select_total_time(&mut self) -> &mut Self {
+        return self.expr(Func::sum(Expr::expr(Expr::col(DriverResult::LapsComplete)).mul(Expr::col(DriverResult::AverageLap))));
+    }
+
+    fn select_laps_complete(&mut self) -> &mut Self {
+        return self.expr(Func::sum(Expr::col(DriverResult::LapsComplete)));
+    }
+
+    fn select_total_distance(&mut self) -> &mut Self {
+        return self.expr(Func::sum(Expr::expr(Expr::col(DriverResult::LapsComplete)).mul(Expr::col(TrackConfig::TrackConfigLength))))
+    }
+
     fn join_driver_result_to_simsession(&mut self) -> &mut Self {
         return self.inner_join(Simsession::Table, all![
             Expr::col((DriverResult::Table, DriverResult::SubsessionId)).equals((Simsession::Table, Simsession::SubsessionId)),
@@ -114,6 +131,12 @@ impl SchemaUtils for SelectStatement {
     fn join_driver_result_to_driver(&mut self) -> &mut Self {
         return self.inner_join(Driver::Table,
             Expr::col((DriverResult::Table, DriverResult::CustId)).equals((Driver::Table, Driver::CustId))
+        );
+    }
+
+    fn join_driver_result_to_car(&mut self) -> &mut Self {
+        return self.inner_join(Car::Table,
+            Expr::col((DriverResult::Table, DriverResult::CarId)).equals((Car::Table, Car::CarId))
         );
     }
 

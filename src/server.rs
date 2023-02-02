@@ -53,17 +53,24 @@ async fn api_v1_track_usage_stats(
     }
 }
 
-#[get("/api/v1/car-usage-stats?<driver_name>")]
-async fn api_v1_car_usage_stats(driver_name: String) -> Value {
-    let raw_data = query_car_usage(&driver_name); 
+#[get("/api/v1/car-usage-stats?<driver_name>&<cust_id>")]
+async fn api_v1_car_usage_stats(
+    driver_name: Option<String>,
+    cust_id: Option<i64>) -> Option<Value>
+{
+    if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
+        let raw_data = query_car_usage(&driver_id); 
 
-    let values: Vec<Value> = raw_data.iter().map(|data| json!({
-        "car_name": data.car_name,
-        "time": data.time,
-        "distance": data.distance,
-    })).collect();
+        let values: Vec<Value> = raw_data.iter().map(|data| json!({
+            "car_name": data.car_name,
+            "time": data.time,
+            "distance": data.distance,
+        })).collect();
 
-    return Value::Array(values);
+        return Some(Value::Array(values));
+    } else {
+        return None;
+    }
 }
 
 #[get("/api/v1/car-track-usage-stats?<driver_name>")]
