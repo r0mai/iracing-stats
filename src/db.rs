@@ -21,7 +21,12 @@ use crate::schema::{
     TrackConfig,
     Track,
     Car,
+
+    is_event_type,
+    is_category_type,
+    SchemaJoins,
 };
+use crate::event_type::EventType;
 
 use crate::category_type::CategoryType;
 
@@ -415,16 +420,10 @@ pub fn query_irating_history(driver_id: &DriverId, category: CategoryType) -> Va
         .column(DriverResult::NewCpi)
         .column(Session::SeriesName)
         .from(DriverResult::Table)
-        .inner_join(Simsession::Table, all![
-            Expr::col((DriverResult::Table, DriverResult::SubsessionId)).equals((Simsession::Table, Simsession::SubsessionId)),
-            Expr::col((DriverResult::Table, DriverResult::SimsessionNumber)).equals((Simsession::Table, Simsession::SimsessionNumber)),
-        ])
-        .inner_join(Subsession::Table,
-            Expr::col((Simsession::Table, Simsession::SubsessionId)).equals((Subsession::Table, Subsession::SubsessionId))
-        )
-        .inner_join(Session::Table,
-            Expr::col((Session::Table, Session::SessionId)).equals((Subsession::Table, Subsession::SessionId))
-        );
+        .join_driver_result_to_simsession()
+        .join_driver_result_to_subsession()
+        .join_subsession_to_session()
+        ;
 
     match driver_id {
         DriverId::CustId(cust_id) => {
@@ -434,9 +433,7 @@ pub fn query_irating_history(driver_id: &DriverId, category: CategoryType) -> Va
         } 
         DriverId::Name(name) => {
             query = query
-                .inner_join(Driver::Table,
-                    Expr::col((Driver::Table, Driver::CustId)).equals((DriverResult::Table, DriverResult::CustId))
-                )
+                .join_driver_result_to_driver()
                 .and_where(Expr::col((Driver::Table, Driver::DisplayName)).eq(name))
                 ;
         }
@@ -444,9 +441,9 @@ pub fn query_irating_history(driver_id: &DriverId, category: CategoryType) -> Va
 
     query = query
         .and_where(Expr::col(DriverResult::NewiRating).ne(-1))
-        .and_where(Expr::col(Subsession::EventType).eq(5))
+        .and_where(is_event_type(EventType::Race))
         .and_where(Expr::col((Simsession::Table, Simsession::SimsessionNumber)).eq(0))
-        .and_where(Expr::col(Subsession::LicenseCategoryId).eq(category.to_db_type()))
+        .and_where(is_category_type(category))
         .order_by(Subsession::StartTime, Order::Asc)
         ;
 
