@@ -6,6 +6,7 @@ mod db;
 mod iracing_client;
 mod category_type;
 mod event_type;
+mod driverid;
 
 use clap::Parser;
 use std::fs;

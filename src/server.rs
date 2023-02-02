@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use rocket::fs::FileServer;
 
 use crate::category_type::CategoryType;
+use crate::driverid::DriverId;
 use crate::db::{
-    DriverId,
     query_irating_history,
     query_track_car_usage_matrix,
     query_track_usage,

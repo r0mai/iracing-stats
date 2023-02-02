@@ -8,6 +8,7 @@ use sea_query::{
 
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
+use crate::driverid::DriverId;
 
 #[derive(Iden)]
 pub enum Driver {
@@ -86,34 +87,51 @@ pub enum Car {
     CarNameAbbreviated,
 }
 
-pub trait SchemaJoins {
+pub trait SchemaUtils {
     fn join_driver_result_to_simsession(&mut self) -> &mut Self;
     fn join_driver_result_to_subsession(&mut self) -> &mut Self;
     fn join_driver_result_to_driver(&mut self) -> &mut Self;
     fn join_subsession_to_session(&mut self) -> &mut Self;
+    fn match_driver_id(&mut self, driver_id: &DriverId) -> &mut Self;
 }
 
-impl SchemaJoins for SelectStatement {
+impl SchemaUtils for SelectStatement {
     fn join_driver_result_to_simsession(&mut self) -> &mut Self {
         return self.inner_join(Simsession::Table, all![
             Expr::col((DriverResult::Table, DriverResult::SubsessionId)).equals((Simsession::Table, Simsession::SubsessionId)),
             Expr::col((DriverResult::Table, DriverResult::SimsessionNumber)).equals((Simsession::Table, Simsession::SimsessionNumber)),
         ]);
     }
+
     fn join_driver_result_to_subsession(&mut self) -> &mut Self {
         return self.inner_join(Subsession::Table,
             Expr::col((DriverResult::Table, DriverResult::SubsessionId)).equals((Subsession::Table, Subsession::SubsessionId))
         );
     }
+
     fn join_driver_result_to_driver(&mut self) -> &mut Self {
         return self.inner_join(Driver::Table,
             Expr::col((DriverResult::Table, DriverResult::CustId)).equals((Driver::Table, Driver::CustId))
         );
     }
+
     fn join_subsession_to_session(&mut self) -> &mut Self {
         return self.inner_join(Session::Table,
             Expr::col((Session::Table, Session::SessionId)).equals((Subsession::Table, Subsession::SessionId))
         );
+    }
+
+    fn match_driver_id(&mut self, driver_id: &DriverId) -> &mut Self {
+        match driver_id {
+            DriverId::CustId(cust_id) => {
+                self.and_where(Expr::col((DriverResult::Table, DriverResult::CustId)).eq(*cust_id));
+            } 
+            DriverId::Name(name) => {
+                self.join_driver_result_to_driver()
+                    .and_where(Expr::col((Driver::Table, Driver::DisplayName)).eq(name));
+            }
+        };
+        return self;
     }
 }
 

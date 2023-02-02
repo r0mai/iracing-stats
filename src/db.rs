@@ -24,11 +24,11 @@ use crate::schema::{
 
     is_event_type,
     is_category_type,
-    SchemaJoins,
+    SchemaUtils,
 };
 use crate::event_type::EventType;
-
 use crate::category_type::CategoryType;
+use crate::driverid::DriverId;
 
 const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
@@ -78,37 +78,6 @@ pub fn get_sessions_dir() -> &'static Path {
 
 pub fn create_db_connection() -> rusqlite::Connection {
     return rusqlite::Connection::open(get_sqlite_db_file()).unwrap();
-}
-
-pub enum DriverId {
-    Name(String),
-    CustId(i64)
-}
-
-impl DriverId {
-    pub fn from_params(driver_name: Option<String>, cust_id: Option<i64>) -> Option<Self> {
-        if let Some(cust_id) = cust_id {
-            return Some(DriverId::CustId(cust_id));
-        }
-        if let Some(driver_name) = driver_name {
-            return Some(DriverId::Name(driver_name));
-        }
-        return None;
-    }
-
-    pub fn to_db_query(&self) -> &str {
-        match self {
-            Self::Name(_) => "(SELECT cust_id FROM driver WHERE display_name = ?)",
-            Self::CustId(_) => "cust_id = ?"
-        }
-    }
-
-    pub fn to_db_query_param(&self) -> String {
-        match self {
-            Self::Name(name) => name.clone(),
-            Self::CustId(cust_id) => cust_id.to_string()
-        }
-    }
 }
 
 pub struct DbContext<'a> {
@@ -413,8 +382,7 @@ pub fn is_session_cached(subsession_id: i64) -> bool {
 pub fn query_irating_history(driver_id: &DriverId, category: CategoryType) -> Value {
     let con = create_db_connection();
 
-    let mut select = Query::select();
-    let mut query = select 
+    let (sql, params) = Query::select()
         .column(Subsession::StartTime)
         .column(DriverResult::NewiRating)
         .column(DriverResult::NewCpi)
@@ -423,32 +391,15 @@ pub fn query_irating_history(driver_id: &DriverId, category: CategoryType) -> Va
         .join_driver_result_to_simsession()
         .join_driver_result_to_subsession()
         .join_subsession_to_session()
-        ;
-
-    match driver_id {
-        DriverId::CustId(cust_id) => {
-            query = query
-                .and_where(Expr::col((DriverResult::Table, DriverResult::CustId)).eq(*cust_id))
-                ;
-        } 
-        DriverId::Name(name) => {
-            query = query
-                .join_driver_result_to_driver()
-                .and_where(Expr::col((Driver::Table, Driver::DisplayName)).eq(name))
-                ;
-        }
-    };
-
-    query = query
+        .match_driver_id(driver_id)
         .and_where(Expr::col(DriverResult::NewiRating).ne(-1))
         .and_where(is_event_type(EventType::Race))
         .and_where(Expr::col((Simsession::Table, Simsession::SimsessionNumber)).eq(0))
         .and_where(is_category_type(category))
         .order_by(Subsession::StartTime, Order::Asc)
+        .build_rusqlite(SqliteQueryBuilder)
         ;
 
-    let (sql, params) = query.build_rusqlite(SqliteQueryBuilder);
-    println!("{}", sql);
     let mut stmt = con.prepare(sql.as_str()).unwrap();
     let mut rows = stmt.query(&*params.as_params()).unwrap();
 
