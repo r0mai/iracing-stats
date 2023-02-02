@@ -92,6 +92,8 @@ pub trait SchemaUtils {
     fn join_driver_result_to_subsession(&mut self) -> &mut Self;
     fn join_driver_result_to_driver(&mut self) -> &mut Self;
     fn join_subsession_to_session(&mut self) -> &mut Self;
+    fn join_subsession_to_track_config(&mut self) -> &mut Self;
+    fn join_track_config_to_track(&mut self) -> &mut Self;
     fn match_driver_id(&mut self, driver_id: &DriverId) -> &mut Self;
 }
 
@@ -118,6 +120,18 @@ impl SchemaUtils for SelectStatement {
     fn join_subsession_to_session(&mut self) -> &mut Self {
         return self.inner_join(Session::Table,
             Expr::col((Session::Table, Session::SessionId)).equals((Subsession::Table, Subsession::SessionId))
+        );
+    }
+
+    fn join_subsession_to_track_config(&mut self) -> &mut Self {
+        return self.inner_join(TrackConfig::Table,
+            Expr::col((TrackConfig::Table, TrackConfig::TrackId)).equals((Subsession::Table, Subsession::TrackId))
+        );
+    }
+
+    fn join_track_config_to_track(&mut self) -> &mut Self {
+        return self.inner_join(Track::Table,
+            Expr::col((Track::Table, Track::PackageId)).equals((TrackConfig::Table, TrackConfig::PackageId))
         );
     }
 
