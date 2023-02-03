@@ -573,20 +573,24 @@ pub fn query_driver_stats(driver_id: &DriverId) -> Value {
 
     let mut stmt = con.prepare(sql.as_str()).unwrap();
 
-    let (name, time, laps, distance) = stmt.query_row(&*params.as_params(), |row| {
+    if let Ok((name, time, laps, distance)) = stmt.query_row(&*params.as_params(), |row| {
+        // TODO get(0) may return an error resulting in a panic
         let name: String = row.get(0).unwrap();
         let time: i64 = row.get(1).unwrap();
         let laps: i64 = row.get(2).unwrap();
         let distance: f32 = row.get(3).unwrap();
         return Ok((name, time, laps, distance));
-    }).unwrap();
+    }) {
+        return json!({
+            "name": name,
+            "time": time,
+            "laps": laps,
+            "distance": distance,
+        });
+    } else {
+        return Value::Null;
+    }
 
-    return json!({
-        "name": name,
-        "time": time,
-        "laps": laps,
-        "distance": distance,
-    });
 }
 
 pub fn rebuild_db_schema() {
