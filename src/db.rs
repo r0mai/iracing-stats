@@ -391,7 +391,7 @@ pub fn query_irating_history(driver_id: &DriverId, category: CategoryType) -> Va
         .join_driver_result_to_simsession()
         .join_driver_result_to_subsession()
         .join_subsession_to_session()
-        .match_driver_id(driver_id)
+        .match_driver_id(driver_id, false)
         .and_where(Expr::col(DriverResult::NewiRating).ne(-1))
         .and_where(is_event_type(EventType::Race))
         .and_where(Expr::col((Simsession::Table, Simsession::SimsessionNumber)).eq(0))
@@ -440,7 +440,7 @@ pub fn query_track_usage(driver_id: &DriverId) -> Vec<TrackUsage> {
         .join_subsession_to_session()
         .join_subsession_to_track_config()
         .join_track_config_to_track()
-        .match_driver_id(driver_id)
+        .match_driver_id(driver_id, false)
         .group_by_col((Track::Table, Track::PackageId))
         .build_rusqlite(SqliteQueryBuilder);
 
@@ -485,7 +485,7 @@ pub fn query_car_usage(driver_id: &DriverId) -> Vec<CarUsage> {
         .join_subsession_to_session()
         .join_subsession_to_track_config()
         .join_track_config_to_track()
-        .match_driver_id(driver_id)
+        .match_driver_id(driver_id, false)
         .group_by_col((Car::Table, Car::CarId))
         .build_rusqlite(SqliteQueryBuilder);
 
@@ -530,7 +530,7 @@ pub fn query_track_car_usage_matrix(driver_id: &DriverId) -> Vec<CarTrackUsage> 
         .join_subsession_to_track_config()
         .join_track_config_to_track()
         .join_driver_result_to_car()
-        .match_driver_id(driver_id)
+        .match_driver_id(driver_id, false)
         .group_by_col((DriverResult::Table, DriverResult::CarId))
         .group_by_col((Track::Table, Track::PackageId))
         .build_rusqlite(SqliteQueryBuilder);
@@ -556,31 +556,24 @@ pub fn query_track_car_usage_matrix(driver_id: &DriverId) -> Vec<CarTrackUsage> 
     return values;
 }
 
-pub fn query_driver_stats(driver_name: &String) -> Value {
+pub fn query_driver_stats(driver_id: &DriverId) -> Value {
     let con = create_db_connection();
 
-    let mut stmt = con.prepare(r#"
-        SELECT
-            driver.display_name,
-            SUM(driver_result.laps_complete * driver_result.average_lap),
-            SUM(driver_result.laps_complete),
-            SUM(driver_result.laps_complete * track_config.track_config_length)
-        FROM
-            driver_result
-        JOIN simsession ON
-            driver_result.subsession_id = simsession.subsession_id AND
-            driver_result.simsession_number = simsession.simsession_number
-        JOIN subsession ON
-            simsession.subsession_id = subsession.subsession_id
-        JOIN track_config ON
-            subsession.track_id = track_config.track_id
-        JOIN driver ON
-            driver.cust_id = driver_result.cust_id
-        WHERE
-            driver.display_name = ?
-    "#).unwrap();
+    let (sql, params) = Query::select()
+        .column((Driver::Table, Driver::DisplayName))
+        .select_total_time()
+        .select_laps_complete()
+        .select_total_distance()
+        .from(DriverResult::Table)
+        .join_driver_result_to_simsession()
+        .join_driver_result_to_subsession()
+        .join_subsession_to_track_config()
+        .match_driver_id(driver_id, true)
+        .build_rusqlite(SqliteQueryBuilder);
 
-    let (name, time, laps, distance) = stmt.query_row((driver_name,), |row| {
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+
+    let (name, time, laps, distance) = stmt.query_row(&*params.as_params(), |row| {
         let name: String = row.get(0).unwrap();
         let time: i64 = row.get(1).unwrap();
         let laps: i64 = row.get(2).unwrap();

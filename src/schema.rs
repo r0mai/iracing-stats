@@ -99,7 +99,7 @@ pub trait SchemaUtils {
     fn join_subsession_to_session(&mut self) -> &mut Self;
     fn join_subsession_to_track_config(&mut self) -> &mut Self;
     fn join_track_config_to_track(&mut self) -> &mut Self;
-    fn match_driver_id(&mut self, driver_id: &DriverId) -> &mut Self;
+    fn match_driver_id(&mut self, driver_id: &DriverId, force_join: bool) -> &mut Self;
 }
 
 impl SchemaUtils for SelectStatement {
@@ -158,9 +158,12 @@ impl SchemaUtils for SelectStatement {
         );
     }
 
-    fn match_driver_id(&mut self, driver_id: &DriverId) -> &mut Self {
+    fn match_driver_id(&mut self, driver_id: &DriverId, force_join: bool) -> &mut Self {
         match driver_id {
             DriverId::CustId(cust_id) => {
+                if force_join {
+                    self.join_driver_result_to_driver();
+                }
                 self.and_where(Expr::col((DriverResult::Table, DriverResult::CustId)).eq(*cust_id));
             } 
             DriverId::Name(name) => {

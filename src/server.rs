@@ -132,9 +132,16 @@ async fn api_v1_car_track_usage_stats(
     }
 }
 
-#[get("/api/v1/driver-stats?<driver_name>")]
-async fn api_v1_driver_stats(driver_name: String) -> Value {
-    return query_driver_stats(&driver_name);
+#[get("/api/v1/driver-stats?<driver_name>&<cust_id>")]
+async fn api_v1_driver_stats(
+    driver_name: Option<String>,
+    cust_id: Option<i64>) -> Option<Value>
+{
+    if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
+        return Some(query_driver_stats(&driver_id));
+    } else {
+        return None;
+    }
 }
 
 pub async fn start_rocket_server() {
