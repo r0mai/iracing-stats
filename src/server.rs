@@ -73,56 +73,63 @@ async fn api_v1_car_usage_stats(
     }
 }
 
-#[get("/api/v1/car-track-usage-stats?<driver_name>")]
-async fn api_v1_car_track_usage_stats(driver_name: String) -> Value {
-    let raw_data = query_track_car_usage_matrix(&driver_name); 
+#[get("/api/v1/car-track-usage-stats?<driver_name>&<cust_id>")]
+async fn api_v1_car_track_usage_stats(
+    driver_name: Option<String>,
+    cust_id: Option<i64>) -> Option<Value>
+{
+    if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
+        let raw_data = query_track_car_usage_matrix(&driver_id); 
 
-    let mut car_idxs = HashMap::new();
-    let mut track_idxs = HashMap::new();
+        let mut car_idxs = HashMap::new();
+        let mut track_idxs = HashMap::new();
 
-    let mut car_idx = 0;
-    let mut track_idx = 0;
+        let mut car_idx = 0;
+        let mut track_idx = 0;
 
-    for data in raw_data.iter() {
-        if !car_idxs.contains_key(&data.car_name) {
-            car_idxs.insert(data.car_name.clone(), car_idx);
-            car_idx += 1;
+        for data in raw_data.iter() {
+            if !car_idxs.contains_key(&data.car_name) {
+                car_idxs.insert(data.car_name.clone(), car_idx);
+                car_idx += 1;
+            }
+            if !track_idxs.contains_key(&data.track_name) {
+                track_idxs.insert(data.track_name.clone(), track_idx);
+                track_idx += 1;
+            }
         }
-        if !track_idxs.contains_key(&data.track_name) {
-            track_idxs.insert(data.track_name.clone(), track_idx);
-            track_idx += 1;
+
+        let car_count = car_idxs.len();
+        let track_count = track_idxs.len();
+
+        // matrix[track][car]
+        let mut matrix = vec![vec![json!({}); car_count]; track_count];
+
+        for data in raw_data.into_iter() {
+            matrix[track_idxs[&data.track_name]][car_idxs[&data.car_name]] = json!({
+                "time": data.time,
+                "laps": data.laps
+            });
         }
+
+        let mut cars = vec![String::new(); car_count];
+        let mut tracks = vec![String::new(); track_count];
+
+        for (name, idx) in car_idxs {
+            cars[idx] = name;
+        }
+
+        for (name, idx) in track_idxs {
+            tracks[idx] = name;
+        }
+
+        return Some(json!({
+            "matrix": matrix,
+            "cars": cars,
+            "tracks": tracks
+        }));
+    } else {
+        return None;
     }
-
-    let car_count = car_idxs.len();
-    let track_count = track_idxs.len();
-
-    // matrix[track][car]
-    let mut matrix = vec![vec![json!({}); car_count]; track_count];
-
-    for data in raw_data.into_iter() {
-        matrix[track_idxs[&data.track_name]][car_idxs[&data.car_name]] = json!({
-            "time": data.time,
-            "laps": data.laps
-        });
-    }
-
-    let mut cars = vec![String::new(); car_count];
-    let mut tracks = vec![String::new(); track_count];
-
-    for (name, idx) in car_idxs {
-        cars[idx] = name;
-    }
-
-    for (name, idx) in track_idxs {
-        tracks[idx] = name;
-    }
-
-    return json!({
-        "matrix": matrix,
-        "cars": cars,
-        "tracks": tracks
-    });
 }
 
 #[get("/api/v1/driver-stats?<driver_name>")]

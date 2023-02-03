@@ -489,34 +489,6 @@ pub fn query_car_usage(driver_id: &DriverId) -> Vec<CarUsage> {
         .group_by_col((Car::Table, Car::CarId))
         .build_rusqlite(SqliteQueryBuilder);
 
-    // let mut stmt = con.prepare(r#"
-    //     SELECT
-    //         car.car_name,
-    //         SUM(driver_result.laps_complete * driver_result.average_lap),
-    //         SUM(driver_result.laps_complete * track_config.track_config_length)
-    //     FROM
-    //         driver_result
-    //     JOIN simsession ON
-    //         driver_result.subsession_id = simsession.subsession_id AND
-    //         driver_result.simsession_number = simsession.simsession_number
-    //     JOIN subsession ON
-    //         simsession.subsession_id = subsession.subsession_id
-    //     JOIN session ON
-    //         subsession.session_id = session.session_id
-    //     JOIN track_config ON
-    //         subsession.track_id = track_config.track_id
-    //     JOIN track ON
-    //         track_config.package_id = track.package_id
-    //     JOIN car ON
-    //         driver_result.car_id = car.car_id
-    //     JOIN driver ON
-    //         driver.cust_id = driver_result.cust_id
-    //     WHERE
-    //         driver.display_name = ?
-    //     GROUP BY
-    //         car.car_id
-    // "#).unwrap();
-
     let mut stmt = con.prepare(sql.as_str()).unwrap();
     let mut rows = stmt.query(&*params.as_params()).unwrap();
 
@@ -543,39 +515,28 @@ pub struct CarTrackUsage {
     pub laps: i64
 }
 
-pub fn query_track_car_usage_matrix(driver_name: &String) -> Vec<CarTrackUsage> {
+pub fn query_track_car_usage_matrix(driver_id: &DriverId) -> Vec<CarTrackUsage> {
     let con = create_db_connection();
 
-    let mut stmt = con.prepare(r#"
-        SELECT
-            car.car_name,
-            track.track_name,
-            SUM(driver_result.laps_complete * driver_result.average_lap),
-            SUM(driver_result.laps_complete)
-        FROM
-            driver_result
-        JOIN simsession ON
-            driver_result.subsession_id = simsession.subsession_id AND
-            driver_result.simsession_number = simsession.simsession_number
-        JOIN subsession ON
-            simsession.subsession_id = subsession.subsession_id
-        JOIN session ON
-            subsession.session_id = session.session_id
-        JOIN track_config ON
-            subsession.track_id = track_config.track_id
-        JOIN track ON
-            track_config.package_id = track.package_id
-        JOIN car ON
-            driver_result.car_id = car.car_id
-        JOIN driver ON
-            driver.cust_id = driver_result.cust_id
-        WHERE
-            driver.display_name = ?
-        GROUP BY
-            driver_result.car_id, track.package_id
-    "#).unwrap();
+    let (sql, params) = Query::select()
+        .column((Car::Table, Car::CarName))
+        .column((Track::Table, Track::TrackName))
+        .select_total_time()
+        .select_laps_complete()
+        .from(DriverResult::Table)
+        .join_driver_result_to_simsession()
+        .join_driver_result_to_subsession()
+        .join_subsession_to_session()
+        .join_subsession_to_track_config()
+        .join_track_config_to_track()
+        .join_driver_result_to_car()
+        .match_driver_id(driver_id)
+        .group_by_col((DriverResult::Table, DriverResult::CarId))
+        .group_by_col((Track::Table, Track::PackageId))
+        .build_rusqlite(SqliteQueryBuilder);
 
-    let mut rows = stmt.query((driver_name,)).unwrap();
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
 
     let mut values = Vec::new();
 
