@@ -556,11 +556,20 @@ pub fn query_track_car_usage_matrix(driver_id: &DriverId) -> Vec<CarTrackUsage> 
     return values;
 }
 
-pub fn query_driver_stats(driver_id: &DriverId) -> Value {
+pub struct DriverStats {
+    pub name: String,
+    pub cust_id: i64,
+    pub time: i64,
+    pub laps: i64,
+    pub distance: f32
+}
+
+pub fn query_driver_stats(driver_id: &DriverId) -> Option<DriverStats> {
     let con = create_db_connection();
 
     let (sql, params) = Query::select()
         .column((Driver::Table, Driver::DisplayName))
+        .column((Driver::Table, Driver::CustId))
         .select_total_time()
         .select_laps_complete()
         .select_total_distance()
@@ -573,24 +582,17 @@ pub fn query_driver_stats(driver_id: &DriverId) -> Value {
 
     let mut stmt = con.prepare(sql.as_str()).unwrap();
 
-    if let Ok((name, time, laps, distance)) = stmt.query_row(&*params.as_params(), |row| {
+    return stmt.query_row(&*params.as_params(), |row| {
         // TODO get(0) may return an error resulting in a panic
-        let name: String = row.get(0).unwrap();
-        let time: i64 = row.get(1).unwrap();
-        let laps: i64 = row.get(2).unwrap();
-        let distance: f32 = row.get(3).unwrap();
-        return Ok((name, time, laps, distance));
-    }) {
-        return json!({
-            "name": name,
-            "time": time,
-            "laps": laps,
-            "distance": distance,
+        let name: String = row.get(0)?;
+        let cust_id: i64 = row.get(1)?;
+        let time: i64 = row.get(2)?;
+        let laps: i64 = row.get(3)?;
+        let distance: f32 = row.get(4)?;
+        return Ok(DriverStats {
+            name, cust_id, time, laps, distance
         });
-    } else {
-        return Value::Null;
-    }
-
+    }).ok();
 }
 
 pub fn rebuild_db_schema() {

@@ -1,16 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::atomic::AtomicI64, sync::atomic::Ordering};
 use serde_json;
 use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
 
 const BASEURL: &str = "https://members-ng.iracing.com";
 
-#[derive(Clone)]
 pub struct IRacingClient {
     pub client: Client,
-    pub rate_limit_limit: i64,
-    pub rate_limit_remaining: i64,
-    pub rate_limit_reset: i64
+    pub rate_limit_limit: AtomicI64,
+    pub rate_limit_remaining: AtomicI64,
+    pub rate_limit_reset: AtomicI64,
 }
 
 impl IRacingClient {
@@ -18,9 +17,9 @@ impl IRacingClient {
         let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
         return IRacingClient {
             client,
-            rate_limit_limit: 1,
-            rate_limit_remaining: 1,
-            rate_limit_reset: 0
+            rate_limit_limit: AtomicI64::new(1),
+            rate_limit_remaining: AtomicI64::new(1),
+            rate_limit_reset: AtomicI64::new(0)
         };
     }
 
@@ -28,7 +27,7 @@ impl IRacingClient {
         return v.to_str().unwrap().parse::<i64>().unwrap();
     }
 
-    async fn get_with_retry(&mut self, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
+    async fn get_with_retry(&self, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
         for _ in 0..10 {
             let response = self.client.get(&url).query(&params).send().await.unwrap();
             let status = response.status();
@@ -38,9 +37,9 @@ impl IRacingClient {
             let rl_remaining = headers.get("x-ratelimit-remaining");
             let rl_reset = headers.get("x-ratelimit-reset");
 
-            if let Some(x) = rl_limit { self.rate_limit_limit = Self::header_value_to_i64(x); }
-            if let Some(x) = rl_remaining { self.rate_limit_remaining = Self::header_value_to_i64(x); }
-            if let Some(x) = rl_reset { self.rate_limit_reset = Self::header_value_to_i64(x); }
+            if let Some(x) = rl_limit { self.rate_limit_limit.store(Self::header_value_to_i64(x), Ordering::Relaxed); }
+            if let Some(x) = rl_remaining { self.rate_limit_remaining.store(Self::header_value_to_i64(x), Ordering::Relaxed); }
+            if let Some(x) = rl_reset { self.rate_limit_reset.store(Self::header_value_to_i64(x), Ordering::Relaxed); }
 
             let text = response.text().await.unwrap();
             status.is_server_error();
@@ -50,6 +49,12 @@ impl IRacingClient {
 
             if status.is_server_error() {
                 println!("Request to {url} failed with {status}. Retrying...");
+                continue;
+            }
+
+            // need to reauth
+            if status.as_u16() == 401 {
+                self.auth().await;
                 continue;
             }
 
@@ -66,12 +71,12 @@ impl IRacingClient {
         panic!("Failed after several retries :(");
     }
 
-    async fn get_and_read(&mut self, suffix: &str, params: &HashMap<&str, String>) -> serde_json::Value {
+    async fn get_and_read(&self, suffix: &str, params: &HashMap<&str, String>) -> serde_json::Value {
         let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await;
         return self.get_with_retry(String::from(pointer_json["link"].as_str().unwrap()), params).await;
     }
 
-    async fn get_and_read_chunked(&mut self, suffix: &str, params: &HashMap<&str, String>) -> serde_json::Value {
+    async fn get_and_read_chunked(&self, suffix: &str, params: &HashMap<&str, String>) -> serde_json::Value {
         let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await;
         let chunk_info = &pointer_json["data"]["chunk_info"];
         let base_url_res= &chunk_info["base_download_url"].as_str();
@@ -92,7 +97,7 @@ impl IRacingClient {
         return result_array;
     }
 
-    async fn get_member_since_year(&mut self, cust_id: i64) -> i32 {
+    async fn get_member_since_year(&self, cust_id: i64) -> i32 {
         let params = HashMap::from([
             ("cust_ids", cust_id.to_string())
         ]);
@@ -102,7 +107,7 @@ impl IRacingClient {
         return res["members"][0]["member_since"].as_str().unwrap()[0..4].parse::<i32>().unwrap();
     }
 
-    async fn search_series(&mut self, cust_id: Option<i64>, year: i32, quarter: i32, week: Option<i32>) -> serde_json::Value {
+    async fn search_series(&self, cust_id: Option<i64>, year: i32, quarter: i32, week: Option<i32>) -> serde_json::Value {
         let mut params = HashMap::from([
             ("season_year", year.to_string()),
             ("season_quarter", quarter.to_string()),
@@ -117,7 +122,7 @@ impl IRacingClient {
         return self.get_and_read_chunked("/data/results/search_series", &params).await;
     }
 
-    async fn find_subsessions_for_driver(&mut self, cust_id: i64) -> Vec<i64> {
+    async fn find_subsessions_for_driver(&self, cust_id: i64) -> Vec<i64> {
         let member_since_year = self.get_member_since_year(cust_id).await;
 
         let mut series = serde_json::Value::Array([].to_vec());
@@ -132,12 +137,12 @@ impl IRacingClient {
         return series.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
     }
 
-    async fn find_subsessions_for_season(&mut self, year: i32, quarter: i32, week: Option<i32>) -> Vec<i64> {
+    async fn find_subsessions_for_season(&self, year: i32, quarter: i32, week: Option<i32>) -> Vec<i64> {
         let series = self.search_series(None, year, quarter, week).await;
         return series.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
     }
 
-    async fn get_cust_id(&mut self, driver_name: &String) -> i64 {
+    async fn get_cust_id(&self, driver_name: &String) -> i64 {
         let res = self.get_and_read("/data/lookup/drivers", &HashMap::from([
             ("search_term", driver_name.clone())
         ])).await;
@@ -154,19 +159,26 @@ impl IRacingClient {
         return arr[0]["cust_id"].as_i64().unwrap();
     }
 
-    async fn get_member_profile(&mut self, cust_id: i64) -> serde_json::Value {
+    async fn lookup_driver(&self, cust_id: i64) -> serde_json::Value {
         return self.get_and_read("/data/lookup/drivers", &HashMap::from([
             ("cust_id", cust_id.to_string())
         ])).await;
     }
 
-    pub async fn get_subsession(&mut self, subsession_id: i64) -> serde_json::Value {
+    pub async fn get_member_profile(&self, cust_id: i64) -> serde_json::Value {
+        return self.get_and_read("/data/member/profile", &HashMap::from([
+            ("cust_id", cust_id.to_string())
+        ])).await;
+    }
+
+
+    pub async fn get_subsession(&self, subsession_id: i64) -> serde_json::Value {
         return self.get_and_read("/data/results/get", &HashMap::from([
             ("subsession_id", subsession_id.to_string())
         ])).await;
     }
 
-    pub async fn auth(&mut self) {
+    pub async fn auth(&self) {
         let user = std::env::var("IRACING_USER").unwrap();
         let token = std::env::var("IRACING_TOKEN").unwrap();
 

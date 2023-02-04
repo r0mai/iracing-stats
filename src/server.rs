@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use rocket::fs::FileServer;
+use rocket::State;
 
 use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
@@ -12,6 +13,7 @@ use crate::db::{
     query_driver_stats,
 };
 use serde_json::{Value, json};
+use crate::iracing_client::IRacingClient;
 
 #[get("/api/v1/irating-history?<driver_name>&<cust_id>&<category>")]
 async fn api_v1_irating_history(
@@ -132,16 +134,50 @@ async fn api_v1_car_track_usage_stats(
     }
 }
 
+fn transform_member_info(member_profile: &Value) -> Value {
+    fn find_category(array: &Value, category: CategoryType) -> &Value {
+        for e in array.as_array().unwrap() {
+            if e["category_id"].as_i64().unwrap() == category as i64 {
+                return e;
+            }
+        }
+        return &Value::Null;
+    }
+
+    if member_profile.is_null() {
+        return Value::Null;
+    }
+
+    let licenses = &member_profile["member_info"]["licenses"];
+    let result = json!({
+        "oval": find_category(&licenses, CategoryType::Oval),
+        "road": find_category(&licenses, CategoryType::Road),
+        "dirt_oval": find_category(&licenses, CategoryType::DirtOval),
+        "dirt_road": find_category(&licenses, CategoryType::DirtRoad),
+    });
+    return result;
+}
+
 #[get("/api/v1/driver-stats?<driver_name>&<cust_id>")]
 async fn api_v1_driver_stats(
     driver_name: Option<String>,
-    cust_id: Option<i64>) -> Option<Value>
+    cust_id: Option<i64>,
+    iracing_client: &State<IRacingClient>) -> Option<Value>
 {
     if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
-        return Some(query_driver_stats(&driver_id));
-    } else {
-        return None;
+        if let Some(stats) = query_driver_stats(&driver_id) {
+            let member_profile = iracing_client.get_member_profile(stats.cust_id).await;
+
+            return Some(json!({
+                "name": stats.name,
+                "time": stats.time,
+                "laps": stats.laps,
+                "distance": stats.distance,
+                "licenses": transform_member_info(&member_profile)
+            }));
+        }
     }
+    return None;
 }
 
 pub async fn start_rocket_server() {
@@ -154,5 +190,6 @@ pub async fn start_rocket_server() {
             api_v1_driver_stats,
         ])
         .mount("/static", FileServer::from("static"))
+        .manage(IRacingClient::new())
         .launch().await.unwrap();
 }
