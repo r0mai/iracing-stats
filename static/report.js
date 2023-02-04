@@ -474,16 +474,22 @@ async function updateCarTrackUsageStats(divTime, divLaps, divTrackStack, divCarS
     populateCarUsageStackBar(divCarStack, result, 'time', toHours);
 }
 
+function add_license_icon(element, license) {
+    element.innerHTML = license["group_name"] + " " + license["safety_rating"];
+}
+
 async function updateDriverStats(div, driverName) {
     let resp = await fetch('/api/v1/driver-stats?driver_name=' + driverName);
     let result = await resp.json()
 
     let driverNameDiv = div.querySelector("#driver-name-value");
+    let roadLicense = div.querySelector("#road-license");
     let totalLapsDiv = div.querySelector("#total-laps-value");
     let totalTimeDiv = div.querySelector("#total-time-value");
     let totalDistanceDiv = div.querySelector("#total-distance-value");
 
     driverNameDiv.innerHTML = result["name"];
+    add_license_icon(roadLicense, result["licenses"]["road"]);
     totalLapsDiv.innerHTML = result["laps"];
     totalTimeDiv.innerHTML = round(toHours(result["time"]), 1) + "h";
     totalDistanceDiv.innerHTML = round(result["distance"], 1) + "km";
