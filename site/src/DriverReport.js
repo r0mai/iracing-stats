@@ -1,8 +1,9 @@
 import { useFetch } from "react-async";
+import DriverStats from './DriverStats.js'
 
 function DriverReport({driver}) {
     let headers = { Accept: "application/json" }
-    let { data, error, isPending, run } = useFetch("/api/v1/driver-stats?driver_name=" + driver, {headers});
+    let { driverStats, error, isPending, run } = useFetch("/api/v1/driver-stats?driver_name=" + driver, {headers});
 
     if (isPending) {
         return "...";
@@ -10,8 +11,8 @@ function DriverReport({driver}) {
     if (error) {
         return `Something went wront: ${error.message}`;
     }
-    if (data) {
-        return <h2>{data["laps"]} laps</h2>;
+    if (driverStats) {
+        return <DriverStats driverStats={driverStats}/>;
     }
 }
 
