@@ -8,14 +8,18 @@ function DriverList({drivers}) {
         <TabList>
             {
                 drivers.map((driver) => {
-                    return <Tab>{driver}</Tab>
+                    return (
+                        <Tab key={driver}>
+                            {driver}
+                        </Tab>
+                    );
                 })
             }
         </TabList>
         {
             drivers.map((driver) => {
                 return (
-                    <TabPanel>
+                    <TabPanel key={driver}>
                         <h2>{driver}</h2>
                     </TabPanel>
                 );
