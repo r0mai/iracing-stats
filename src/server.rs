@@ -182,6 +182,8 @@ async fn api_v1_driver_stats(
 
 pub async fn start_rocket_server() {
     let _result = rocket::build()
+        // .mount("/static", FileServer::from("static"))
+        .mount("/", FileServer::from("site/build"))
         .mount("/", routes![
             api_v1_irating_history,
             api_v1_car_track_usage_stats,
@@ -189,7 +191,6 @@ pub async fn start_rocket_server() {
             api_v1_car_usage_stats,
             api_v1_driver_stats,
         ])
-        .mount("/static", FileServer::from("static"))
         .manage(IRacingClient::new())
         .launch().await.unwrap();
 }
