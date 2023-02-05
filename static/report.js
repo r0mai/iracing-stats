@@ -474,8 +474,72 @@ async function updateCarTrackUsageStats(divTime, divLaps, divTrackStack, divCarS
     populateCarUsageStackBar(divCarStack, result, 'time', toHours);
 }
 
-function add_license_icon(element, license) {
-    element.innerHTML = license["group_name"] + " " + license["safety_rating"];
+function get_short_license_name(licenseGroupId) {
+    switch (licenseGroupId) {
+        case 1: return "R";
+        case 2: return "D";
+        case 3: return "C";
+        case 4: return "B";
+        case 5: return "A";
+        default: return "?";
+    }
+}
+
+function get_nice_category_name(categoryId) {
+    switch (categoryId) {
+        case 1: return "Oval";
+        case 2: return "Road";
+        case 3: return "Dirt Oval";
+        case 4: return "Dirt Road";
+        default: return "?";
+    }
+}
+
+function add_license_icon(div, license) {
+    let nameDiv = document.createElement("div");
+    let iconDiv = document.createElement("div");
+
+    div.style.display = "flex";
+    div.style.flexWrap = "wrap";
+    div.style.justifyContent = "left";
+
+    div.appendChild(nameDiv);
+    div.appendChild(iconDiv);
+
+    nameDiv.innerHTML = get_nice_category_name(license["category_id"]);
+
+    iconDiv.style.background = "#" + license["color"];
+    iconDiv.style.color = "black"; // text color
+    iconDiv.style.borderRadius = "5px";
+    iconDiv.style.paddingRight = "5px";
+    iconDiv.style.paddingLeft = "5px";
+    iconDiv.style.margin = "2px";
+    iconDiv.style.fontWeight = "bold";
+    iconDiv.innerHTML = get_short_license_name(license["group_id"]) + " " + license["safety_rating"].toFixed(2);
+}
+
+function add_license_icons(element, licenses) {
+    let mainDiv = document.createElement("div");
+    element.appendChild(mainDiv);
+
+    mainDiv.style.display = "flex";
+    mainDiv.style.flexWrap = "nowrap";
+    mainDiv.style.justifyContent = "left";
+
+    let roadDiv = document.createElement("div");
+    let ovalDiv = document.createElement("div");
+    let dirtRoadDiv = document.createElement("div");
+    let dirtOvalDiv = document.createElement("div");
+
+    mainDiv.appendChild(roadDiv);
+    mainDiv.appendChild(ovalDiv);
+    mainDiv.appendChild(dirtRoadDiv);
+    mainDiv.appendChild(dirtOvalDiv);
+
+    add_license_icon(roadDiv, licenses["road"]);
+    add_license_icon(ovalDiv, licenses["oval"]);
+    add_license_icon(dirtRoadDiv, licenses["dirt_road"]);
+    add_license_icon(dirtOvalDiv, licenses["dirt_oval"]);
 }
 
 async function updateDriverStats(div, driverName) {
@@ -483,13 +547,13 @@ async function updateDriverStats(div, driverName) {
     let result = await resp.json()
 
     let driverNameDiv = div.querySelector("#driver-name-value");
-    let roadLicense = div.querySelector("#road-license");
+    let roadLicense = div.querySelector("#licenses");
     let totalLapsDiv = div.querySelector("#total-laps-value");
     let totalTimeDiv = div.querySelector("#total-time-value");
     let totalDistanceDiv = div.querySelector("#total-distance-value");
 
     driverNameDiv.innerHTML = result["name"];
-    add_license_icon(roadLicense, result["licenses"]["road"]);
+    add_license_icons(roadLicense, result["licenses"]);
     totalLapsDiv.innerHTML = result["laps"];
     totalTimeDiv.innerHTML = round(toHours(result["time"]), 1) + "h";
     totalDistanceDiv.innerHTML = round(result["distance"], 1) + "km";
