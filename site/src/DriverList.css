@@ -43,7 +43,7 @@
 
 .react-tabs__tab-panel {
   display: none;
-  width: 300px;
+  padding-left: 20px;
 }
 
 .react-tabs__tab-panel--selected {
@@ -55,7 +55,7 @@
 }
 
 .react-tabs__tab--selected {
-  padding-left: 21px;
+  padding-left: 24px;
 }
 
 .panel-content {
