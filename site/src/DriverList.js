@@ -2,8 +2,7 @@ import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import './DriverList.css'
 // import 'react-tabs/style/react-tabs.css';
 
-function DriverList() {
-  let drivers = ["Bela", "Jani", "Marcsi"];
+function DriverList({drivers}) {
   return (
     <Tabs>
         <TabList>

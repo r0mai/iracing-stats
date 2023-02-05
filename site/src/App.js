@@ -3,7 +3,7 @@ import DriverList from './DriverList.js'
 
 function App() {
   return (
-    <DriverList/>
+    <DriverList drivers={["Bela", "Jani"]}/>
   );
 }
 
