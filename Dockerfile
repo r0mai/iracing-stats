@@ -1,4 +1,4 @@
-FROM rust:latest AS builder
+FROM rust:latest AS rust-builder
 
 WORKDIR /
 
@@ -19,13 +19,23 @@ RUN cargo install --path . --root /app
 
 # -----
 
+FROM node:18.4 AS node-builder
+
+WORKDIR /iracing-stats-site
+COPY site .
+RUN npm install
+RUN npm run build
+
+# -----
+
 FROM debian:bullseye-slim
 # no clue what this does, but it doesn't work
 # RUN apt-get update && apt-get install -y extra-runtime-dependencies && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get install -y ca-certificates curl procps
 
 # TODO it's a bit ugly to copy this to /usr/local
-COPY --from=builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
+COPY --from=rust-builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
+COPY --from=node-builder /iracing-stats-site/build /iracing-stats-site
 COPY static /static
 
 ARG IRACING_USER
@@ -34,6 +44,7 @@ ARG IRACING_TOKEN
 ENV IRACING_TOKEN=${IRACING_TOKEN}
 
 ENV IRACING_STATS_BASE_DIR=/iracing-stats-dir
+ENV IRACING_STATS_SITE_DIR=/iracing-stats-site
 
 EXPOSE 8000
 

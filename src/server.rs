@@ -1,3 +1,4 @@
+use std::env;
 use std::collections::HashMap;
 
 use rocket::fs::FileServer;
@@ -181,9 +182,15 @@ async fn api_v1_driver_stats(
 }
 
 pub async fn start_rocket_server() {
+    const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
+
+    let site_dir = match env::var(SITE_DIR_ENV_VAR) {
+        Ok(value) => value,
+        Err(_error) => "site/build".to_owned()
+    };
     let _result = rocket::build()
         // .mount("/static", FileServer::from("static"))
-        .mount("/", FileServer::from("site/build"))
+        .mount("/", FileServer::from(site_dir))
         .mount("/", routes![
             api_v1_irating_history,
             api_v1_car_track_usage_stats,
