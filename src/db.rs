@@ -583,7 +583,6 @@ pub fn query_driver_stats(driver_id: &DriverId) -> Option<DriverStats> {
     let mut stmt = con.prepare(sql.as_str()).unwrap();
 
     return stmt.query_row(&*params.as_params(), |row| {
-        // TODO get(0) may return an error resulting in a panic
         let name: String = row.get(0)?;
         let cust_id: i64 = row.get(1)?;
         let time: i64 = row.get(2)?;
@@ -593,6 +592,38 @@ pub fn query_driver_stats(driver_id: &DriverId) -> Option<DriverStats> {
             name, cust_id, time, laps, distance
         });
     }).ok();
+}
+
+pub struct CustomerName {
+    pub cust_id: i64,
+    pub name: String
+}
+
+pub fn query_customer_names(cust_ids: Vec<i64>) -> Vec<CustomerName> {
+    let con = create_db_connection();
+
+    let (sql, params) = Query::select()
+        .column((Driver::Table, Driver::DisplayName))
+        .column((Driver::Table, Driver::CustId))
+        .from(Driver::Table)
+        .and_where(Expr::col(Driver::CustId).is_in(cust_ids))
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        let name: String = row.get(0).unwrap();
+        let cust_id: i64 = row.get(1).unwrap();
+
+        values.push(CustomerName{
+            cust_id, name
+        });
+    }
+
+    return values;
 }
 
 pub fn rebuild_db_schema() {

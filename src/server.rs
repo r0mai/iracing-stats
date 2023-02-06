@@ -12,6 +12,7 @@ use crate::db::{
     query_track_usage,
     query_car_usage,
     query_driver_stats,
+    query_customer_names,
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -181,6 +182,30 @@ async fn api_v1_driver_stats(
     return None;
 }
 
+#[get("/api/v1/customer-names?<cust_ids>")]
+async fn api_v1_customer_names(
+    cust_ids: String) -> Option<Value>
+{
+    let cust_id_strs = cust_ids.split(";");
+    let mut cust_id_nums = vec![];
+    for str in cust_id_strs {
+        if let Ok(num) = str.parse::<i64>() {
+            cust_id_nums.push(num);
+        }
+    }
+
+    let names = query_customer_names(cust_id_nums);
+
+    let result = names.iter().map(|name| {
+        return json!({
+            "name": name.name,
+            "cust_id": name.cust_id
+        });
+    }).collect();
+
+    return Some(Value::Array(result));
+}
+
 pub async fn start_rocket_server() {
     const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
 
@@ -197,6 +222,7 @@ pub async fn start_rocket_server() {
             api_v1_track_usage_stats,
             api_v1_car_usage_stats,
             api_v1_driver_stats,
+            api_v1_customer_names
         ])
         .manage(IRacingClient::new())
         .launch().await.unwrap();
