@@ -184,7 +184,8 @@ async fn api_v1_driver_stats(
             stats_opt = query_driver_stats(&con, &driver_id);
         }
         if let Some(stats) = stats_opt {
-            let member_profile = iracing_client.get_member_profile(stats.cust_id).await;
+            // let member_profile = iracing_client.get_member_profile(stats.cust_id).await;
+            let member_profile = Value::Null;
 
             return Some(json!({
                 "name": stats.name,
