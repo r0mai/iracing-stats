@@ -48,4 +48,4 @@ ENV IRACING_STATS_SITE_DIR=/iracing-stats-site
 
 EXPOSE 8000
 
-CMD echo "Starting server" && ROCKET_ADDRESS=0.0.0.0 iracing-stats --server
+CMD echo "Starting server" && ROCKET_LOG_LEVEL=normal ROCKET_ADDRESS=0.0.0.0 iracing-stats --server
