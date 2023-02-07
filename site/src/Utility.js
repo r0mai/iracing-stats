@@ -19,3 +19,19 @@ export function svgRotate(angle) {
 export function svgPx(v) {
     return `${v}px`;
 }
+
+export function isDriverCustomerID(driver) {
+    return driver.startsWith("$");
+}
+
+export function extractCustomerID(driver) {
+    return driver.slice(1);
+}
+
+export function driverToQueryParam(driver) {
+    if (isDriverCustomerID(driver)) {
+        return "cust_id=" + extractCustomerID(driver);
+    } else {
+        return "driver_name=" + driver;
+    }
+}
