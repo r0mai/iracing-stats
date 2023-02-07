@@ -1,6 +1,8 @@
 use std::{fs, path::PathBuf, path::Path, io::Write, env};
+use r2d2_sqlite::SqliteConnectionManager;
 use serde_json::{self, Value};
 use rusqlite;
+use rusqlite::Connection;
 use chrono::{self, TimeZone};
 use zip::write::FileOptions;
 use lazy_static::lazy_static;
@@ -78,6 +80,14 @@ pub fn get_sessions_dir() -> &'static Path {
 
 pub fn create_db_connection() -> rusqlite::Connection {
     return rusqlite::Connection::open(get_sqlite_db_file()).unwrap();
+}
+
+pub type DbPool = r2d2::Pool<SqliteConnectionManager>;
+
+pub fn create_r2d2_db_connection_pool() -> DbPool {
+    let manager = SqliteConnectionManager::file(get_sqlite_db_file());
+    let pool = r2d2::Pool::builder().build(manager).unwrap();
+    return pool;
 }
 
 pub struct DbContext<'a> {
@@ -379,9 +389,7 @@ pub fn is_session_cached(subsession_id: i64) -> bool {
     return get_session_cache_path(subsession_id).exists();
 }
 
-pub fn query_irating_history(driver_id: &DriverId, category: CategoryType) -> Value {
-    let con = create_db_connection();
-
+pub fn query_irating_history(con: &Connection, driver_id: &DriverId, category: CategoryType) -> Value {
     let (sql, params) = Query::select()
         .column(Subsession::StartTime)
         .column(DriverResult::NewiRating)
@@ -426,9 +434,7 @@ pub struct TrackUsage {
     pub laps: i64,
     pub distance: f32,
 }
-pub fn query_track_usage(driver_id: &DriverId) -> Vec<TrackUsage> {
-    let con = create_db_connection();
-
+pub fn query_track_usage(con: &Connection, driver_id: &DriverId) -> Vec<TrackUsage> {
     let (sql, params) = Query::select()
         .column((Track::Table, Track::TrackName))
         .select_total_time()
@@ -471,9 +477,7 @@ pub struct CarUsage {
     pub distance: f32,
 }
 
-pub fn query_car_usage(driver_id: &DriverId) -> Vec<CarUsage> {
-    let con = create_db_connection();
-
+pub fn query_car_usage(con: &Connection, driver_id: &DriverId) -> Vec<CarUsage> {
     let (sql, params) = Query::select()
         .column((Car::Table, Car::CarName))
         .select_total_time()
@@ -515,9 +519,7 @@ pub struct CarTrackUsage {
     pub laps: i64
 }
 
-pub fn query_track_car_usage_matrix(driver_id: &DriverId) -> Vec<CarTrackUsage> {
-    let con = create_db_connection();
-
+pub fn query_track_car_usage_matrix(con: &Connection, driver_id: &DriverId) -> Vec<CarTrackUsage> {
     let (sql, params) = Query::select()
         .column((Car::Table, Car::CarName))
         .column((Track::Table, Track::TrackName))
@@ -564,9 +566,7 @@ pub struct DriverStats {
     pub distance: f32
 }
 
-pub fn query_driver_stats(driver_id: &DriverId) -> Option<DriverStats> {
-    let con = create_db_connection();
-
+pub fn query_driver_stats(con: &Connection, driver_id: &DriverId) -> Option<DriverStats> {
     let (sql, params) = Query::select()
         .column((Driver::Table, Driver::DisplayName))
         .column((Driver::Table, Driver::CustId))
@@ -599,9 +599,7 @@ pub struct CustomerName {
     pub name: String
 }
 
-pub fn query_customer_names(cust_ids: Vec<i64>) -> Vec<CustomerName> {
-    let con = create_db_connection();
-
+pub fn query_customer_names(con: &Connection, cust_ids: Vec<i64>) -> Vec<CustomerName> {
     let (sql, params) = Query::select()
         .column((Driver::Table, Driver::DisplayName))
         .column((Driver::Table, Driver::CustId))

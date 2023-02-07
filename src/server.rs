@@ -7,6 +7,8 @@ use rocket::State;
 use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
 use crate::db::{
+    DbPool,
+    create_r2d2_db_connection_pool,
     query_irating_history,
     query_track_car_usage_matrix,
     query_track_usage,
@@ -21,7 +23,8 @@ use crate::iracing_client::IRacingClient;
 async fn api_v1_irating_history(
     driver_name: Option<String>,
     cust_id: Option<i64>,
-    category: Option<String>) -> Option<Value>
+    category: Option<String>,
+    db_pool: &State<DbPool>) -> Option<Value>
 {
     let category_type = match category {
         Some(str) => CategoryType::from_string(str.as_str()).unwrap_or(CategoryType::Road),
@@ -29,7 +32,8 @@ async fn api_v1_irating_history(
     };
 
     if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
-        return Some(query_irating_history(&driver_id, category_type));
+        let con = db_pool.get().unwrap();
+        return Some(query_irating_history(&con, &driver_id, category_type));
     } else {
         return None;
     }
@@ -39,10 +43,12 @@ async fn api_v1_irating_history(
 #[get("/api/v1/track-usage-stats?<driver_name>&<cust_id>")]
 async fn api_v1_track_usage_stats(
     driver_name: Option<String>,
-    cust_id: Option<i64>) -> Option<Value>
+    cust_id: Option<i64>,
+    db_pool: &State<DbPool>) -> Option<Value>
 {
     if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
-        let raw_data = query_track_usage(&driver_id);
+        let con = db_pool.get().unwrap();
+        let raw_data = query_track_usage(&con, &driver_id);
 
         let values: Vec<Value> = raw_data.iter().map(|data| json!({
             "track_name": data.track_name,
@@ -60,10 +66,12 @@ async fn api_v1_track_usage_stats(
 #[get("/api/v1/car-usage-stats?<driver_name>&<cust_id>")]
 async fn api_v1_car_usage_stats(
     driver_name: Option<String>,
-    cust_id: Option<i64>) -> Option<Value>
+    cust_id: Option<i64>,
+    db_pool: &State<DbPool>) -> Option<Value>
 {
     if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
-        let raw_data = query_car_usage(&driver_id); 
+        let con = db_pool.get().unwrap();
+        let raw_data = query_car_usage(&con, &driver_id); 
 
         let values: Vec<Value> = raw_data.iter().map(|data| json!({
             "car_name": data.car_name,
@@ -80,10 +88,12 @@ async fn api_v1_car_usage_stats(
 #[get("/api/v1/car-track-usage-stats?<driver_name>&<cust_id>")]
 async fn api_v1_car_track_usage_stats(
     driver_name: Option<String>,
-    cust_id: Option<i64>) -> Option<Value>
+    cust_id: Option<i64>,
+    db_pool: &State<DbPool>) -> Option<Value>
 {
     if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
-        let raw_data = query_track_car_usage_matrix(&driver_id); 
+        let con = db_pool.get().unwrap();
+        let raw_data = query_track_car_usage_matrix(&con, &driver_id); 
 
         let mut car_idxs = HashMap::new();
         let mut track_idxs = HashMap::new();
@@ -164,10 +174,16 @@ fn transform_member_info(member_profile: &Value) -> Value {
 async fn api_v1_driver_stats(
     driver_name: Option<String>,
     cust_id: Option<i64>,
-    iracing_client: &State<IRacingClient>) -> Option<Value>
+    iracing_client: &State<IRacingClient>,
+    db_pool: &State<DbPool>) -> Option<Value>
 {
     if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
-        if let Some(stats) = query_driver_stats(&driver_id) {
+        let stats_opt;
+        {
+            let con = db_pool.get().unwrap();
+            stats_opt = query_driver_stats(&con, &driver_id);
+        }
+        if let Some(stats) = stats_opt {
             let member_profile = iracing_client.get_member_profile(stats.cust_id).await;
 
             return Some(json!({
@@ -184,7 +200,8 @@ async fn api_v1_driver_stats(
 
 #[get("/api/v1/customer-names?<cust_ids>")]
 async fn api_v1_customer_names(
-    cust_ids: String) -> Option<Value>
+    cust_ids: String,
+    db_pool: &State<DbPool>) -> Option<Value>
 {
     let cust_id_strs = cust_ids.split(";");
     let mut cust_id_nums = vec![];
@@ -194,7 +211,8 @@ async fn api_v1_customer_names(
         }
     }
 
-    let names = query_customer_names(cust_id_nums);
+    let con = db_pool.get().unwrap();
+    let names = query_customer_names(&con, cust_id_nums);
 
     let result = names.iter().map(|name| {
         return json!({
@@ -208,6 +226,8 @@ async fn api_v1_customer_names(
 
 pub async fn start_rocket_server() {
     const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
+
+    let db_pool = create_r2d2_db_connection_pool();
 
     let site_dir = match env::var(SITE_DIR_ENV_VAR) {
         Ok(value) => value,
@@ -225,5 +245,6 @@ pub async fn start_rocket_server() {
             api_v1_customer_names
         ])
         .manage(IRacingClient::new())
+        .manage(db_pool)
         .launch().await.unwrap();
 }

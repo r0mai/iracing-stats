@@ -61,7 +61,7 @@ function DriverList({drivers}) {
             {
                 driverViews.map((view) => {
                     return (
-                        <TabPanel key={view.driver} forceRender={true}>
+                        <TabPanel key={view.driver} forceRender={false}>
                             <DriverReport driver={view.driver}/>
                         </TabPanel>
                     );
