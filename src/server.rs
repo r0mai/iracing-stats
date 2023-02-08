@@ -247,5 +247,6 @@ pub async fn start_rocket_server() {
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)
+        .attach(crate::response_timer::ResponseTimer::new())
         .launch().await.unwrap();
 }
