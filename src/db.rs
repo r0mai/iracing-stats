@@ -606,7 +606,8 @@ pub struct DriverSession {
     pub license_category: CategoryType,
     pub start_time: String,
     pub event_type: EventType,
-    pub series_name: String
+    pub series_name: String,
+    pub simsession_number: i32,
 }
 
 pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<Vec<DriverSession>> {
@@ -624,8 +625,10 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
         .column((Subsession::Table, Subsession::StartTime))
         .column((Subsession::Table, Subsession::EventType))
         .column((Session::Table, Session::SeriesName))
+        .column((Simsession::Table, Simsession::SimsessionNumber))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
+        .join_driver_result_to_simsession()
         .join_subsession_to_session()
         .match_driver_id(driver_id, false)
         .build_rusqlite(SqliteQueryBuilder);
@@ -652,6 +655,7 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
             start_time: row.get(10).unwrap(),
             event_type: EventType::from_i32(row.get(11).unwrap()).ok()?,
             series_name: row.get(12).unwrap(),
+            simsession_number: row.get(13).unwrap(),
         });
     }
 

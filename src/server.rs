@@ -223,6 +223,7 @@ async fn api_v1_driver_sessions(
             "start_time": data.start_time,
             "event_type": data.event_type.to_db_type(),
             "series_name": data.series_name,
+            "simsession_number": data.simsession_number,
         })).collect();
 
         return Some(Value::Array(values));
