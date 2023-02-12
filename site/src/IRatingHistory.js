@@ -2,9 +2,16 @@ import { useD3 } from './hooks/useD3.js';
 import * as d3 from 'd3';
 import { svgTranslate, svgPx } from './Utility.js'
 
-function populateIratingHistoryRaceD3JSDiv(div, result) {
-    // preprocess data: add index field
-    result = result.map((d, idx) => ({...d, index: idx}));
+function populateIratingHistoryRaceD3JSDiv(div, sessions) {
+    let result = sessions.filter((session) => {
+        return (
+            session["new_irating"] !== -1 &&
+            session["event_type"] === 5 && // race
+            session["simsession_number"] === 0 &&
+            session["license_category"] === 2 // road
+        );
+    }).map((d, idx) => ({...d, index: idx})); // add index field
+    // TODO sort
 
     let margin = {top: 10, right: 30, bottom: 30, left: 60},
         width = 800 - margin.left - margin.right,
@@ -23,7 +30,7 @@ function populateIratingHistoryRaceD3JSDiv(div, result) {
         .range([0, width]);
 
     let y = d3.scaleLinear()
-        .domain(d3.extent(result, e => e["irating"]))
+        .domain(d3.extent(result, e => e["new_irating"]))
         .range([height, 0]);
     
     svg.append("g")
@@ -35,7 +42,7 @@ function populateIratingHistoryRaceD3JSDiv(div, result) {
 
     let line = d3.line()
         .x(d => x(d["index"]))
-        .y(d => y(d["irating"]));
+        .y(d => y(d["new_irating"]));
 
     svg.append("path")
         .datum(result)
@@ -59,9 +66,9 @@ function populateIratingHistoryRaceD3JSDiv(div, result) {
         let marker = getMarkerFromEvent(event);
         marker.setAttribute("opacity", 1)
         tooltip
-            .html("IRating: " + d["irating"])
+            .html("IRating: " + d["new_irating"])
             .style("left", svgPx(x(d["index"])+10))
-            .style("top", svgPx(y(d["irating"])))
+            .style("top", svgPx(y(d["new_irating"])))
             .style("visibility", "visible");
     }
     let mouseleave = function(event, d) {
@@ -89,19 +96,19 @@ function populateIratingHistoryRaceD3JSDiv(div, result) {
     points.append("circle")
         .attr("id", marker_id)
         .attr("cx", function(d) { return x(d["index"]); })
-        .attr("cy", function(d) { return y(d["irating"]); })
+        .attr("cy", function(d) { return y(d["new_irating"]); })
         .attr("r", 2)
         .attr("opacity", 0)
         .attr("stroke", "none")
         .attr("fill", "black");
 }
 
-function IRatingHistory({iratingHistory}) {
+function IRatingHistory({driverSessions}) {
     const ref = useD3(
         (root) => {
-            populateIratingHistoryRaceD3JSDiv(root, iratingHistory);
+            populateIratingHistoryRaceD3JSDiv(root, driverSessions);
         },
-        [iratingHistory]
+        [driverSessions]
     );
     
     return <div ref={ref}/>;

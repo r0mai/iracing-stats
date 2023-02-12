@@ -3,6 +3,13 @@ import DriverStats from './DriverStats.js'
 import IRatingHistory from './IRatingHistory.js'
 import { driverToQueryParam } from "./Utility.js";
 
+function preprocessDriverSessions(sessions) {
+    sessions.forEach(session => {
+        session['start_time'] = new Date(session['start_time']);
+    });
+    sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
+}
+
 function DriverReport({driver}) {
     let driverStatsElement;
     let iratingHistoryElement;
@@ -24,15 +31,16 @@ function DriverReport({driver}) {
     }
 
     {
-        let { data, error, isPending, run } = useFetch("/api/v1/irating-history?" + driverQueryParam, {headers});
+        let { data, error, isPending, run } = useFetch("/api/v1/driver-sessions?" + driverQueryParam, {headers});
 
-        let iratingHistory = data;
+        let driverSessions = data;
         if (isPending) {
             iratingHistoryElement = "...";
         } else if (error) {
             iratingHistoryElement = `Something went wront: ${error.message}`;
-        } else if (iratingHistory) {
-            iratingHistoryElement = <IRatingHistory iratingHistory={iratingHistory}/>;
+        } else if (driverSessions) {
+            preprocessDriverSessions(driverSessions);
+            iratingHistoryElement = <IRatingHistory driverSessions={driverSessions}/>;
         }
     }
 
