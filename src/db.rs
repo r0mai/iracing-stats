@@ -12,7 +12,6 @@ use sea_query::{
     Expr,
     Order,
     SqliteQueryBuilder,
-    Func,
 };
 use crate::schema::{
     Driver,
@@ -592,6 +591,71 @@ pub fn query_driver_stats(con: &Connection, driver_id: &DriverId) -> Option<Driv
             name, cust_id, time, laps, distance
         });
     }).ok();
+}
+
+pub struct DriverSession {
+    pub subsession_id: i64,
+    pub new_irating: i32,
+    pub new_cpi: f32,
+    pub incidents: i32,
+    pub laps_complete: i32,
+    pub average_lap: i64,
+    pub finish_position_in_class: i32,
+    pub car_id: i32,
+    pub track_id: i32,
+    pub license_category: CategoryType,
+    pub start_time: String,
+    pub event_type: EventType,
+    pub series_name: String
+}
+
+pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<Vec<DriverSession>> {
+    let (sql, params) = Query::select()
+        .column((DriverResult::Table, DriverResult::SubsessionId))
+        .column((DriverResult::Table, DriverResult::NewiRating))
+        .column((DriverResult::Table, DriverResult::NewCpi))
+        .column((DriverResult::Table, DriverResult::Incidents))
+        .column((DriverResult::Table, DriverResult::LapsComplete))
+        .column((DriverResult::Table, DriverResult::AverageLap))
+        .column((DriverResult::Table, DriverResult::FinishPositionInClass))
+        .column((DriverResult::Table, DriverResult::CarId))
+        .column((Subsession::Table, Subsession::TrackId))
+        .column((Subsession::Table, Subsession::LicenseCategoryId))
+        .column((Subsession::Table, Subsession::StartTime))
+        .column((Subsession::Table, Subsession::EventType))
+        .column((Session::Table, Session::SeriesName))
+        .from(DriverResult::Table)
+        .join_driver_result_to_subsession()
+        .join_subsession_to_session()
+        .match_driver_id(driver_id, false)
+        .build_rusqlite(SqliteQueryBuilder);
+
+    println!("{}", sql.as_str());
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        values.push(DriverSession{
+            subsession_id: row.get(0).unwrap(),
+            new_irating: row.get(1).unwrap(),
+            new_cpi: row.get(2).unwrap(),
+            incidents: row.get(3).unwrap(),
+            laps_complete: row.get(4).unwrap(),
+            average_lap: row.get(5).unwrap(),
+            finish_position_in_class: row.get(6).unwrap(),
+            car_id: row.get(7).unwrap(),
+            track_id: row.get(8).unwrap(),
+            license_category: CategoryType::from_i32(row.get(9).unwrap()).ok()?,
+            start_time: row.get(10).unwrap(),
+            event_type: EventType::from_i32(row.get(11).unwrap()).ok()?,
+            series_name: row.get(12).unwrap(),
+        });
+    }
+
+    return Some(values);
 }
 
 pub struct CustomerName {

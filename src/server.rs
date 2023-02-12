@@ -14,7 +14,7 @@ use crate::db::{
     query_track_usage,
     query_car_usage,
     query_driver_stats,
-    query_customer_names,
+    query_customer_names, query_driver_sessions,
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -199,6 +199,38 @@ async fn api_v1_driver_stats(
     return None;
 }
 
+#[get("/api/v1/driver-sessions?<driver_name>&<cust_id>")]
+async fn api_v1_driver_sessions(
+    driver_name: Option<String>,
+    cust_id: Option<i64>,
+    db_pool: &State<DbPool>) -> Option<Value>
+{
+    if let Some(driver_id) = DriverId::from_params(driver_name, cust_id) {
+        let con = db_pool.get().unwrap();
+        let raw_data = query_driver_sessions(&con, &driver_id)?;
+
+        let values: Vec<Value> = raw_data.iter().map(|data| json!({
+            "subsession_id": data.subsession_id,
+            "new_irating": data.new_irating,
+            "new_cpi": data.new_cpi,
+            "incidents": data.incidents,
+            "laps_complete": data.laps_complete,
+            "average_lap": data.average_lap,
+            "finish_position_in_class": data.finish_position_in_class,
+            "car_id": data.car_id,
+            "track_id": data.track_id,
+            "license_category": data.license_category.to_db_type(),
+            "start_time": data.start_time,
+            "event_type": data.event_type.to_db_type(),
+            "series_name": data.series_name,
+        })).collect();
+
+        return Some(Value::Array(values));
+    } else {
+        return None;
+    }
+}
+
 #[get("/api/v1/customer-names?<cust_ids>")]
 async fn api_v1_customer_names(
     cust_ids: String,
@@ -243,7 +275,8 @@ pub async fn start_rocket_server() {
             api_v1_track_usage_stats,
             api_v1_car_usage_stats,
             api_v1_driver_stats,
-            api_v1_customer_names
+            api_v1_customer_names,
+            api_v1_driver_sessions
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)

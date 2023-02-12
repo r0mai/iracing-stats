@@ -7,8 +7,17 @@ pub enum CategoryType {
 }
 
 impl CategoryType {
+    pub fn from_i32(i: i32) -> Result<Self, &'static str> {
+        return match i {
+            1 => Ok(CategoryType::Oval),
+            2 => Ok(CategoryType::Road),
+            3 => Ok(CategoryType::DirtOval),
+            4 => Ok(CategoryType::DirtRoad),
+            _ => Err("invalid category int")
+        }
+    }
     pub fn from_string(str: &str) -> Result<Self, &'static str> {
-        match str.to_lowercase().as_str() {
+        return match str.to_lowercase().as_str() {
             "oval" => Ok(CategoryType::Oval),
             "road" => Ok(CategoryType::Road),
             "dirtoval" => Ok(CategoryType::DirtOval),
