@@ -8,6 +8,7 @@ mod iracing_client;
 mod category_type;
 mod event_type;
 mod driverid;
+mod motec_xml;
 
 use clap::Parser;
 use std::fs;
@@ -52,7 +53,11 @@ struct Args {
 
     /// Start server
     #[arg(short = 's', long = "server")]
-    start_server: bool
+    start_server: bool,
+
+    /// Do the motec thing
+    #[arg(short = 'm', long = "motec")]
+    motec_thing: bool,
 }
 
 fn has_async(args: &Args) -> bool {
@@ -96,6 +101,9 @@ async fn main() {
 
     fs::create_dir_all(crate::db::get_sessions_dir()).unwrap();
 
+    if args.motec_thing {
+        crate::motec_xml::output_motec_track_xmls();
+    }
     if args.rebuild_db_schema {
         db::rebuild_db_schema();
     }
