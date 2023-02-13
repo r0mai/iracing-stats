@@ -32,10 +32,15 @@ pub fn output_motec_track_xmls() {
 
         let mut constants = XMLElement::new("MathConstants");
 
-        add_constant(&mut constants, "corners", &track["corners_per_lap"].as_i64().unwrap().to_string(), "");
-        add_constant(&mut constants, "pit speed", &track["pit_road_speed_limit"].as_i64().unwrap_or(0).to_string(), "km/h");
+        add_constant(&mut constants, "ai_enabled", &track["ai_enabled"].as_bool().unwrap().to_string(), "");
+        add_constant(&mut constants, "config_name", &track["config_name"].as_str().unwrap_or("").to_string(), "");
+        add_constant(&mut constants, "corners_per_lap", &track["corners_per_lap"].as_i64().unwrap().to_string(), "");
+        add_constant(&mut constants, "grid_stalls", &track["grid_stalls"].as_i64().unwrap_or(0).to_string(), "");
+        add_constant(&mut constants, "number_pitstalls", &track["number_pitstalls"].as_i64().unwrap_or(0).to_string(), "");
+        add_constant(&mut constants, "pit_road_speed_limit", &track["pit_road_speed_limit"].as_i64().unwrap_or(0).to_string(), "mph");
+        add_constant(&mut constants, "track_config_length", &track["track_config_length"].as_f64().unwrap().to_string(), "mile");
         add_constant(&mut constants, "track_id", &track["track_id"].as_i64().unwrap().to_string(), "");
-        add_constant(&mut constants, "track_length", &track["track_config_length"].as_f64().unwrap().to_string(), "km");
+        add_constant(&mut constants, "track_name", &track["track_name"].as_str().unwrap().to_string(), "");
 
         maths.add_child(constants);
         maths.write(xml_file).unwrap();
