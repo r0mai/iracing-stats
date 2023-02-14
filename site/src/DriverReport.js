@@ -65,6 +65,7 @@ function DriverReport({driver}) {
 
     return (
         <Box sx={{ width: "100%" }}>
+            {driverStatsElement}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabIndex} onChange={updateTabIndex}>
                     <Tab label="Road" />
