@@ -1,6 +1,7 @@
 import { useFetch } from "react-async";
 import DriverStats from './DriverStats.js'
 import IRatingHistory from './IRatingHistory.js'
+import IncidentHistory from './IncidentHistory.js'
 import { driverToQueryParam } from "./Utility.js";
 
 function preprocessDriverSessions(sessions) {
@@ -13,6 +14,7 @@ function preprocessDriverSessions(sessions) {
 function DriverReport({driver}) {
     let driverStatsElement;
     let iratingHistoryElement;
+    let incidentHistoryElement;
 
     let driverQueryParam = driverToQueryParam(driver);
 
@@ -41,6 +43,7 @@ function DriverReport({driver}) {
         } else if (driverSessions) {
             preprocessDriverSessions(driverSessions);
             iratingHistoryElement = <IRatingHistory driverSessions={driverSessions}/>;
+            incidentHistoryElement = <IncidentHistory driverSessions={driverSessions}/>;
         }
     }
 
@@ -48,6 +51,7 @@ function DriverReport({driver}) {
         <div>
             {driverStatsElement}
             {iratingHistoryElement}
+            {incidentHistoryElement}
         </div>
     );
 }

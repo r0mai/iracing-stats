@@ -1,7 +1,7 @@
 import { useD3 } from './hooks/useD3.js';
 import { linePlot } from './Plot.js';
 
-function plotIRatingHistory(div, sessions) {
+function plotIncidentHistory(div, sessions) {
     let filtered = sessions.filter((session) => {
         return (
             session["new_irating"] !== -1 &&
@@ -11,13 +11,13 @@ function plotIRatingHistory(div, sessions) {
         );
     });
 
-    linePlot(div, filtered, e => e["start_time"], e => e["new_irating"]);
+    linePlot(div, filtered, e => e["start_time"], e => e["new_cpi"]);
 }
 
-function IRatingHistory({driverSessions}) {
+function IncidentHistory({driverSessions}) {
     const ref = useD3(
         (root) => {
-            plotIRatingHistory(root, driverSessions);
+            plotIncidentHistory(root, driverSessions);
         },
         [driverSessions]
     );
@@ -25,4 +25,4 @@ function IRatingHistory({driverSessions}) {
     return <div ref={ref}/>;
 }
 
-export default IRatingHistory;
+export default IncidentHistory;
