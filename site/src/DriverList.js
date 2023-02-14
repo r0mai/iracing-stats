@@ -1,28 +1,13 @@
 import { useFetch } from "react-async";
 import { isDriverCustomerID, extractCustomerID } from './Utility';
 import DriverReport from './DriverReport';
+import TabPanel from "./TabPanel";
 import './DriverList.css'
 
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import * as React from 'react';
-
-function DriverReportTabPanel({children, value, index}) {
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-        >
-            {value === index && (
-                <div>
-                    {children}
-                </div>
-            )}
-        </div>
-    );
-}
 
 function DriverList({drivers}) {
 
@@ -82,9 +67,9 @@ function DriverList({drivers}) {
             {
                 driverViews.map((view, i) => {
                     return (
-                        <DriverReportTabPanel value={tabIndex} index={i}>
+                        <TabPanel value={tabIndex} index={i}>
                             <DriverReport driver={view.driver}/>
-                        </DriverReportTabPanel>
+                        </TabPanel>
                     );
                 })
             }

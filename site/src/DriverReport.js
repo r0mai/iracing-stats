@@ -8,7 +8,7 @@ import {
     Category_DirtRoad,
     Category_DirtOval
 } from './LicenseCategory.js';
-// import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import TabPanel from "./TabPanel";
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
@@ -19,22 +19,6 @@ function preprocessDriverSessions(sessions) {
         session['start_time'] = new Date(session['start_time']);
     });
     sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
-}
-
-function CategoryTabPanel({children, value, index}) {
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-        >
-            {value === index && (
-                <div>
-                    {children}
-                </div>
-            )}
-        </div>
-    );
 }
 
 function DriverReport({driver}) {
@@ -89,18 +73,18 @@ function DriverReport({driver}) {
                     <Tab label="Dirt Oval" />
                 </Tabs>
             </Box>
-            <CategoryTabPanel value={tabIndex} index={0}>
+            <TabPanel value={tabIndex} index={0}>
                 {roadReport}
-            </CategoryTabPanel>
-            <CategoryTabPanel value={tabIndex} index={1}>
+            </TabPanel>
+            <TabPanel value={tabIndex} index={1}>
                 {ovalReport}
-            </CategoryTabPanel>
-            <CategoryTabPanel value={tabIndex} index={2}>
+            </TabPanel>
+            <TabPanel value={tabIndex} index={2}>
                 {dirtRoadReport}
-            </CategoryTabPanel>
-            <CategoryTabPanel value={tabIndex} index={3}>
+            </TabPanel>
+            <TabPanel value={tabIndex} index={3}>
                 {dirtOvalReport}
-            </CategoryTabPanel>
+            </TabPanel>
         </Box>
 
     );
