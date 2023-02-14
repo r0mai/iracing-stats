@@ -633,8 +633,6 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
         .match_driver_id(driver_id, false)
         .build_rusqlite(SqliteQueryBuilder);
 
-    println!("{}", sql.as_str());
-
     let mut stmt = con.prepare(sql.as_str()).unwrap();
     let mut rows = stmt.query(&*params.as_params()).unwrap();
 
