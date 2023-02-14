@@ -1,8 +1,14 @@
 import { useFetch } from "react-async";
 import DriverStats from './DriverStats.js'
-import IRatingHistory from './IRatingHistory.js'
-import IncidentHistory from './IncidentHistory.js'
-import { driverToQueryParam } from "./Utility.js";
+import CategoryReport from './CategoryReport'
+import { driverToQueryParam } from './Utility.js';
+import {
+    Category_Road,
+    Category_Oval,
+    Category_DirtRoad,
+    Category_DirtOval
+} from './LicenseCategory.js';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 
 function preprocessDriverSessions(sessions) {
     sessions.forEach(session => {
@@ -13,8 +19,10 @@ function preprocessDriverSessions(sessions) {
 
 function DriverReport({driver}) {
     let driverStatsElement;
-    let iratingHistoryElement;
-    let incidentHistoryElement;
+    let roadReport;
+    let ovalReport;
+    let dirtRoadReport;
+    let dirtOvalReport;
 
     let driverQueryParam = driverToQueryParam(driver);
 
@@ -37,21 +45,39 @@ function DriverReport({driver}) {
 
         let driverSessions = data;
         if (isPending) {
-            iratingHistoryElement = "...";
         } else if (error) {
-            iratingHistoryElement = `Something went wront: ${error.message}`;
         } else if (driverSessions) {
             preprocessDriverSessions(driverSessions);
-            iratingHistoryElement = <IRatingHistory driverSessions={driverSessions}/>;
-            incidentHistoryElement = <IncidentHistory driverSessions={driverSessions}/>;
+            roadReport = <CategoryReport driverSessions={driverSessions} category={Category_Road}/>;
+            ovalReport = <CategoryReport driverSessions={driverSessions} category={Category_Oval}/>;
+            dirtRoadReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtRoad}/>;
+            dirtOvalReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtOval}/>;
         }
     }
 
     return (
         <div>
             {driverStatsElement}
-            {iratingHistoryElement}
-            {incidentHistoryElement}
+            <Tabs>
+                <TabList>
+                    <Tab>Road</Tab>
+                    <Tab>Oval</Tab>
+                    <Tab>Dirt Road</Tab>
+                    <Tab>Dirt Oval</Tab>
+                </TabList>
+                <TabPanel forceRender={false}>
+                    {roadReport}
+                </TabPanel>
+                <TabPanel forceRender={false}>
+                    {ovalReport}
+                </TabPanel>
+                <TabPanel forceRender={false}>
+                    {dirtRoadReport}
+                </TabPanel>
+                <TabPanel forceRender={false}>
+                    {dirtOvalReport}
+                </TabPanel>
+            </Tabs>
         </div>
     );
 }
