@@ -1,8 +1,28 @@
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import { useFetch } from "react-async";
 import { isDriverCustomerID, extractCustomerID } from './Utility';
 import DriverReport from './DriverReport';
 import './DriverList.css'
+
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
+import * as React from 'react';
+
+function DriverReportTabPanel({children, value, index}) {
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+        >
+            {value === index && (
+                <div>
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+}
 
 function DriverList({drivers}) {
 
@@ -45,29 +65,30 @@ function DriverList({drivers}) {
         }
     }
 
+    const [tabIndex, setTabIndex] = React.useState(0);
+    let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
+
     return (
-        <Tabs>
-            <TabList>
-                {
-                    driverViews.map((view) => {
-                        return (
-                            <Tab key={view.driver}>
-                                {view.displayName}
-                            </Tab>
-                        );
-                    })
-                }
-            </TabList>
+        <Box sx={{ flexGrow: 1, bgcolor: 'background.paper', display: 'flex', height: '100%' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs value={tabIndex} onChange={updateTabIndex} orientation="vertical" variant="scrollable">
+                    {
+                        driverViews.map((view) => 
+                            <Tab label={view.displayName} key={view.driver} />
+                        )
+                    }
+                </Tabs>
+            </Box>
             {
-                driverViews.map((view) => {
+                driverViews.map((view, i) => {
                     return (
-                        <TabPanel key={view.driver} forceRender={false}>
+                        <DriverReportTabPanel value={tabIndex} index={i}>
                             <DriverReport driver={view.driver}/>
-                        </TabPanel>
+                        </DriverReportTabPanel>
                     );
                 })
             }
-        </Tabs>
+        </Box>
     );
 }
 

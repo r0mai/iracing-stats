@@ -29,9 +29,9 @@ function CategoryTabPanel({children, value, index}) {
             id={`simple-tabpanel-${index}`}
         >
             {value === index && (
-                <Box sx={{ p: 3 }}>
+                <div>
                     {children}
-                </Box>
+                </div>
             )}
         </div>
     );
@@ -44,7 +44,6 @@ function DriverReport({driver}) {
     let dirtRoadReport;
     let dirtOvalReport;
 
-    const [tabIndex, setTabIndex] = React.useState(0);
 
     let driverQueryParam = driverToQueryParam(driver);
 
@@ -77,6 +76,7 @@ function DriverReport({driver}) {
         }
     }
 
+    const [tabIndex, setTabIndex] = React.useState(0);
     let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
 
     return (
@@ -104,34 +104,6 @@ function DriverReport({driver}) {
         </Box>
 
     );
-
-    /*
-    return (
-        <div>
-            {driverStatsElement}
-            <Tabs>
-                <TabList>
-                    <Tab>Road</Tab>
-                    <Tab>Oval</Tab>
-                    <Tab>Dirt Road</Tab>
-                    <Tab>Dirt Oval</Tab>
-                </TabList>
-                <TabPanel forceRender={false}>
-                    {roadReport}
-                </TabPanel>
-                <TabPanel forceRender={false}>
-                    {ovalReport}
-                </TabPanel>
-                <TabPanel forceRender={false}>
-                    {dirtRoadReport}
-                </TabPanel>
-                <TabPanel forceRender={false}>
-                    {dirtOvalReport}
-                </TabPanel>
-            </Tabs>
-        </div>
-    );
-    */
 }
 
 export default DriverReport;
