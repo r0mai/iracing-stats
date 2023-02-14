@@ -8,7 +8,11 @@ import {
     Category_DirtRoad,
     Category_DirtOval
 } from './LicenseCategory.js';
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+// import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
+import * as React from 'react';
 
 function preprocessDriverSessions(sessions) {
     sessions.forEach(session => {
@@ -17,12 +21,30 @@ function preprocessDriverSessions(sessions) {
     sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
 }
 
+function CategoryTabPanel({children, value, index}) {
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    );
+}
+
 function DriverReport({driver}) {
     let driverStatsElement;
     let roadReport;
     let ovalReport;
     let dirtRoadReport;
     let dirtOvalReport;
+
+    const [tabIndex, setTabIndex] = React.useState(0);
 
     let driverQueryParam = driverToQueryParam(driver);
 
@@ -55,6 +77,35 @@ function DriverReport({driver}) {
         }
     }
 
+    let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
+
+    return (
+        <Box sx={{ width: "100%" }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs value={tabIndex} onChange={updateTabIndex}>
+                    <Tab label="Road" />
+                    <Tab label="Oval" />
+                    <Tab label="Dirt Road" />
+                    <Tab label="Dirt Oval" />
+                </Tabs>
+            </Box>
+            <CategoryTabPanel value={tabIndex} index={0}>
+                {roadReport}
+            </CategoryTabPanel>
+            <CategoryTabPanel value={tabIndex} index={1}>
+                {ovalReport}
+            </CategoryTabPanel>
+            <CategoryTabPanel value={tabIndex} index={2}>
+                {dirtRoadReport}
+            </CategoryTabPanel>
+            <CategoryTabPanel value={tabIndex} index={3}>
+                {dirtOvalReport}
+            </CategoryTabPanel>
+        </Box>
+
+    );
+
+    /*
     return (
         <div>
             {driverStatsElement}
@@ -80,6 +131,7 @@ function DriverReport({driver}) {
             </Tabs>
         </div>
     );
+    */
 }
 
 export default DriverReport;

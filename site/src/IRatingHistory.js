@@ -22,7 +22,9 @@ function IRatingHistory({driverSessions, category}) {
         [driverSessions]
     );
     
-    return <div ref={ref}/>;
+    return (
+        <div ref={ref}/>
+    );
 }
 
 export default IRatingHistory;
