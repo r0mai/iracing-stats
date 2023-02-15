@@ -31,7 +31,7 @@ RUN npm run build
 FROM debian:bullseye-slim
 # no clue what this does, but it doesn't work
 # RUN apt-get update && apt-get install -y extra-runtime-dependencies && rm -rf /var/lib/apt/lists/*
-RUN apt-get update && apt-get install -y ca-certificates curl procps
+RUN apt-get update && apt-get install -y ca-certificates curl procps cron
 
 # TODO it's a bit ugly to copy this to /usr/local
 COPY --from=rust-builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
@@ -48,4 +48,6 @@ ENV IRACING_STATS_SITE_DIR=/iracing-stats-site
 
 EXPOSE 8000
 
-CMD echo "Starting server" && ROCKET_LOG_LEVEL=normal ROCKET_ADDRESS=0.0.0.0 iracing-stats --server
+RUN crontab -l | { cat; echo "0 * * * * iracing-stats -D 'Andras Kucsma'"; } | crontab -
+
+CMD echo "Starting cron" && cron && echo "Starting server" && ROCKET_LOG_LEVEL=normal ROCKET_ADDRESS=0.0.0.0 iracing-stats --server
