@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { curveNatural } from 'd3';
 import { svgTranslate, svgPx } from './Utility.js'
 
 export function linePlot(
@@ -40,6 +41,7 @@ export function linePlot(
         .call(d3.axisLeft(y));
 
     let line = d3.line()
+        .curve(d3.curveStepAfter)
         .x(d => x(xFunc(d)))
         .y(d => y(yFunc(d)));
 
