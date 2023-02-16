@@ -28,7 +28,7 @@ CREATE TABLE driver_result(
     new_cpi REAL NOT NULL,
     incidents INTEGER NOT NULL,
     laps_complete INTEGER NOT NULL,
-    average_lap INTEGER NOT NULL
+    average_lap INTEGER NOT NULL,
     car_id INTEGER NOT NULL,
     finish_position INTEGER NOT NULL, /* 0 based! */
     finish_position_in_class INTEGER NOT NULL, /* 0 based! */
