@@ -31,6 +31,10 @@ struct Args {
     #[arg(short = 'D', long)]
     sync_drivers_to_db: Vec<String>,
 
+    /// Sync cust_ids to db
+    #[arg(short = 'C', long)]
+    sync_cust_ids_to_db: Vec<i64>,
+
     /// Sync car infos
     #[arg(short = 'c', long)]
     sync_car_infos: bool,
@@ -63,6 +67,7 @@ struct Args {
 fn has_async(args: &Args) -> bool {
     return
         !args.sync_drivers_to_db.is_empty() ||
+        !args.sync_cust_ids_to_db.is_empty() ||
         args.season_year.is_some() ||
         args.sync_car_infos ||
         args.sync_track_infos;
@@ -79,6 +84,10 @@ async fn tokio_main(args: &Args) {
 
     if !args.sync_drivers_to_db.is_empty() {
         iracing_client::sync_drivers_to_db(&mut client, &args.sync_drivers_to_db).await;
+    }
+
+    if !args.sync_cust_ids_to_db.is_empty() {
+        iracing_client::sync_cust_ids_to_db(&mut client, &args.sync_cust_ids_to_db).await;
     }
 
     if args.season_year.is_some() && args.season_quarter.is_some() {

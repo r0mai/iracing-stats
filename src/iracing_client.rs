@@ -1,4 +1,9 @@
-use std::{collections::HashMap, sync::atomic::AtomicI64, sync::atomic::Ordering};
+use std::{
+    collections::HashMap,
+    collections::HashSet,
+    sync::atomic::AtomicI64,
+    sync::atomic::Ordering
+};
 use serde_json;
 use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
@@ -32,7 +37,6 @@ impl IRacingClient {
             let response = self.client.get(&url).query(&params).send().await.unwrap();
             let status = response.status();
             let headers = response.headers();
-
             let rl_limit = headers.get("x-ratelimit-limit");
             let rl_remaining = headers.get("x-ratelimit-remaining");
             let rl_reset = headers.get("x-ratelimit-reset");
@@ -267,17 +271,27 @@ pub async fn sync_car_infos(client: &mut IRacingClient) {
     crate::db::write_cached_car_infos_json(&data);
 }
 
+pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>) {
+    let mut subsession_ids = HashSet::<i64>::new();
+
+    for cust_id in cust_ids {
+        subsession_ids.extend(&mut find_non_cached_subsessions_for_driver(client, *cust_id).await.iter());
+    }
+
+    let subsession_ids_vec = Vec::from_iter(subsession_ids.into_iter());
+    sync_subsessions(client, &subsession_ids_vec).await;
+    add_subsessions_to_db(&subsession_ids_vec);
+}
+
 pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<String>) {
-    let mut subsession_ids = Vec::new();
+    let mut cust_ids = Vec::new();
 
     for driver_name in driver_names {
         let cust_id = client.get_cust_id(driver_name).await;
-        println!("Cust id {cust_id}");
-
-        subsession_ids.append(&mut find_non_cached_subsessions_for_driver(client, cust_id).await);
+        println!("{driver_name} -> {cust_id}");
+        cust_ids.push(cust_id)
     }
-    sync_subsessions(client, &subsession_ids).await;
-    add_subsessions_to_db(&subsession_ids);
+    sync_cust_ids_to_db(client, &cust_ids).await;
 }
 
 pub async fn sync_season_to_db(client: &mut IRacingClient, year: i32, quarter: i32, week: Option<i32>) {
