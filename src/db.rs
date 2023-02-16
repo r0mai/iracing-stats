@@ -217,6 +217,10 @@ fn build_db_indices(tx: &rusqlite::Transaction) {
     tx.execute_batch(indicies_sql).unwrap();
 }
 
+fn miles_to_km(miles: f64) -> f64 {
+    return miles * 1.60934;
+}
+
 fn add_track_to_db(ctx: &mut DbContext, track: &Value) {
     ctx.insert_track_statement.execute((
         track["package_id"].as_i64().unwrap(),
@@ -226,7 +230,7 @@ fn add_track_to_db(ctx: &mut DbContext, track: &Value) {
         track["track_id"].as_i64().unwrap(),
         track["package_id"].as_i64().unwrap(),
         track["config_name"].as_str().unwrap_or(""),
-        track["track_config_length"].as_f64().unwrap()
+        miles_to_km(track["track_config_length"].as_f64().unwrap())
     )).unwrap();
 }
 
