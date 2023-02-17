@@ -2,7 +2,6 @@ import { useFetch } from "react-async";
 import { isDriverCustomerID, extractCustomerID } from './Utility';
 import DriverReport from './DriverReport';
 import TabPanel from "./TabPanel";
-import './DriverList.css'
 
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
