@@ -46,7 +46,7 @@ CREATE TABLE track_config(
     track_id INTEGER PRIMARY KEY NOT NULL,
     package_id INTEGER NOT NULL, /* a.k.a track_id */
     config_name TEXT NOT NULL,
-    track_config_length REAL NOT NULL
+    track_config_length REAL NOT NULL /* converted to km during db build */
 );
 
 CREATE TABLE track(

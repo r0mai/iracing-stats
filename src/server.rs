@@ -14,7 +14,10 @@ use crate::db::{
     query_track_usage,
     query_car_usage,
     query_driver_stats,
-    query_customer_names, query_driver_sessions,
+    query_customer_names,
+    query_driver_sessions,
+    query_track_data,
+    query_car_data
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -232,6 +235,40 @@ async fn api_v1_driver_sessions(
     }
 }
 
+#[get("/api/v1/track-car-data")]
+async fn api_v1_track_car_data(db_pool: &State<DbPool>) -> Value {
+    // TODO caching
+    let con = db_pool.get().unwrap();
+
+    let track_data = query_track_data(&con);
+    let car_data = query_car_data(&con);
+
+    let mut tracks = Vec::new();
+    for track in track_data {
+        tracks.push(json!({
+            "package_id": track.package_id,
+            "track_id": track.track_id,
+            "track_name": track.track_name,
+            "config_name": track.config_name,
+            "track_config_length": track.track_config_length,
+        }));
+    }
+
+    let mut cars = Vec::new();
+    for car in car_data {
+        cars.push(json!({
+            "car_id": car.car_id,
+            "car_name": car.car_name,
+            "car_name_abbreviated": car.car_name_abbreviated
+        }));
+    }
+
+    return json!({
+        "tracks": tracks,
+        "cars": cars
+    });
+}
+
 #[get("/api/v1/customer-names?<cust_ids>")]
 async fn api_v1_customer_names(
     cust_ids: String,
@@ -277,7 +314,8 @@ pub async fn start_rocket_server() {
             api_v1_car_usage_stats,
             api_v1_driver_stats,
             api_v1_customer_names,
-            api_v1_driver_sessions
+            api_v1_driver_sessions,
+            api_v1_track_car_data
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)

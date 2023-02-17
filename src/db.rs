@@ -694,6 +694,83 @@ pub fn query_customer_names(con: &Connection, cust_ids: Vec<i64>) -> Vec<Custome
     return values;
 }
 
+pub struct CarData {
+    pub car_id: i64,
+    pub car_name: String,
+    pub car_name_abbreviated: String
+}
+
+pub fn query_car_data(con: &Connection) -> Vec<CarData> {
+    let (sql, params) = Query::select()
+        .column((Car::Table, Car::CarId))
+        .column((Car::Table, Car::CarName))
+        .column((Car::Table, Car::CarNameAbbreviated))
+        .from(Car::Table)
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        let car_id: i64 = row.get(0).unwrap();
+        let car_name: String = row.get(1).unwrap();
+        let car_name_abbreviated = row.get(2).unwrap();
+
+        values.push(CarData{
+            car_id,
+            car_name,
+            car_name_abbreviated
+        });
+    }
+
+    return values;
+}
+
+pub struct TrackData {
+    pub package_id: i64,
+    pub track_id: i64,
+    pub track_name: String,
+    pub config_name: String,
+    pub track_config_length: f32
+}
+
+pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
+    let (sql, params) = Query::select()
+        .column((Track::Table, Track::PackageId))
+        .column((TrackConfig::Table, TrackConfig::TrackId))
+        .column((Track::Table, Track::TrackName))
+        .column((TrackConfig::Table, TrackConfig::ConfigName))
+        .column((TrackConfig::Table, TrackConfig::TrackConfigLength))
+        .from(TrackConfig::Table)
+        .join_track_config_to_track()
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        let package_id: i64 = row.get(0).unwrap();
+        let track_id: i64 = row.get(1).unwrap();
+        let track_name: String = row.get(2).unwrap();
+        let config_name: String = row.get(3).unwrap();
+        let track_config_length: f32 = row.get(4).unwrap();
+
+        values.push(TrackData{
+            package_id,
+            track_id,
+            track_name,
+            config_name,
+            track_config_length
+        });
+    }
+
+    return values;
+}
+
 pub fn rebuild_db_schema() {
     fs::remove_file(get_sqlite_db_file()).ok(); // ignore error
 
