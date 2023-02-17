@@ -27,9 +27,20 @@ function DriverList({drivers}) {
         driverViews.push(view);
     }
 
+    let headers = { Accept: "application/json" }
+
+    let trackCarData;
+    {
+        let { data, error, isPending, run } = useFetch("/api/v1/track-car-data", {headers});
+        if (isPending) {
+        } else if (error) {
+        } else if (data) {
+            trackCarData = data;
+        }
+    }
+
     // conditional useFetch is not allowed
     /*if (custIDs.length != 0)*/ {
-        let headers = { Accept: "application/json" }
         let { data, error, isPending, run } = useFetch("/api/v1/customer-names?cust_ids=" + custIDs.join(';'), {headers});
 
         let custNames = data;
@@ -67,7 +78,7 @@ function DriverList({drivers}) {
                 driverViews.map((view, i) => {
                     return (
                         <TabPanel value={tabIndex} index={i}>
-                            <DriverReport driver={view.driver}/>
+                            <DriverReport driver={view.driver} trackCarData={trackCarData}/>
                         </TabPanel>
                     );
                 })

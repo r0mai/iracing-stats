@@ -1,6 +1,7 @@
 import { useFetch } from "react-async";
-import DriverStats from './DriverStats.js'
-import CategoryReport from './CategoryReport'
+import DriverStats from './DriverStats.js';
+import CategoryReport from './CategoryReport.js';
+import CarUsage from './CarUsage.js';
 import { driverToQueryParam } from './Utility.js';
 import {
     Category_Road,
@@ -21,12 +22,14 @@ function preprocessDriverSessions(sessions) {
     sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
 }
 
-function DriverReport({driver}) {
+function DriverReport({driver, trackCarData}) {
     let driverStatsElement;
     let roadReport;
     let ovalReport;
     let dirtRoadReport;
     let dirtOvalReport;
+
+    let carUsage;
 
 
     let driverQueryParam = driverToQueryParam(driver);
@@ -57,6 +60,9 @@ function DriverReport({driver}) {
             ovalReport = <CategoryReport driverSessions={driverSessions} category={Category_Oval}/>;
             dirtRoadReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtRoad}/>;
             dirtOvalReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtOval}/>;
+            if (trackCarData) {
+                carUsage = <CarUsage driverSessions={driverSessions} trackCarData={trackCarData}/>
+            }
         }
     }
 
@@ -66,6 +72,7 @@ function DriverReport({driver}) {
     return (
         <Box sx={{ width: "100%" }}>
             {driverStatsElement}
+            {carUsage}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabIndex} onChange={updateTabIndex}>
                     <Tab label="Road" />
