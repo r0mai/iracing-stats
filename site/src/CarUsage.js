@@ -55,7 +55,7 @@ function CarUsage({driverSessions, trackCarData}) {
         (root) => {
             plotCarUsageTime(root, carUsage);
         },
-        [carUsage]
+        [driverSessions, trackCarData]
     );
     
     return <div ref={ref}/>;
