@@ -50,7 +50,7 @@ function DriverList({drivers}) {
             for (let view of driverViews) {
                 if (view.custID) {
                     for (let custName of custNames) {
-                        if (custName["cust_id"] === view.custID) {
+                        if (custName["cust_id"].toString() === view.custID) {
                             view.displayName = custName["name"];
                             break;
                         }
