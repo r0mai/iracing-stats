@@ -6,15 +6,10 @@ import '@fontsource/roboto/700.css';
 import _default from 'react-async';
 import './App.css';
 import DriverList from './DriverList.js';
+import { theme } from './Theme.js';
 
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-
-let darkTheme = createTheme({
-    palette: {
-        mode: "dark"
-    }
-});
 
 function App() {
     let paramString = window.location.search.split('?')[1];
@@ -26,7 +21,7 @@ function App() {
     }
     let drivers = urlDrivers.split(';');
     return (
-        <ThemeProvider theme={darkTheme}>
+        <ThemeProvider theme={theme}>
             <CssBaseline />
             <DriverList drivers={drivers}/>
         </ThemeProvider>

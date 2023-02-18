@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
-import { svgTranslate, svgPx } from './Utility.js'
+import { svgTranslate, svgPx } from './Utility.js';
+import { theme } from './Theme.js';
 
 export function linePlot(
     div,
@@ -161,6 +162,8 @@ export function verticalBarChart(
                 .attr("font-size", y.bandwidth() * 0.8)
                 .attr("dx", "0.5em")
                 .attr("dy", "0.9em")
+                .attr("fill", theme.palette.text.primary)
+                // .attr("fill-opacity", 0.7)
                 .text(d => xTickFormat(xFunc(d)))
         });
             
