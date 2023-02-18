@@ -7,6 +7,15 @@ import _default from 'react-async';
 import './App.css';
 import DriverList from './DriverList.js';
 
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+let darkTheme = createTheme({
+    palette: {
+        mode: "dark"
+    }
+});
+
 function App() {
     let paramString = window.location.search.split('?')[1];
     let queryString = new URLSearchParams(paramString);
@@ -17,7 +26,10 @@ function App() {
     }
     let drivers = urlDrivers.split(';');
     return (
-        <DriverList drivers={drivers}/>
+        <ThemeProvider theme={darkTheme}>
+            <CssBaseline />
+            <DriverList drivers={drivers}/>
+        </ThemeProvider>
     );
 }
 

@@ -64,7 +64,7 @@ function DriverList({drivers}) {
     let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
 
     return (
-        <Box sx={{ flexGrow: 1, bgcolor: 'background.paper', display: 'flex', height: '100%' }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', height: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabIndex} onChange={updateTabIndex} orientation="vertical" variant="scrollable">
                     {
