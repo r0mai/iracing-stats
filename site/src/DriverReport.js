@@ -2,6 +2,7 @@ import { useFetch } from "react-async";
 import DriverStats from './DriverStats.js';
 import CategoryReport from './CategoryReport.js';
 import CarUsage from './CarUsage.js';
+import TrackUsage from './TrackUsage.js';
 import { driverToQueryParam } from './Utility.js';
 import {
     Category_Road,
@@ -30,7 +31,7 @@ function DriverReport({driver, trackCarData}) {
     let dirtOvalReport;
 
     let carUsage;
-
+    let trackUsage;
 
     let driverQueryParam = driverToQueryParam(driver);
 
@@ -62,6 +63,7 @@ function DriverReport({driver, trackCarData}) {
             dirtOvalReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtOval}/>;
             if (trackCarData) {
                 carUsage = <CarUsage driverSessions={driverSessions} trackCarData={trackCarData}/>
+                trackUsage = <TrackUsage driverSessions={driverSessions} trackCarData={trackCarData}/>
             }
         }
     }
@@ -73,6 +75,7 @@ function DriverReport({driver, trackCarData}) {
         <Box sx={{ width: "100%" }}>
             {driverStatsElement}
             {carUsage}
+            {trackUsage}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabIndex} onChange={updateTabIndex}>
                     <Tab label="Road" />

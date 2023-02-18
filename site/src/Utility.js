@@ -35,3 +35,19 @@ export function driverToQueryParam(driver) {
         return "driver_name=" + driver;
     }
 }
+
+export function mapifyTrackData(tracks) {
+    let trackMap = {};
+    tracks.forEach(track => {
+        trackMap[track["track_id"]] = track;
+    });
+    return trackMap;
+}
+
+export function mapifyCarData(cars) {
+    let carMap = {};
+    cars.forEach(car => {
+        carMap[car["car_id"]] = car;
+    });
+    return carMap;
+}

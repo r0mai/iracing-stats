@@ -1,18 +1,10 @@
 import { useD3 } from './hooks/useD3.js';
 import { verticalBarChart } from './Plot.js';
-import { toHours, round } from './Utility.js';
+import { toHours, round, mapifyCarData, mapifyTrackData } from './Utility.js';
 
 function collectCarUsage(sessions, trackCarData) {
-    // TODO factor this out
-    let trackMap = {};
-    trackCarData["tracks"].forEach(track => {
-        trackMap[track["track_id"]] = track;
-    });
-
-    let carMap = {};
-    trackCarData["cars"].forEach(car => {
-        carMap[car["car_id"]] = car;
-    });
+    let trackMap = mapifyTrackData(trackCarData["tracks"]);
+    let carMap = mapifyCarData(trackCarData["cars"]);
 
     let carUsage = {};
     sessions.forEach(session => {
