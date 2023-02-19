@@ -32,11 +32,7 @@ function DriverList({drivers}) {
     let trackCarData;
     {
         let { data, error, isPending, run } = useFetch("/api/v1/track-car-data", {headers});
-        if (isPending) {
-        } else if (error) {
-        } else if (data) {
-            trackCarData = data;
-        }
+        trackCarData = data;
     }
 
     // conditional useFetch is not allowed
@@ -44,9 +40,7 @@ function DriverList({drivers}) {
         let { data, error, isPending, run } = useFetch("/api/v1/customer-names?cust_ids=" + custIDs.join(';'), {headers});
 
         let custNames = data;
-        if (isPending) {
-        } else if (error) {
-        } else if (custNames) {
+        if (custNames) {
             for (let view of driverViews) {
                 if (view.custID) {
                     for (let custName of custNames) {

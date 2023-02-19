@@ -1,7 +1,27 @@
 import './DriverStats.css'
-import { toHours, round } from './Utility.js'
+import { toHours, round, mapifyTrackData } from './Utility.js'
 
-function DriverStats({driverStats, driverName}) {
+function calcGlobalStats(sessions, trackCarData) {
+    let trackMap = mapifyTrackData(trackCarData["tracks"]);
+
+    let time = 0;
+    let distance = 0;
+    let laps = 0;
+    sessions.forEach(session => {
+        time += session["average_lap"] * session["laps_complete"];
+        distance += trackMap[session["track_id"]]["track_config_length"] * session["laps_complete"];
+        laps += session["laps_complete"];
+    });
+
+    return {
+        time: time,
+        distance: distance,
+        laps: laps
+    };
+}
+
+function DriverStats({driverSessions, trackCarData, driverName}) {
+    let globalStats = calcGlobalStats(driverSessions, trackCarData);
     return (
         <table class="driver-stats-table">
             <tbody>
@@ -15,15 +35,15 @@ function DriverStats({driverStats, driverName}) {
                 </tr>
                 <tr>
                     <td>Total laps:</td>
-                    <td>{driverStats["laps"]}</td>
+                    <td>{globalStats.laps}</td>
                 </tr>
                 <tr>
                     <td>Total time:</td>
-                    <td>{round(toHours(driverStats["time"]), 1) + "h"}</td>
+                    <td>{round(toHours(globalStats.time), 1) + "h"}</td>
                 </tr>
                 <tr>
                     <td>Total distance:</td>
-                    <td>{round(driverStats["distance"], 1) + "km"}</td>
+                    <td>{round(globalStats.distance, 1) + "km"}</td>
                 </tr>
             </tbody>
         </table>

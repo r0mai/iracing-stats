@@ -35,27 +35,12 @@ function DriverReport({driver, driverName, trackCarData}) {
 
     let driverQueryParam = driverToQueryParam(driver);
 
-    let headers = { Accept: "application/json" }
     {
-        let { data, error, isPending, run } = useFetch("/api/v1/driver-stats?" + driverQueryParam, {headers});
-
-        let driverStats = data;
-        if (isPending) {
-            driverStatsElement = "...";
-        } else if (error) {
-            driverStatsElement = `Something went wront: ${error.message}`;
-        } else if (driverStats) {
-            driverStatsElement = <DriverStats driverStats={driverStats} driverName={driverName}/>;
-        }
-    }
-
-    {
+        let headers = { Accept: "application/json" }
         let { data, error, isPending, run } = useFetch("/api/v1/driver-info?" + driverQueryParam, {headers});
 
         let driverInfo = data;
-        if (isPending) {
-        } else if (error) {
-        } else if (driverInfo) {
+        if (driverInfo) {
             let driverSessions = driverInfo["sessions"];
             preprocessDriverSessions(driverSessions);
             roadReport = <CategoryReport driverSessions={driverSessions} category={Category_Road}/>;
@@ -65,6 +50,7 @@ function DriverReport({driver, driverName, trackCarData}) {
             if (trackCarData) {
                 carUsage = <CarUsage driverSessions={driverSessions} trackCarData={trackCarData}/>
                 trackUsage = <TrackUsage driverSessions={driverSessions} trackCarData={trackCarData}/>
+                driverStatsElement = <DriverStats driverSessions={driverSessions} trackCarData={trackCarData} driverName={driverName}/>;
             }
         }
     }
