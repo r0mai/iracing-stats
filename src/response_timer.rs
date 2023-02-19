@@ -21,7 +21,7 @@ impl Fairing for ResponseTimer {
         request.local_cache(|| std::time::Instant::now());
     }
 
-    async fn on_response<'r>(&self, request: &'r Request<'_>, response: &mut rocket::Response<'r>) {
+    async fn on_response<'r>(&self, request: &'r Request<'_>, _response: &mut rocket::Response<'r>) {
         let start_time = request.local_cache(|| std::time::Instant::now());
         let end_time = start_time.elapsed();
 
