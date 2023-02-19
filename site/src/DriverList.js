@@ -78,7 +78,7 @@ function DriverList({drivers}) {
                 driverViews.map((view, i) => {
                     return (
                         <TabPanel value={tabIndex} index={i}>
-                            <DriverReport driver={view.driver} trackCarData={trackCarData}/>
+                            <DriverReport driver={view.driver} driverName={view.displayName} trackCarData={trackCarData}/>
                         </TabPanel>
                     );
                 })

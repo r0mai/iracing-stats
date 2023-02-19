@@ -23,7 +23,7 @@ function preprocessDriverSessions(sessions) {
     sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
 }
 
-function DriverReport({driver, trackCarData}) {
+function DriverReport({driver, driverName, trackCarData}) {
     let driverStatsElement;
     let roadReport;
     let ovalReport;
@@ -45,7 +45,7 @@ function DriverReport({driver, trackCarData}) {
         } else if (error) {
             driverStatsElement = `Something went wront: ${error.message}`;
         } else if (driverStats) {
-            driverStatsElement = <DriverStats driverStats={driverStats}/>;
+            driverStatsElement = <DriverStats driverStats={driverStats} driverName={driverName}/>;
         }
     }
 

@@ -1,13 +1,13 @@
 import './DriverStats.css'
 import { toHours, round } from './Utility.js'
 
-function DriverStats({driverStats}) {
+function DriverStats({driverStats, driverName}) {
     return (
         <table class="driver-stats-table">
             <tbody>
                 <tr>
                     <td>Name:</td>
-                    <td>{driverStats["name"]}</td>
+                    <td>{driverName}</td>
                 </tr>
                 <tr>
                     <td>Licenses:</td>
