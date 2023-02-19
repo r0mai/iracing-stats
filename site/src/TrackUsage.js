@@ -30,7 +30,6 @@ function plotTrackUsageTime(div, trackUsage) {
         barFill: "#6EB5FF"
     };
     trackUsage.sort((lhs, rhs) => rhs["time"] - lhs["time"]);
-    console.log(trackUsage);
     verticalBarChart(
         div,
         trackUsage,

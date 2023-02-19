@@ -50,12 +50,13 @@ function DriverReport({driver, trackCarData}) {
     }
 
     {
-        let { data, error, isPending, run } = useFetch("/api/v1/driver-sessions?" + driverQueryParam, {headers});
+        let { data, error, isPending, run } = useFetch("/api/v1/driver-info?" + driverQueryParam, {headers});
 
-        let driverSessions = data;
+        let driverInfo = data;
         if (isPending) {
         } else if (error) {
-        } else if (driverSessions) {
+        } else if (driverInfo) {
+            let driverSessions = driverInfo["sessions"];
             preprocessDriverSessions(driverSessions);
             roadReport = <CategoryReport driverSessions={driverSessions} category={Category_Road}/>;
             ovalReport = <CategoryReport driverSessions={driverSessions} category={Category_Oval}/>;
