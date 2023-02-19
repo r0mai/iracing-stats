@@ -202,8 +202,8 @@ async fn api_v1_driver_stats(
     return None;
 }
 
-#[get("/api/v1/driver-sessions?<driver_name>&<cust_id>")]
-async fn api_v1_driver_sessions(
+#[get("/api/v1/driver-info?<driver_name>&<cust_id>")]
+async fn api_v1_driver_info(
     driver_name: Option<String>,
     cust_id: Option<i64>,
     db_pool: &State<DbPool>) -> Option<Value>
@@ -222,6 +222,7 @@ async fn api_v1_driver_sessions(
             "finish_position_in_class": data.finish_position_in_class,
             "car_id": data.car_id,
             "track_id": data.track_id,
+            "package_id": data.package_id,
             "license_category": data.license_category.to_db_type(),
             "start_time": data.start_time,
             "event_type": data.event_type.to_db_type(),
@@ -229,7 +230,9 @@ async fn api_v1_driver_sessions(
             "simsession_number": data.simsession_number,
         })).collect();
 
-        return Some(Value::Array(values));
+        return Some(json!({
+            "sessions": values
+        }));
     } else {
         return None;
     }
@@ -314,7 +317,7 @@ pub async fn start_rocket_server() {
             api_v1_car_usage_stats,
             api_v1_driver_stats,
             api_v1_customer_names,
-            api_v1_driver_sessions,
+            api_v1_driver_info,
             api_v1_track_car_data
         ])
         .manage(IRacingClient::new())

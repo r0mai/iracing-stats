@@ -607,6 +607,7 @@ pub struct DriverSession {
     pub finish_position_in_class: i32,
     pub car_id: i32,
     pub track_id: i32,
+    pub package_id: i32,
     pub license_category: CategoryType,
     pub start_time: String,
     pub event_type: EventType,
@@ -624,7 +625,8 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
         .column((DriverResult::Table, DriverResult::AverageLap))
         .column((DriverResult::Table, DriverResult::FinishPositionInClass))
         .column((DriverResult::Table, DriverResult::CarId))
-        .column((Subsession::Table, Subsession::TrackId))
+        .column((TrackConfig::Table, TrackConfig::TrackId))
+        .column((TrackConfig::Table, TrackConfig::PackageId))
         .column((Subsession::Table, Subsession::LicenseCategoryId))
         .column((Subsession::Table, Subsession::StartTime))
         .column((Subsession::Table, Subsession::EventType))
@@ -634,6 +636,7 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
         .join_subsession_to_session()
+        .join_subsession_to_track_config()
         .match_driver_id(driver_id, false)
         .build_rusqlite(SqliteQueryBuilder);
 
@@ -653,11 +656,12 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
             finish_position_in_class: row.get(6).unwrap(),
             car_id: row.get(7).unwrap(),
             track_id: row.get(8).unwrap(),
-            license_category: CategoryType::from_i32(row.get(9).unwrap()).ok()?,
-            start_time: row.get(10).unwrap(),
-            event_type: EventType::from_i32(row.get(11).unwrap()).ok()?,
-            series_name: row.get(12).unwrap(),
-            simsession_number: row.get(13).unwrap(),
+            package_id: row.get(9).unwrap(),
+            license_category: CategoryType::from_i32(row.get(10).unwrap()).ok()?,
+            start_time: row.get(11).unwrap(),
+            event_type: EventType::from_i32(row.get(12).unwrap()).ok()?,
+            series_name: row.get(13).unwrap(),
+            simsession_number: row.get(14).unwrap(),
         });
     }
 
