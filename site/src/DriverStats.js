@@ -1,9 +1,7 @@
 import './DriverStats.css'
 import { toHours, round, mapifyTrackData } from './Utility.js'
 
-function calcGlobalStats(sessions, trackCarData) {
-    let trackMap = mapifyTrackData(trackCarData["tracks"]);
-
+function calcGlobalStats(sessions, trackMap) {
     let time = 0;
     let distance = 0;
     let laps = 0;
@@ -20,8 +18,8 @@ function calcGlobalStats(sessions, trackCarData) {
     };
 }
 
-function DriverStats({driverSessions, trackCarData, driverName}) {
-    let globalStats = calcGlobalStats(driverSessions, trackCarData);
+function DriverStats({driverSessions, trackMap, driverName}) {
+    let globalStats = calcGlobalStats(driverSessions, trackMap);
     return (
         <table class="driver-stats-table">
             <tbody>

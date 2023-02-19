@@ -2,9 +2,7 @@ import { useD3 } from './hooks/useD3.js';
 import { verticalBarChart } from './Plot.js';
 import { toHours, round, mapifyCarData, mapifyTrackData } from './Utility.js';
 
-function collectTrackUsage(sessions, trackCarData) {
-    let trackMap = mapifyTrackData(trackCarData["tracks"]);
-
+function collectTrackUsage(sessions, trackMap) {
     let trackUsage = {};
     sessions.forEach(session => {
         let trackId = session["track_id"];
@@ -40,13 +38,13 @@ function plotTrackUsageTime(div, trackUsage) {
 }
 
 
-function TrackUsage({driverSessions, trackCarData}) {
-    let trackUsage = collectTrackUsage(driverSessions, trackCarData);
+function TrackUsage({driverSessions, trackMap}) {
+    let trackUsage = collectTrackUsage(driverSessions, trackMap);
     const ref = useD3(
         (root) => {
             plotTrackUsageTime(root, trackUsage);
         },
-        [driverSessions, trackCarData]
+        [driverSessions, trackMap]
     );
     
     return <div ref={ref}/>;

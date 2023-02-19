@@ -23,7 +23,7 @@ function preprocessDriverSessions(sessions) {
     sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
 }
 
-function DriverReport({driver, driverName, trackCarData}) {
+function DriverReport({driver, driverName, trackMap, carMap}) {
     let driverStatsElement;
     let roadReport;
     let ovalReport;
@@ -47,10 +47,10 @@ function DriverReport({driver, driverName, trackCarData}) {
             ovalReport = <CategoryReport driverSessions={driverSessions} category={Category_Oval}/>;
             dirtRoadReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtRoad}/>;
             dirtOvalReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtOval}/>;
-            if (trackCarData) {
-                carUsage = <CarUsage driverSessions={driverSessions} trackCarData={trackCarData}/>
-                trackUsage = <TrackUsage driverSessions={driverSessions} trackCarData={trackCarData}/>
-                driverStatsElement = <DriverStats driverSessions={driverSessions} trackCarData={trackCarData} driverName={driverName}/>;
+            if (trackMap && carMap) {
+                carUsage = <CarUsage driverSessions={driverSessions} trackMap={trackMap} carMap={carMap}/>
+                trackUsage = <TrackUsage driverSessions={driverSessions} trackMap={trackMap}/>
+                driverStatsElement = <DriverStats driverSessions={driverSessions} trackMap={trackMap} driverName={driverName}/>;
             }
         }
     }

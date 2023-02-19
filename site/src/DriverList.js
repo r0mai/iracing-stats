@@ -1,5 +1,5 @@
 import { useFetch } from "react-async";
-import { isDriverCustomerID, extractCustomerID } from './Utility';
+import { isDriverCustomerID, extractCustomerID, mapifyTrackData, mapifyCarData } from './Utility';
 import DriverReport from './DriverReport';
 import TabPanel from "./TabPanel";
 
@@ -29,10 +29,14 @@ function DriverList({drivers}) {
 
     let headers = { Accept: "application/json" }
 
-    let trackCarData;
+    let trackMap;
+    let carMap;
     {
         let { data, error, isPending, run } = useFetch("/api/v1/track-car-data", {headers});
-        trackCarData = data;
+        if (data) {
+            trackMap = mapifyTrackData(data["tracks"]);
+            carMap = mapifyCarData(data["cars"]);
+        }
     }
 
     // conditional useFetch is not allowed
@@ -72,7 +76,7 @@ function DriverList({drivers}) {
                 driverViews.map((view, i) => {
                     return (
                         <TabPanel value={tabIndex} index={i}>
-                            <DriverReport driver={view.driver} driverName={view.displayName} trackCarData={trackCarData}/>
+                            <DriverReport driver={view.driver} driverName={view.displayName} trackMap={trackMap} carMap={carMap}/>
                         </TabPanel>
                     );
                 })
