@@ -6,6 +6,7 @@ import TabPanel from "./TabPanel";
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import * as React from 'react';
 
 function DriverList({drivers}) {
@@ -62,26 +63,28 @@ function DriverList({drivers}) {
     let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
 
     return (
-        <Box sx={{ flexGrow: 1, display: 'flex', height: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabIndex} onChange={updateTabIndex} orientation="vertical" variant="scrollable">
-                    {
-                        driverViews.map((view) => 
-                            <Tab label={view.displayName} key={view.driver} />
-                        )
-                    }
-                </Tabs>
-            </Box>
-            {
-                driverViews.map((view, i) => {
-                    return (
-                        <TabPanel value={tabIndex} index={i}>
-                            <DriverReport driver={view.driver} driverName={view.displayName} trackMap={trackMap} carMap={carMap}/>
-                        </TabPanel>
-                    );
-                })
-            }
-        </Box>
+            <Grid container sx={{ flexGrow: 1, display: 'flex', height: '100%' }}>
+                <Grid item xs={2} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <Tabs value={tabIndex} onChange={updateTabIndex} orientation="vertical" variant="scrollable">
+                        {
+                            driverViews.map((view) => 
+                                <Tab label={view.displayName} key={view.driver} />
+                            )
+                        }
+                    </Tabs>
+                </Grid>
+                <Grid item xs={10}>
+                {
+                    driverViews.map((view, i) => {
+                        return (
+                            <TabPanel value={tabIndex} index={i}>
+                                <DriverReport driver={view.driver} driverName={view.displayName} trackMap={trackMap} carMap={carMap}/>
+                            </TabPanel>
+                        );
+                    })
+                }
+                </Grid>
+        </Grid>
     );
 }
 
