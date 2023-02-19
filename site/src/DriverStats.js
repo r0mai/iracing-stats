@@ -33,7 +33,7 @@ function DriverStats({driverSessions, trackMap, driverName}) {
                 <TableBody>
                     <TableRow>
                         <TableCell>Name:</TableCell>
-                        <TableCell>{driverName}</TableCell>
+                        <TableCell><b>{driverName}</b></TableCell>
                     </TableRow>
                     <TableRow>
                         <TableCell>Total laps:</TableCell>

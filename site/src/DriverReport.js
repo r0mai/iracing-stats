@@ -14,6 +14,7 @@ import TabPanel from "./TabPanel";
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import * as React from 'react';
 
 function preprocessDriverSessions(sessions) {
@@ -59,32 +60,37 @@ function DriverReport({driver, driverName, trackMap, carMap}) {
     let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
 
     return (
-        <Box sx={{ width: "100%" }}>
-            {driverStatsElement}
-            {carUsage}
-            {trackUsage}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabIndex} onChange={updateTabIndex}>
-                    <Tab label="Road" />
-                    <Tab label="Oval" />
-                    <Tab label="Dirt Road" />
-                    <Tab label="Dirt Oval" />
-                </Tabs>
-            </Box>
-            <TabPanel value={tabIndex} index={0}>
-                {roadReport}
-            </TabPanel>
-            <TabPanel value={tabIndex} index={1}>
-                {ovalReport}
-            </TabPanel>
-            <TabPanel value={tabIndex} index={2}>
-                {dirtRoadReport}
-            </TabPanel>
-            <TabPanel value={tabIndex} index={3}>
-                {dirtOvalReport}
-            </TabPanel>
-        </Box>
+        <Grid container>
+            <Grid item xs={6}>
+                {driverStatsElement}
+            </Grid>
+            <Box width="100%"/>
 
+            <Grid item xs={12}>
+                {carUsage}
+                {trackUsage}
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <Tabs value={tabIndex} onChange={updateTabIndex}>
+                        <Tab label="Road" />
+                        <Tab label="Oval" />
+                        <Tab label="Dirt Road" />
+                        <Tab label="Dirt Oval" />
+                    </Tabs>
+                </Box>
+                <TabPanel value={tabIndex} index={0}>
+                    {roadReport}
+                </TabPanel>
+                <TabPanel value={tabIndex} index={1}>
+                    {ovalReport}
+                </TabPanel>
+                <TabPanel value={tabIndex} index={2}>
+                    {dirtRoadReport}
+                </TabPanel>
+                <TabPanel value={tabIndex} index={3}>
+                    {dirtOvalReport}
+                </TabPanel>
+            </Grid>
+        </Grid>
     );
 }
 
