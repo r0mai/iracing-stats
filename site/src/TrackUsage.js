@@ -1,6 +1,6 @@
 import { useD3 } from './hooks/useD3.js';
 import { verticalBarChart } from './Plot.js';
-import { toHours, round, mapifyCarData, mapifyTrackData } from './Utility.js';
+import { toHours, round } from './Utility.js';
 
 function collectTrackUsage(sessions, trackMap) {
     let trackUsage = {};

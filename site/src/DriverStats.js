@@ -1,6 +1,13 @@
 import './DriverStats.css'
 import { toHours, round, mapifyTrackData } from './Utility.js'
 
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell, { tableCellClasses } from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+
 function calcGlobalStats(sessions, trackMap) {
     let time = 0;
     let distance = 0;
@@ -21,30 +28,28 @@ function calcGlobalStats(sessions, trackMap) {
 function DriverStats({driverSessions, trackMap, driverName}) {
     let globalStats = calcGlobalStats(driverSessions, trackMap);
     return (
-        <table class="driver-stats-table">
-            <tbody>
-                <tr>
-                    <td>Name:</td>
-                    <td>{driverName}</td>
-                </tr>
-                <tr>
-                    <td>Licenses:</td>
-                    <td>...licenses...</td>
-                </tr>
-                <tr>
-                    <td>Total laps:</td>
-                    <td>{globalStats.laps}</td>
-                </tr>
-                <tr>
-                    <td>Total time:</td>
-                    <td>{round(toHours(globalStats.time), 1) + "h"}</td>
-                </tr>
-                <tr>
-                    <td>Total distance:</td>
-                    <td>{round(globalStats.distance, 1) + "km"}</td>
-                </tr>
-            </tbody>
-        </table>
+        <TableContainer sx={{maxWidth:'500px'}}>
+            <Table>
+                <TableBody>
+                    <TableRow>
+                        <TableCell>Name:</TableCell>
+                        <TableCell>{driverName}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>Total laps:</TableCell>
+                        <TableCell>{globalStats.laps}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>Total time:</TableCell>
+                        <TableCell>{round(toHours(globalStats.time), 1) + "h"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>Total distance:</TableCell>
+                        <TableCell>{round(globalStats.distance, 1) + "km"}</TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </TableContainer>
     );
 }
 
