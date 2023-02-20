@@ -9,14 +9,19 @@ export function linePlot(
     yFunc, // e => e["new_irating"]
 ) {
     let margin = {top: 10, right: 30, bottom: 30, left: 60},
-        width = 800 - margin.left - margin.right,
+        width = 1200 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
+
+    let fullWidth = width + margin.left + margin.right;
+    let fullHeight = height + margin.top + margin.bottom;
 
     // append the svg object to the body of the page
     let svg = d3.select(div)
         .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", `0 0 ${fullWidth} ${fullHeight}`)
+            // .attr("width", width + margin.left + margin.right)
+            // .attr("height", height + margin.top + margin.bottom)
         .append("g")
             .attr("transform", svgTranslate(margin.left, margin.top));
     
@@ -123,10 +128,16 @@ export function verticalBarChart(
         width = 1000 - margin.left - margin.right,
         height = coreHeight - margin.top - margin.bottom;
 
+    let fullWidth = width + margin.left + margin.right;
+    let fullHeight = height + margin.top + margin.bottom;
+
+    // append the svg object to the body of the page
     let svg = d3.select(div)
         .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", `0 0 ${fullWidth} ${fullHeight}`)
+            // .attr("width", width + margin.left + margin.right)
+            // .attr("height", height + margin.top + margin.bottom)
         .append("g")
             .attr("transform", svgTranslate(margin.left, margin.top));
 
