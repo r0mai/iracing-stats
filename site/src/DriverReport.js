@@ -15,6 +15,11 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import Typography from "@mui/material/Typography";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import * as React from 'react';
 
 function preprocessDriverSessions(sessions) {
@@ -67,28 +72,55 @@ function DriverReport({driver, driverName, trackMap, carMap}) {
             <Box width="100%"/>
 
             <Grid item xs={12}>
-                {carUsage}
-                {trackUsage}
-                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs value={tabIndex} onChange={updateTabIndex}>
-                        <Tab label="Road" />
-                        <Tab label="Oval" />
-                        <Tab label="Dirt Road" />
-                        <Tab label="Dirt Oval" />
-                    </Tabs>
-                </Box>
-                <TabPanel value={tabIndex} index={0}>
-                    {roadReport}
-                </TabPanel>
-                <TabPanel value={tabIndex} index={1}>
-                    {ovalReport}
-                </TabPanel>
-                <TabPanel value={tabIndex} index={2}>
-                    {dirtRoadReport}
-                </TabPanel>
-                <TabPanel value={tabIndex} index={3}>
-                    {dirtOvalReport}
-                </TabPanel>
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography>
+                            Car usage stats
+                        </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        {carUsage}
+                    </AccordionDetails>
+                </Accordion>
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography>
+                            Track usage stats
+                        </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        {trackUsage}
+                    </AccordionDetails>
+                </Accordion>
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography>
+                            Category stats
+                        </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Tabs value={tabIndex} onChange={updateTabIndex}>
+                                <Tab label="Road" />
+                                <Tab label="Oval" />
+                                <Tab label="Dirt Road" />
+                                <Tab label="Dirt Oval" />
+                            </Tabs>
+                        </Box>
+                        <TabPanel value={tabIndex} index={0}>
+                            {roadReport}
+                        </TabPanel>
+                        <TabPanel value={tabIndex} index={1}>
+                            {ovalReport}
+                        </TabPanel>
+                        <TabPanel value={tabIndex} index={2}>
+                            {dirtRoadReport}
+                        </TabPanel>
+                        <TabPanel value={tabIndex} index={3}>
+                            {dirtOvalReport}
+                        </TabPanel>
+                    </AccordionDetails>
+                </Accordion>
             </Grid>
         </Grid>
     );
