@@ -3,6 +3,7 @@ import DriverStats from './DriverStats.js';
 import CategoryReport from './CategoryReport.js';
 import CarUsage from './CarUsage.js';
 import TrackUsage from './TrackUsage.js';
+import SessionList from "./SessionList.js";
 import { driverToQueryParam } from './Utility.js';
 import {
     Category_Road,
@@ -38,6 +39,7 @@ function DriverReport({driver, driverName, trackMap, carMap}) {
 
     let carUsage;
     let trackUsage;
+    let sessionList;
 
     let driverQueryParam = driverToQueryParam(driver);
 
@@ -57,6 +59,7 @@ function DriverReport({driver, driverName, trackMap, carMap}) {
                 carUsage = <CarUsage driverSessions={driverSessions} trackMap={trackMap} carMap={carMap}/>
                 trackUsage = <TrackUsage driverSessions={driverSessions} trackMap={trackMap}/>
                 driverStatsElement = <DriverStats driverSessions={driverSessions} trackMap={trackMap} driverName={driverName}/>;
+                sessionList = <SessionList driverSessions={driverSessions} trackMap={trackMap} carMap={carMap}/>
             }
         }
     }
@@ -72,6 +75,16 @@ function DriverReport({driver, driverName, trackMap, carMap}) {
             <Box width="100%"/>
 
             <Grid item xs={12}>
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography>
+                            Session list
+                        </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        {sessionList}
+                    </AccordionDetails>
+                </Accordion>
                 <Accordion>
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                         <Typography>
