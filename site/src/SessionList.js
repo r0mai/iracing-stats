@@ -31,6 +31,13 @@ function SessionList({driverSessions, trackMap, carMap}) {
             field: "id",
             headerName: "Session ID",
             width: 90,
+            renderCell: params => {
+                return (
+                    <a href={"https://members.iracing.com/membersite/member/EventResult.do?&subsessionid=" + params.value}>
+                        {params.value}
+                    </a>
+                );
+            },
         },
         {
             field: "series_name",
