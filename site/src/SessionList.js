@@ -57,7 +57,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
         {
             field: "irating_delta",
             headerName: "IR",
-            width: 30,
+            width: 50,
             valueFormatter: params => {
                 return (params.value > 0 ? "+" : "") + params.value;
             },
@@ -73,15 +73,20 @@ function SessionList({driverSessions, trackMap, carMap}) {
         }
     ];
     return (
-        <Box sx={{ height: 600, width: "100%" }}>
-            <DataGrid
-                rows={rows}
-                columns={columns}
-                pageSize={10}
-                rowsPerPageOptions={[10]}
-                disableSelectionOnClick
-            />
-        </Box>
+        <div style={{ width: "100%", height: 660 }}>
+            <div style={{ display: 'flex', height: "100%" }}>
+                <div style={{ flexGrow: 1 }}>
+                    <DataGrid
+                        rows={rows}
+                        columns={columns}
+                        pageSize={10}
+                        rowsPerPageOptions={[10]}
+                        disableSelectionOnClick
+                        autoHeight={true}
+                    />
+                </div>
+            </div>
+        </div>
     );
 }
 
