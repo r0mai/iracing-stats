@@ -1,5 +1,6 @@
 import { DataGrid } from '@mui/x-data-grid';
 import Box from '@mui/material/Box';
+import './SessionList.css';
 
 function preprocessSessions(driverSessions, trackMap, carMap) {
     return (driverSessions 
@@ -13,8 +14,10 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
         .map(session => {
             return {
                 "id": session["subsession_id"],
+                "series_name": session["series_name"],
                 "car": carMap[session["car_id"]]["car_name"],
                 "track": trackMap[session["track_id"]]["track_name"],
+                "irating_delta": session["new_irating"] - session["old_irating"],
             };
         })
         .reverse()
@@ -30,6 +33,11 @@ function SessionList({driverSessions, trackMap, carMap}) {
             width: 90,
         },
         {
+            field: "series_name",
+            headerName: "Series",
+            width: 200,
+        },
+        {
             field: "car",
             headerName: "Car",
             width: 200,
@@ -39,8 +47,24 @@ function SessionList({driverSessions, trackMap, carMap}) {
             headerName: "Track",
             width: 200,
         },
+        {
+            field: "irating_delta",
+            headerName: "IR",
+            width: 30,
+            valueFormatter: params => {
+                return (params.value > 0 ? "+" : "") + params.value;
+            },
+            cellClassName: params => {
+                if (params.value > 0) {
+                    return 'positive-gain';
+                } else if (params.value < 0) { 
+                    return 'negative-gain';
+                } else {
+                    return '';
+                }
+            },
+        }
     ];
-    console.log(rows.length);
     return (
         <Box sx={{ height: 600, width: "100%" }}>
             <DataGrid
