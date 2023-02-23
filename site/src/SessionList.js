@@ -57,7 +57,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
         {
             field: "irating_delta",
             headerName: "IR",
-            width: 50,
+            width: 60,
             valueFormatter: params => {
                 return (params.value > 0 ? "+" : "") + params.value;
             },
