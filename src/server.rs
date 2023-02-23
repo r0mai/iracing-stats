@@ -214,7 +214,9 @@ async fn api_v1_driver_info(
 
         let values: Vec<Value> = raw_data.iter().map(|data| json!({
             "subsession_id": data.subsession_id,
+            "old_irating": data.old_irating,
             "new_irating": data.new_irating,
+            "old_cpi": data.old_cpi,
             "new_cpi": data.new_cpi,
             "incidents": data.incidents,
             "laps_complete": data.laps_complete,

@@ -599,7 +599,9 @@ pub fn query_driver_stats(con: &Connection, driver_id: &DriverId) -> Option<Driv
 
 pub struct DriverSession {
     pub subsession_id: i64,
+    pub old_irating: i32,
     pub new_irating: i32,
+    pub old_cpi: f32,
     pub new_cpi: f32,
     pub incidents: i32,
     pub laps_complete: i32,
@@ -618,7 +620,9 @@ pub struct DriverSession {
 pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<Vec<DriverSession>> {
     let (sql, params) = Query::select()
         .column((DriverResult::Table, DriverResult::SubsessionId))
+        .column((DriverResult::Table, DriverResult::OldiRating))
         .column((DriverResult::Table, DriverResult::NewiRating))
+        .column((DriverResult::Table, DriverResult::OldCpi))
         .column((DriverResult::Table, DriverResult::NewCpi))
         .column((DriverResult::Table, DriverResult::Incidents))
         .column((DriverResult::Table, DriverResult::LapsComplete))
@@ -648,20 +652,22 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
     while let Some(row) = rows.next().unwrap() {
         values.push(DriverSession{
             subsession_id: row.get(0).unwrap(),
-            new_irating: row.get(1).unwrap(),
-            new_cpi: row.get(2).unwrap(),
-            incidents: row.get(3).unwrap(),
-            laps_complete: row.get(4).unwrap(),
-            average_lap: row.get(5).unwrap(),
-            finish_position_in_class: row.get(6).unwrap(),
-            car_id: row.get(7).unwrap(),
-            track_id: row.get(8).unwrap(),
-            package_id: row.get(9).unwrap(),
-            license_category: CategoryType::from_i32(row.get(10).unwrap()).ok()?,
-            start_time: row.get(11).unwrap(),
-            event_type: EventType::from_i32(row.get(12).unwrap()).ok()?,
-            series_name: row.get(13).unwrap(),
-            simsession_number: row.get(14).unwrap(),
+            old_irating: row.get(1).unwrap(),
+            new_irating: row.get(2).unwrap(),
+            old_cpi: row.get(3).unwrap(),
+            new_cpi: row.get(4).unwrap(),
+            incidents: row.get(5).unwrap(),
+            laps_complete: row.get(6).unwrap(),
+            average_lap: row.get(7).unwrap(),
+            finish_position_in_class: row.get(8).unwrap(),
+            car_id: row.get(9).unwrap(),
+            track_id: row.get(10).unwrap(),
+            package_id: row.get(11).unwrap(),
+            license_category: CategoryType::from_i32(row.get(12).unwrap()).ok()?,
+            start_time: row.get(13).unwrap(),
+            event_type: EventType::from_i32(row.get(14).unwrap()).ok()?,
+            series_name: row.get(15).unwrap(),
+            simsession_number: row.get(16).unwrap(),
         });
     }
 
