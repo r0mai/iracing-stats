@@ -7,6 +7,7 @@ export function linePlot(
     data,
     xFunc, // e => e["start_time"]
     yFunc, // e => e["new_irating"]
+    horizontalLanes, // [{min: X, max: Y, color: C}, ...]
 ) {
     let margin = {top: 10, right: 30, bottom: 30, left: 60},
         width = 1200 - margin.left - margin.right,
@@ -34,9 +35,23 @@ export function linePlot(
         .domain(xExtent)
         .range([0, width]);
 
+    let yExtent = d3.extent(data, yFunc);
     let y = d3.scaleLinear()
-        .domain(d3.extent(data, yFunc))
+        .domain(yExtent)
         .range([height, 0]);
+
+    if (horizontalLanes) {
+        horizontalLanes.forEach(lane => {
+            let min = Math.max(lane.min, yExtent[0]);
+            let max = Math.min(lane.max, yExtent[1]);
+            svg.append("rect")
+                .attr("fill", lane.color)
+                .attr("x", x(xExtent[0]))
+                .attr("width", x(xExtent[1]) - x(xExtent[0]))
+                .attr("y", y(max))
+                .attr("height", y(min) - y(max));
+        });
+    }
     
     svg.append("g")
         .attr("transform", svgTranslate(0, height))
