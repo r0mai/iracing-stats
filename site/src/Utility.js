@@ -51,3 +51,19 @@ export function mapifyCarData(cars) {
     });
     return carMap;
 }
+
+export function isRookie(session) {
+    return session["new_irating"] === -1;
+}
+
+export function isRace(session) {
+    return session["event_type"] === 5;
+}
+
+export function isMainEvent(session) {
+    return session["simsession_number"] === 0;
+}
+
+export function isCategory(session, category) {
+    return session["license_category"] === category ;
+}

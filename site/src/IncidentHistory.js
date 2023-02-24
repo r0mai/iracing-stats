@@ -1,13 +1,14 @@
 import { useD3 } from './hooks/useD3.js';
 import { linePlot } from './Plot.js';
+import { isRookie, isRace, isMainEvent, isCategory } from './Utility.js';
 
 function plotIncidentHistory(div, sessions, category) {
     let filtered = sessions.filter((session) => {
         return (
-            session["new_irating"] !== -1 &&
-            session["event_type"] === 5 && // race
-            session["simsession_number"] === 0 &&
-            session["license_category"] === category
+            !isRookie(session) &&
+            isMainEvent(session) &&
+            isRace(session) &&
+            isCategory(session, category)
         );
     });
 
