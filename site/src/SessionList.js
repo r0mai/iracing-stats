@@ -18,6 +18,7 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
                 "car": carMap[session["car_id"]]["car_name"],
                 "track": trackMap[session["track_id"]]["track_name"],
                 "irating_delta": session["new_irating"] - session["old_irating"],
+                "finish_position_in_class": session["finish_position_in_class"] + 1,
             };
         })
         .reverse()
@@ -53,6 +54,11 @@ function SessionList({driverSessions, trackMap, carMap}) {
             field: "track",
             headerName: "Track",
             width: 200,
+        },
+        {
+            field: "finish_position_in_class",
+            headerName: "Pos",
+            width: 60,
         },
         {
             field: "irating_delta",
