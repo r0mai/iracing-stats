@@ -20,7 +20,10 @@ function plotIncidentHistory(div, sessions, category) {
         { min: 50, max: 5000, color: "#174189" },
     ];
 
-    linePlot(div, filtered, e => e["start_time"], e => e["new_cpi"], safetyRatingLanes);
+    linePlot(div, filtered, e => e["start_time"], e => e["new_cpi"], {
+        horizontalLanes: safetyRatingLanes,
+        lineColor: "#DDD"
+    });
 }
 
 function IncidentHistory({driverSessions, category}) {

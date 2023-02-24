@@ -7,7 +7,11 @@ export function linePlot(
     data,
     xFunc, // e => e["start_time"]
     yFunc, // e => e["new_irating"]
-    horizontalLanes, // [{min: X, max: Y, color: C}, ...]
+    // {
+    //    horizontalLanes: [{min: X, max: Y, color: C}, ...]
+    //    lineColor: color
+    // }
+    style, 
 ) {
     let margin = {top: 10, right: 30, bottom: 30, left: 60},
         width = 1200 - margin.left - margin.right,
@@ -40,8 +44,8 @@ export function linePlot(
         .domain(yExtent)
         .range([height, 0]);
 
-    if (horizontalLanes) {
-        horizontalLanes.forEach(lane => {
+    if (style.horizontalLanes) {
+        style.horizontalLanes.forEach(lane => {
             let min = Math.max(lane.min, yExtent[0]);
             let max = Math.min(lane.max, yExtent[1]);
             svg.append("rect")
@@ -65,10 +69,12 @@ export function linePlot(
         .x(d => x(xFunc(d)))
         .y(d => y(yFunc(d)));
 
+    let lineColor = style.lineColor || "red";
+
     svg.append("path")
         .datum(data)
         .attr("fill", "none")
-        .attr("stroke", "red")
+        .attr("stroke", lineColor)
         .attr("stroke-width", 1.5)
         .attr("d", line);
 

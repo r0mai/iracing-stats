@@ -12,7 +12,7 @@ function plotIRatingHistory(div, sessions, category) {
         );
     });
 
-    linePlot(div, filtered, e => e["start_time"], e => e["new_irating"]);
+    linePlot(div, filtered, e => e["start_time"], e => e["new_irating"], {});
 }
 
 function IRatingHistory({driverSessions, category}) {
