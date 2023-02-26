@@ -1,4 +1,4 @@
-export const Category_Oval = 1;
-export const Category_Road = 2;
-export const Category_DirtOval = 3;
-export const Category_DirtRoad = 4;
+export const kOval = 1;
+export const kRoad = 2;
+export const kDirtOval = 3;
+export const kDirtRoad = 4;

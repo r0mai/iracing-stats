@@ -5,12 +5,7 @@ import CarUsage from './CarUsage.js';
 import TrackUsage from './TrackUsage.js';
 import SessionList from "./SessionList.js";
 import { driverToQueryParam } from './Utility.js';
-import {
-    Category_Road,
-    Category_Oval,
-    Category_DirtRoad,
-    Category_DirtOval
-} from './LicenseCategory.js';
+import * as Category from './LicenseCategory.js';
 import * as ReportType from './ReportType.js'
 import TabPanel from "./TabPanel";
 import Tabs from '@mui/material/Tabs';
@@ -52,10 +47,10 @@ function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
         if (driverInfo) {
             let driverSessions = driverInfo["sessions"];
             preprocessDriverSessions(driverSessions);
-            roadReport = <CategoryReport driverSessions={driverSessions} category={Category_Road}/>;
-            ovalReport = <CategoryReport driverSessions={driverSessions} category={Category_Oval}/>;
-            dirtRoadReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtRoad}/>;
-            dirtOvalReport = <CategoryReport driverSessions={driverSessions} category={Category_DirtOval}/>;
+            roadReport = <CategoryReport driverSessions={driverSessions} category={Category.kRoad}/>;
+            ovalReport = <CategoryReport driverSessions={driverSessions} category={Category.kOval}/>;
+            dirtRoadReport = <CategoryReport driverSessions={driverSessions} category={Category.kDirtRoad}/>;
+            dirtOvalReport = <CategoryReport driverSessions={driverSessions} category={Category.kDirtOval}/>;
             if (trackMap && carMap) {
                 carUsage = <CarUsage driverSessions={driverSessions} trackMap={trackMap} carMap={carMap}/>
                 trackUsage = <TrackUsage driverSessions={driverSessions} trackMap={trackMap}/>
