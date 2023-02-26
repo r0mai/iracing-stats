@@ -1,6 +1,7 @@
 import { useFetch } from "react-async";
 import { isDriverCustomerID, extractCustomerID, mapifyTrackData, mapifyCarData } from './Utility';
 import DriverReport from './DriverReport';
+import ReportSelector from './ReportSelector.js';
 import TabPanel from "./TabPanel";
 
 import Tabs from '@mui/material/Tabs';
@@ -8,7 +9,7 @@ import Tab from '@mui/material/Tab';
 import Grid from '@mui/material/Grid';
 import * as React from 'react';
 
-function DriverList({drivers}) {
+function DriverList({drivers, reportState, setReportState}) {
 
     let driverViews = [];
     let custIDs = [];
@@ -77,7 +78,17 @@ function DriverList({drivers}) {
                     driverViews.map((view, i) => {
                         return (
                             <TabPanel value={tabIndex} index={i}>
-                                <DriverReport driver={view.driver} driverName={view.displayName} trackMap={trackMap} carMap={carMap}/>
+                                <ReportSelector
+                                    reportState={reportState}
+                                    setReportState={setReportState}
+                                />
+                                <DriverReport
+                                    driver={view.driver}
+                                    driverName={view.displayName}
+                                    trackMap={trackMap}
+                                    carMap={carMap}
+                                    reportState={reportState}
+                                />
                             </TabPanel>
                         );
                     })

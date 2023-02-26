@@ -8,10 +8,17 @@ import './App.css';
 import DriverList from './DriverList.js';
 import { theme } from './Theme.js';
 
+import React from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
+import * as ReportType from './ReportType.js'
+
 function App() {
+    let [reportState, setReportState] = React.useState({
+        type: ReportType.kSummary,
+    });
+
     let paramString = window.location.search.split('?')[1];
     let queryString = new URLSearchParams(paramString);
 
@@ -20,10 +27,11 @@ function App() {
         return "Pass in a list of drivers <url>?drivers=Driver1;Driver2;Driver3";
     }
     let drivers = urlDrivers.split(';');
+    
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <DriverList drivers={drivers}/>
+            <DriverList drivers={drivers} reportState={reportState} setReportState={setReportState}/>
         </ThemeProvider>
     );
 }

@@ -11,6 +11,7 @@ import {
     Category_DirtRoad,
     Category_DirtOval
 } from './LicenseCategory.js';
+import * as ReportType from './ReportType.js'
 import TabPanel from "./TabPanel";
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -30,7 +31,7 @@ function preprocessDriverSessions(sessions) {
     sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
 }
 
-function DriverReport({driver, driverName, trackMap, carMap}) {
+function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
     let driverStatsElement;
     let roadReport;
     let ovalReport;
@@ -66,6 +67,27 @@ function DriverReport({driver, driverName, trackMap, carMap}) {
 
     const [tabIndex, setTabIndex] = React.useState(0);
     let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
+
+    let report;
+    switch (reportState.type) {
+        case ReportType.kSummary:
+            report = driverStatsElement;
+            break;
+        case ReportType.kCarUsage:
+            report = carUsage;
+            break;
+        case ReportType.kTrackUsage:
+            report = trackUsage;
+            break;
+    }
+
+    return (
+        <Grid container>
+            <Grid item xs={12}>
+                {report}
+            </Grid>
+        </Grid>
+    );
 
     return (
         <Grid container>
