@@ -11,6 +11,7 @@ import { theme } from './Theme.js';
 import React from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box';
 
 import * as ReportType from './ReportType.js';
 import * as Category from './LicenseCategory.js';
@@ -33,7 +34,9 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <DriverList drivers={drivers} reportState={reportState} setReportState={setReportState}/>
+            <Box sx={{ m: 1 }}>
+                <DriverList drivers={drivers} reportState={reportState} setReportState={setReportState}/>
+            </Box>
         </ThemeProvider>
     );
 }
