@@ -13,6 +13,10 @@ export function linePlot(
     // }
     style, 
 ) {
+
+    let lineColor = style.lineColor || "red";
+    let horizontalLanes = style.horizontalLanes || [];
+
     let margin = {top: 10, right: 30, bottom: 30, left: 60},
         width = 1200 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
@@ -44,18 +48,16 @@ export function linePlot(
         .domain(yExtent)
         .range([height, 0]);
 
-    if (style.horizontalLanes) {
-        style.horizontalLanes.forEach(lane => {
-            let min = Math.max(lane.min, yExtent[0]);
-            let max = Math.min(lane.max, yExtent[1]);
-            svg.append("rect")
-                .attr("fill", lane.color)
-                .attr("x", x(xExtent[0]))
-                .attr("width", x(xExtent[1]) - x(xExtent[0]))
-                .attr("y", y(max))
-                .attr("height", y(min) - y(max));
-        });
-    }
+    horizontalLanes.forEach(lane => {
+        let min = Math.max(lane.min, yExtent[0]);
+        let max = Math.min(lane.max, yExtent[1]);
+        svg.append("rect")
+            .attr("fill", lane.color)
+            .attr("x", x(xExtent[0]))
+            .attr("width", x(xExtent[1]) - x(xExtent[0]))
+            .attr("y", y(max))
+            .attr("height", y(min) - y(max));
+    });
     
     svg.append("g")
         .attr("transform", svgTranslate(0, height))
@@ -68,8 +70,6 @@ export function linePlot(
         .curve(d3.curveStepAfter)
         .x(d => x(xFunc(d)))
         .y(d => y(yFunc(d)));
-
-    let lineColor = style.lineColor || "red";
 
     svg.append("path")
         .datum(data)
