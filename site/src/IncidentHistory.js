@@ -31,7 +31,7 @@ function IncidentHistory({driverSessions, category}) {
         (root) => {
             plotIncidentHistory(root, driverSessions, category);
         },
-        [driverSessions]
+        [driverSessions, category]
     );
     
     return <div ref={ref}/>;

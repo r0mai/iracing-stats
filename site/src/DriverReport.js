@@ -3,6 +3,8 @@ import DriverStats from './DriverStats.js';
 import CategoryReport from './CategoryReport.js';
 import CarUsage from './CarUsage.js';
 import TrackUsage from './TrackUsage.js';
+import IRatingHistory from './IRatingHistory.js'
+import IncidentHistory from './IncidentHistory.js'
 import SessionList from "./SessionList.js";
 import { driverToQueryParam } from './Utility.js';
 import * as Category from './LicenseCategory.js';
@@ -27,52 +29,39 @@ function preprocessDriverSessions(sessions) {
 }
 
 function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
-    let driverStatsElement;
-    let roadReport;
-    let ovalReport;
-    let dirtRoadReport;
-    let dirtOvalReport;
-
-    let carUsage;
-    let trackUsage;
-    let sessionList;
-
-    let driverQueryParam = driverToQueryParam(driver);
-
+    let driverInfo;
     {
         let headers = { Accept: "application/json" }
-        let { data, error, isPending, run } = useFetch("/api/v1/driver-info?" + driverQueryParam, {headers});
-
-        let driverInfo = data;
-        if (driverInfo) {
-            let driverSessions = driverInfo["sessions"];
-            preprocessDriverSessions(driverSessions);
-            roadReport = <CategoryReport driverSessions={driverSessions} category={Category.kRoad}/>;
-            ovalReport = <CategoryReport driverSessions={driverSessions} category={Category.kOval}/>;
-            dirtRoadReport = <CategoryReport driverSessions={driverSessions} category={Category.kDirtRoad}/>;
-            dirtOvalReport = <CategoryReport driverSessions={driverSessions} category={Category.kDirtOval}/>;
-            if (trackMap && carMap) {
-                carUsage = <CarUsage driverSessions={driverSessions} trackMap={trackMap} carMap={carMap}/>
-                trackUsage = <TrackUsage driverSessions={driverSessions} trackMap={trackMap}/>
-                driverStatsElement = <DriverStats driverSessions={driverSessions} trackMap={trackMap} driverName={driverName}/>;
-                sessionList = <SessionList driverSessions={driverSessions} trackMap={trackMap} carMap={carMap}/>
-            }
-        }
+        let { data, error, isPending, run } = useFetch("/api/v1/driver-info?" + driverToQueryParam(driver), {headers});
+        driverInfo = data;
     }
 
-    const [tabIndex, setTabIndex] = React.useState(0);
-    let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
+    if (!driverInfo || !trackMap || !carMap) {
+        return;
+    }
+
+    let driverSessions = driverInfo["sessions"];
+    preprocessDriverSessions(driverSessions);
 
     let report;
     switch (reportState.type) {
         case ReportType.kSummary:
-            report = driverStatsElement;
+            report = <DriverStats driverSessions={driverSessions} trackMap={trackMap} driverName={driverName}/>;
+            break;
+        case ReportType.kSessionList:
+            report = <SessionList driverSessions={driverSessions} trackMap={trackMap} carMap={carMap}/>;
             break;
         case ReportType.kCarUsage:
-            report = carUsage;
+            report = <CarUsage driverSessions={driverSessions} trackMap={trackMap} carMap={carMap}/>;
             break;
         case ReportType.kTrackUsage:
-            report = trackUsage;
+            report = <TrackUsage driverSessions={driverSessions} trackMap={trackMap}/>;
+            break;
+        case ReportType.kIRacingHistory:
+            report = <IRatingHistory driverSessions={driverSessions} category={reportState.category}/>;
+            break;
+        case ReportType.kCPIHistory:
+            report = <IncidentHistory driverSessions={driverSessions} category={reportState.category}/>;
             break;
     }
 
@@ -80,77 +69,6 @@ function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
         <Grid container>
             <Grid item xs={12}>
                 {report}
-            </Grid>
-        </Grid>
-    );
-
-    return (
-        <Grid container>
-            <Grid item xs={6}>
-                {driverStatsElement}
-            </Grid>
-            <Box width="100%"/>
-
-            <Grid item xs={12}>
-                <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography>
-                            Session list
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {sessionList}
-                    </AccordionDetails>
-                </Accordion>
-                <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography>
-                            Car usage stats
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {carUsage}
-                    </AccordionDetails>
-                </Accordion>
-                <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography>
-                            Track usage stats
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {trackUsage}
-                    </AccordionDetails>
-                </Accordion>
-                <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography>
-                            Category stats
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <Tabs value={tabIndex} onChange={updateTabIndex}>
-                                <Tab label="Road" />
-                                <Tab label="Oval" />
-                                <Tab label="Dirt Road" />
-                                <Tab label="Dirt Oval" />
-                            </Tabs>
-                        </Box>
-                        <TabPanel value={tabIndex} index={0}>
-                            {roadReport}
-                        </TabPanel>
-                        <TabPanel value={tabIndex} index={1}>
-                            {ovalReport}
-                        </TabPanel>
-                        <TabPanel value={tabIndex} index={2}>
-                            {dirtRoadReport}
-                        </TabPanel>
-                        <TabPanel value={tabIndex} index={3}>
-                            {dirtOvalReport}
-                        </TabPanel>
-                    </AccordionDetails>
-                </Accordion>
             </Grid>
         </Grid>
     );

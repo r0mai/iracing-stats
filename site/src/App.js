@@ -12,11 +12,13 @@ import React from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
-import * as ReportType from './ReportType.js'
+import * as ReportType from './ReportType.js';
+import * as Category from './LicenseCategory.js';
 
 function App() {
     let [reportState, setReportState] = React.useState({
         type: ReportType.kSummary,
+        category: Category.kRoad
     });
 
     let paramString = window.location.search.split('?')[1];

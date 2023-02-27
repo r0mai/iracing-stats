@@ -20,7 +20,7 @@ function IRatingHistory({driverSessions, category}) {
         (root) => {
             plotIRatingHistory(root, driverSessions, category);
         },
-        [driverSessions]
+        [driverSessions, category]
     );
     
     return (
