@@ -2,7 +2,6 @@ import { MenuItem, FormControl, Select } from '@mui/material';
 import * as ReportType from './ReportType.js'
 import * as Category from './LicenseCategory.js';
 import Stack from '@mui/system/Stack';
-import Box from '@mui/system/Box';
 
 function ReportSelector({reportState, setReportState}) {
     let typeSelector = (
@@ -20,6 +19,7 @@ function ReportSelector({reportState, setReportState}) {
             <MenuItem value={ReportType.kCPIHistory}>CPI History</MenuItem>
             <MenuItem value={ReportType.kTrackUsage}>Track Usage</MenuItem>
             <MenuItem value={ReportType.kCarUsage}>Car Usage</MenuItem>
+            <MenuItem value={ReportType.kHistoryChart}>History Chart</MenuItem>
         </Select>
     );
 

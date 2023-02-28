@@ -200,3 +200,41 @@ export function verticalBarChart(
         });
             
 }
+
+function range(start, end) {
+    let res = [];
+    for (let i = start; i <= end; ++i) {
+        res.push(i);
+    }
+    return res;
+}
+
+export function yearlyFrequencyMap(
+    div,
+    data,
+    dateFunc)
+{
+    // TODO continue
+    let dateExtent = d3.extent(data, dateFunc);
+
+    let width = 900;
+    let height = 110;
+
+    let rootSvg = d3.select(div)
+        .append('svg');
+
+    let startYear = dateExtent[0].getFullYear();
+    let endYear = dateExtent[1].getFullYear();
+
+    rootSvg.select('svg')
+        .data(range(startYear, endYear))
+        .enter()
+        .append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            // .attr('class', 'color')
+        ;
+
+
+    div.innerHtml = `${startYear} -> ${endYear}`;
+}
