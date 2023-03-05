@@ -1,6 +1,8 @@
-import { MenuItem, FormControl, Select } from '@mui/material';
+import { MenuItem, FormControl, Select, IconButton } from '@mui/material';
 import * as ReportType from './ReportType.js'
 import * as Category from './LicenseCategory.js';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import Stack from '@mui/system/Stack';
 
 function ReportSelector({reportState, setReportState}) {
@@ -19,7 +21,7 @@ function ReportSelector({reportState, setReportState}) {
             <MenuItem value={ReportType.kCPIHistory}>CPI History</MenuItem>
             <MenuItem value={ReportType.kTrackUsage}>Track Usage</MenuItem>
             <MenuItem value={ReportType.kCarUsage}>Car Usage</MenuItem>
-            <MenuItem value={ReportType.kHistoryChart}>History Chart</MenuItem>
+            {/* <MenuItem value={ReportType.kHistoryChart}>History Chart</MenuItem> */}
         </Select>
     );
 
@@ -38,10 +40,34 @@ function ReportSelector({reportState, setReportState}) {
             <MenuItem value={Category.kDirtOval}>Dirt Oval</MenuItem>
         </Select>
     );
+
+    let onPrevClick = () => {
+        let newType = reportState.type;
+        newType -= 1;
+        if (newType < 0) {
+            newType = ReportType.kReportTypeCount - 1;
+        }
+        setReportState({...reportState, type: newType});
+    };
+    let onNextClick = () => {
+        let newType = reportState.type;
+        newType += 1;
+        if (newType >= ReportType.kReportTypeCount) {
+            newType = 0;
+        }
+        setReportState({...reportState, type: newType});
+    };
+
     return (
         <FormControl>
             <Stack direction="row" spacing={2}>
+                <IconButton onClick={onPrevClick}>
+                    <NavigateBeforeIcon/>
+                </IconButton>
                 {typeSelector}
+                <IconButton onClick={onNextClick}>
+                    <NavigateNextIcon/>
+                </IconButton>
                 {(reportState.type == ReportType.kIRacingHistory || reportState.type == ReportType.kCPIHistory) && categorySelector}
             </Stack>
         </FormControl>

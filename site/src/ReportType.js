@@ -1,7 +1,9 @@
-export const kSummary = 10;
-export const kIRacingHistory = 11;
-export const kCPIHistory = 12;
-export const kTrackUsage = 13;
-export const kCarUsage = 14;
-export const kSessionList = 15;
-export const kHistoryChart = 16;
+let i = 0;
+export const kSummary = i++;
+export const kIRacingHistory = i++;
+export const kCPIHistory = i++;
+export const kTrackUsage = i++;
+export const kCarUsage = i++;
+export const kSessionList = i++;
+// export const kHistoryChart = i++;
+export const kReportTypeCount = i++;
