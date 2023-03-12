@@ -201,14 +201,6 @@ export function verticalBarChart(
             
 }
 
-function range(start, end) {
-    let res = [];
-    for (let i = start; i <= end; ++i) {
-        res.push(i);
-    }
-    return res;
-}
-
 const oneJanLookUpTable = (() => {
     let table = [];
     for (let y = 2000; y <= 2030; ++y) {
@@ -221,11 +213,17 @@ function lookupOneJan(year) {
     return oneJanLookUpTable[year - 2000];
 }
 
+// Makes Monday the 0th day
+function getDay(date) {
+    let idx = date.getDay();
+    return [6, 0, 1, 2, 3, 4, 5][idx];
+}
+
 // Adapted from https://stackoverflow.com/questions/6117814/get-week-of-year-in-javascript-like-in-php
 function getWeekNumber(date) {
     let onejan = lookupOneJan(date.getFullYear());
     let dayIndex = (date.getTime() - onejan.getTime()) / 86400000;
-    let week = Math.ceil((dayIndex + onejan.getDay() + 1) / 7);
+    let week = Math.ceil((dayIndex + getDay(onejan) + 1) / 7);
     return week - 1;
 }
 
@@ -236,7 +234,7 @@ function ywdToKey(year, week, day) {
 function dateToKey(date) {
     let year = date.getFullYear();
     let week = getWeekNumber(date);
-    let day = date.getDay();
+    let day = getDay(date);
     return ywdToKey(year, week, day);
 }
 
@@ -360,8 +358,8 @@ export function yearlyFrequencyMap(
         let firstDay = lookupOneJan(y);
         let lastDay = new Date(y, 11, 31);
 
-        let firstDayDayIdx = firstDay.getDay();
-        let lastDayDayIdx = lastDay.getDay();
+        let firstDayDayIdx = getDay(firstDay);
+        let lastDayDayIdx = getDay(lastDay);
         let lastWeekIdx = getWeekNumber(lastDay);
 
         for (let w = 0; w <= lastWeekIdx; ++w) {
