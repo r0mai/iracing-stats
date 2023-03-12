@@ -250,10 +250,15 @@ export function yearlyFrequencyMap(
     let endYear = dateExtent[1].getFullYear();
 
     let frequencyMap = new Map();
+
+    let maxValue = 0;
     for (let res of data) {
         let date = dateFunc(res);
         let key = dateToKey(date);
-        frequencyMap.set(key, (frequencyMap.get(key) ?? 0) + 1);
+        let newValue = (frequencyMap.get(key) ?? 0) + 1;
+        frequencyMap.set(key, newValue);
+
+        maxValue = Math.max(newValue, maxValue);
     }
 
     let rectW = 10;
@@ -267,6 +272,11 @@ export function yearlyFrequencyMap(
         .append('svg')
         .attr("width", 55 * offsetX + leftMargin) // # weeks
         .attr("height", (endYear - startYear + 1) * yearOffsetY)
+        ;
+
+    let colorScale = d3.scaleLinear()
+        .domain([0, maxValue])
+        .range(["#aaa", "blue"])
         ;
 
     for (let y = endYear; y >= startYear; --y) {
@@ -298,9 +308,9 @@ export function yearlyFrequencyMap(
                 let color = undefined;
                 let value = frequencyMap.get(key);
                 if (value === undefined) {
-                    color = "black";
+                    color = "#444";
                 } else {
-                    color = "green";
+                    color = colorScale(value);
                 }
 
                 yearG.append("rect")
