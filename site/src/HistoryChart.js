@@ -9,7 +9,6 @@ function HistoryChart({driverSessions}) {
         [driverSessions]
     );
     
-    return "Under construction";
     return <div ref={ref}/>;
 }
 

@@ -21,7 +21,7 @@ function ReportSelector({reportState, setReportState}) {
             <MenuItem value={ReportType.kCPIHistory}>CPI History</MenuItem>
             <MenuItem value={ReportType.kTrackUsage}>Track Usage</MenuItem>
             <MenuItem value={ReportType.kCarUsage}>Car Usage</MenuItem>
-            {/* <MenuItem value={ReportType.kHistoryChart}>History Chart</MenuItem> */}
+            <MenuItem value={ReportType.kHistoryChart}>History Chart</MenuItem>
         </Select>
     );
 

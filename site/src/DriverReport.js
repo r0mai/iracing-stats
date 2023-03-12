@@ -53,9 +53,9 @@ function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
         case ReportType.kCPIHistory:
             report = <IncidentHistory driverSessions={driverSessions} category={reportState.category}/>;
             break;
-        // case ReportType.kHistoryChart:
-        //     report = <HistoryChart driverSessions={driverSessions}/>;
-        //     break;
+        case ReportType.kHistoryChart:
+            report = <HistoryChart driverSessions={driverSessions}/>;
+            break;
     }
 
     return (

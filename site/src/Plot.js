@@ -209,32 +209,109 @@ function range(start, end) {
     return res;
 }
 
+const oneJanLookUpTable = (() => {
+    let table = [];
+    for (let y = 2000; y <= 2030; ++y) {
+        table[y - 2000] = new Date(y, 0, 1);
+    }
+    return table;
+})();
+
+function lookupOneJan(year) {
+    return oneJanLookUpTable[year - 2000];
+}
+
+// Adapted from https://stackoverflow.com/questions/6117814/get-week-of-year-in-javascript-like-in-php
+function getWeekNumber(date) {
+    let onejan = lookupOneJan(date.getFullYear());
+    let dayIndex = (date.getTime() - onejan.getTime()) / 86400000;
+    let week = Math.ceil((dayIndex + onejan.getDay() + 1) / 7);
+    return week - 1;
+}
+
+function ywdToKey(year, week, day) {
+    return day + 10 * week + 1000 * year;
+}
+
+function dateToKey(date) {
+    let year = date.getFullYear();
+    let week = getWeekNumber(date);
+    let day = date.getDay();
+    return ywdToKey(year, week, day);
+}
+
 export function yearlyFrequencyMap(
     div,
     data,
     dateFunc)
 {
-    // TODO continue
     let dateExtent = d3.extent(data, dateFunc);
-
-    let width = 900;
-    let height = 110;
-
-    let rootSvg = d3.select(div)
-        .append('svg');
-
     let startYear = dateExtent[0].getFullYear();
     let endYear = dateExtent[1].getFullYear();
 
-    rootSvg.select('svg')
-        .data(range(startYear, endYear))
-        .enter()
+    let frequencyMap = new Map();
+    for (let res of data) {
+        let date = dateFunc(res);
+        let key = dateToKey(date);
+        frequencyMap.set(key, (frequencyMap.get(key) ?? 0) + 1);
+    }
+
+    let rectW = 10;
+    let rectH = 10;
+    let offsetX = rectW + 2;
+    let offsetY = rectH + 2;
+    let yearOffsetY = 7 * offsetY + 6;
+    let leftMargin = 50;
+
+    let svg = d3.select(div)
         .append('svg')
-            .attr('width', width)
-            .attr('height', height)
-            // .attr('class', 'color')
+        .attr("width", 55 * offsetX + leftMargin) // # weeks
+        .attr("height", (endYear - startYear + 1) * yearOffsetY)
         ;
 
+    for (let y = endYear; y >= startYear; --y) {
+        let originY = (endYear - y) * yearOffsetY;
 
-    div.innerHtml = `${startYear} -> ${endYear}`;
+        svg.append("text")
+            .attr("x", 5)
+            .attr("y", originY + 0.5 * yearOffsetY)
+            .attr("fill", theme.palette.text.primary)
+            .text(`${y}`)
+            ;
+
+        let yearG = svg.append("g")
+            .attr("transform", svgTranslate(leftMargin, originY))
+            ;
+
+        let firstDay = lookupOneJan(y);
+        let lastDay = new Date(y, 11, 31);
+
+        let firstDayDayIdx = firstDay.getDay();
+        let lastDayDayIdx = lastDay.getDay();
+        let lastWeekIdx = getWeekNumber(lastDay);
+
+        for (let w = 0; w <= lastWeekIdx; ++w) {
+            let startD = w == 0 ? firstDayDayIdx : 0;
+            let lastD = w == lastWeekIdx ? lastDayDayIdx: 6;
+            for (let d = startD; d <= lastD; ++d) {
+                let key = ywdToKey(y, w, d);
+                let color = undefined;
+                let value = frequencyMap.get(key);
+                if (value === undefined) {
+                    color = "black";
+                } else {
+                    color = "green";
+                }
+
+                yearG.append("rect")
+                    .attr("x", offsetX * w)
+                    .attr("y", offsetY * d)
+                    .attr("width", rectW)
+                    .attr("height", rectH)
+                    .attr("rx", rectW * 0.2)
+                    .attr("fill", color)
+                    ;
+            }
+        }
+    }
 }
