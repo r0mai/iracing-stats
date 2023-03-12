@@ -37,11 +37,11 @@ struct Args {
 
     /// Sync car infos
     #[arg(short = 'c', long)]
-    sync_car_infos: bool,
+    sync_car_infos_to_db: bool,
 
     /// Sync track infos
     #[arg(short = 't', long)]
-    sync_track_infos: bool,
+    sync_track_infos_to_db: bool,
 
     /// Sync season year to db
     #[arg(short = 'y', long)]
@@ -69,8 +69,8 @@ fn has_async(args: &Args) -> bool {
         !args.sync_drivers_to_db.is_empty() ||
         !args.sync_cust_ids_to_db.is_empty() ||
         args.season_year.is_some() ||
-        args.sync_car_infos ||
-        args.sync_track_infos;
+        args.sync_car_infos_to_db ||
+        args.sync_track_infos_to_db;
 }
 
 async fn tokio_main(args: &Args) {
@@ -95,12 +95,12 @@ async fn tokio_main(args: &Args) {
             args.season_year.unwrap(), args.season_quarter.unwrap(), args.season_week).await;
     }
 
-    if args.sync_car_infos {
-        iracing_client::sync_car_infos(&mut client).await;
+    if args.sync_car_infos_to_db {
+        iracing_client::sync_car_infos_to_db(&mut client).await;
     }
 
-    if args.sync_track_infos {
-        iracing_client::sync_track_infos(&mut client).await;
+    if args.sync_track_infos_to_db {
+        iracing_client::sync_track_infos_to_db(&mut client).await;
     }
 }
 

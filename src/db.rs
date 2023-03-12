@@ -334,7 +334,7 @@ fn add_sessions_to_db<I>(ctx: &mut DbContext, files: I)
     }
 }
 
-fn rebuild_tracks(ctx: &mut DbContext) {
+pub fn rebuild_tracks(ctx: &mut DbContext) {
     let contents = fs::read_to_string(get_track_data_file()).unwrap();
     let tracks: Value = serde_json::from_str(&contents).unwrap();
 
@@ -343,7 +343,7 @@ fn rebuild_tracks(ctx: &mut DbContext) {
     }
 }
 
-fn rebuild_cars(ctx: &mut DbContext) {
+pub fn rebuild_cars(ctx: &mut DbContext) {
     let contents = fs::read_to_string(get_car_data_file()).unwrap();
     let cars: Value = serde_json::from_str(&contents).unwrap();
 
@@ -791,6 +791,25 @@ pub fn rebuild_db_schema() {
     build_db_indices(&tx);
 
     tx.commit().unwrap();
+}
+
+pub fn rebuild_tracks_in_db() {
+    let mut con = create_db_connection();
+    let mut tx = con.transaction().unwrap();
+    tx.execute("DELETE FROM track", ()).unwrap();
+    tx.execute("DELETE FROM track_config", ()).unwrap();
+
+    let mut ctx = create_db_context(&mut tx);
+    rebuild_tracks(&mut ctx);
+}
+
+pub fn rebuild_cars_in_db() {
+    let mut con = create_db_connection();
+    let mut tx = con.transaction().unwrap();
+    tx.execute("DELETE FROM car", ()).unwrap(); // deletes all rows
+
+    let mut ctx = create_db_context(&mut tx);
+    rebuild_cars(&mut ctx);
 }
 
 pub fn rebuild_db() {
