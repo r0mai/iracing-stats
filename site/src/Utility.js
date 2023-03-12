@@ -72,3 +72,7 @@ export function getHighestIRating(driverSessions, category) {
     let filteredIRating = driverSessions.filter(session => isCategory(session, category)).map(session => session["new_irating"]);
     return Math.max.apply(null, filteredIRating);
 }
+
+export function getTimeInSession(session) {
+    return session["average_lap"] * session["laps_complete"];
+}

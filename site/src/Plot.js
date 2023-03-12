@@ -243,7 +243,9 @@ function dateToKey(date) {
 export function yearlyFrequencyMap(
     div,
     data,
-    dateFunc)
+    dateFunc,
+    valueFunc,
+    formatValue)
 {
     let dateExtent = d3.extent(data, dateFunc);
     let startYear = dateExtent[0].getFullYear();
@@ -252,10 +254,10 @@ export function yearlyFrequencyMap(
     let frequencyMap = new Map();
 
     let maxValue = 0;
-    for (let res of data) {
-        let date = dateFunc(res);
+    for (let session of data) {
+        let date = dateFunc(session);
         let key = dateToKey(date);
-        let newValue = (frequencyMap.get(key) ?? 0) + 1;
+        let newValue = (frequencyMap.get(key) ?? 0) + valueFunc(session);
         frequencyMap.set(key, newValue);
 
         maxValue = Math.max(newValue, maxValue);
@@ -267,10 +269,11 @@ export function yearlyFrequencyMap(
     let offsetY = rectH + 2;
     let yearOffsetY = 7 * offsetY + 6;
     let leftMargin = 50;
+    let rightMargin = 100;
 
     let svg = d3.select(div)
         .append('svg')
-        .attr("width", 55 * offsetX + leftMargin) // # weeks
+        .attr("width", 55 * offsetX + leftMargin + rightMargin)
         .attr("height", (endYear - startYear + 1) * yearOffsetY)
         ;
 
@@ -278,6 +281,47 @@ export function yearlyFrequencyMap(
         .domain([0, maxValue])
         .range(["#aaa", "blue"])
         ;
+
+    let defs = svg.append("defs");
+    let scaleGradient = defs.append("linearGradient")
+        .attr("id", "scaleGradient")
+        .attr("x1", "0%")
+        .attr("y1", "100%")
+        .attr("x2", "0%")
+        .attr("y2", "0%");
+    
+    scaleGradient.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", colorScale(0));
+    scaleGradient.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", colorScale(maxValue));
+
+    let legendG = svg.append("g")
+        .attr("transform", svgTranslate(55 * offsetX + leftMargin + offsetX, offsetY));
+    legendG.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", rectW * 1)
+        .attr("height", offsetY * 5)
+        .attr("rx", rectW * 0.2)
+        .attr("fill", "url(#scaleGradient)")
+        ;
+    legendG.append("text")
+        .attr("x", rectW * 2)
+        .attr("y", 0)
+        .attr("dy", "0.5em")
+        .attr("fill", theme.palette.text.primary)
+        .text(formatValue(maxValue))
+        ;
+    legendG.append("text")
+        .attr("x", rectW * 2)
+        .attr("y", offsetY * 5)
+        .attr("dy", "0.5em")
+        .attr("fill", theme.palette.text.primary)
+        .text(formatValue(0))
+        ;
+
 
     for (let y = endYear; y >= startYear; --y) {
         let originY = (endYear - y) * yearOffsetY;
