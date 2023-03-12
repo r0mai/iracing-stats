@@ -1,6 +1,6 @@
 import { useD3 } from './hooks/useD3.js';
 import { verticalBarChart } from './Plot.js';
-import { toHours, round } from './Utility.js';
+import { formatTime } from './Utility.js';
 
 function collectTrackUsage(sessions, trackMap) {
     let trackUsage = {};
@@ -24,14 +24,14 @@ function collectTrackUsage(sessions, trackMap) {
 
 function plotTrackUsageTime(div, trackUsage) {
     let format = {
-        xTickFormat: (e => round(e, 1) + "h"),
+        xTickFormat: formatTime,
         barFill: "#6EB5FF"
     };
     trackUsage.sort((lhs, rhs) => rhs["time"] - lhs["time"]);
     verticalBarChart(
         div,
         trackUsage,
-        e => toHours(e["time"]),
+        e => e["time"],
         e => e["track_name"],
         format
     );

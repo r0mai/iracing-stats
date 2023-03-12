@@ -1,7 +1,6 @@
 import * as d3 from 'd3';
 import { svgTranslate, svgPx } from './Utility.js';
 import { theme } from './Theme.js';
-import './Plot.css';
 
 export function linePlot(
     div,

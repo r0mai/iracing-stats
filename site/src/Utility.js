@@ -36,6 +36,15 @@ export function driverToQueryParam(driver) {
     }
 }
 
+export function formatTime(time) {
+    let hours = toHours(time);
+    if (hours < 1) {
+        return round(hours * 60, 0) + " min";
+    } else {
+        return round(hours, 1) + "h";
+    }
+}
+
 export function mapifyTrackData(tracks) {
     let trackMap = {};
     tracks.forEach(track => {

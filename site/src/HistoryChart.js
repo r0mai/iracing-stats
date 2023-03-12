@@ -1,6 +1,6 @@
 import { useD3 } from './hooks/useD3.js';
 import { yearlyFrequencyMap } from './Plot.js';
-import { getTimeInSession, round, toHours } from './Utility.js';
+import { formatTime, getTimeInSession, round, toHours } from './Utility.js';
 
 function HistoryChart({driverSessions}) {
     const ref = useD3(
@@ -10,7 +10,8 @@ function HistoryChart({driverSessions}) {
                 driverSessions,
                 e => e["start_time"],
                 e => getTimeInSession(e),
-                e => round(toHours(e), 1) + "h");
+                e => formatTime(e)
+            )
         },
         [driverSessions]
     );
