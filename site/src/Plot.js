@@ -272,7 +272,7 @@ export function yearlyFrequencyMap(
     let offsetX = rectW + 2;
     let offsetY = rectH + 2;
     let yearOffsetY = 7 * offsetY + 6;
-    let leftMargin = 50;
+    let leftMargin = 80;
     let rightMargin = 100;
 
     let svg = d3.select(div)
@@ -344,16 +344,14 @@ export function yearlyFrequencyMap(
     for (let y = endYear; y >= startYear; --y) {
         let originY = (endYear - y) * yearOffsetY;
 
-        svg.append("text")
-            .attr("x", 5)
-            .attr("y", originY + 0.5 * yearOffsetY)
-            .attr("fill", theme.palette.text.primary)
-            .text(`${y}`)
-            ;
-
         let yearG = svg.append("g")
-            .attr("transform", svgTranslate(leftMargin, originY))
-            ;
+            .attr("transform", svgTranslate(leftMargin, originY));
+
+        yearG.append("text")
+            .attr("x", -75)
+            .attr("y", 0.5 * yearOffsetY)
+            .attr("fill", theme.palette.text.primary)
+            .text(`${y}`);
 
         let firstDay = lookupOneJan(y);
         let lastDay = new Date(y, 11, 31);
@@ -361,6 +359,23 @@ export function yearlyFrequencyMap(
         let firstDayDayIdx = getDay(firstDay);
         let lastDayDayIdx = getDay(lastDay);
         let lastWeekIdx = getWeekNumber(lastDay);
+
+        // week day names
+        {
+            let names = ["Mon", "Thu", "Sun"];
+            let offsets = [0, 3, 6];
+
+            for (let i = 0; i < names.length; ++i) {
+                yearG.append("text")
+                    .attr("x", -25)
+                    .attr("y", offsetY * offsets[i])
+                    .attr("dy", "0.9em")
+                    .attr("font-size", rectH)
+                    .attr("fill", theme.palette.text.primary)
+                    .text(names[i]);
+            }
+
+        }
 
         for (let w = 0; w <= lastWeekIdx; ++w) {
             let startD = w == 0 ? firstDayDayIdx : 0;
@@ -381,7 +396,7 @@ export function yearlyFrequencyMap(
                     .attr("width", rectW)
                     .attr("height", rectH)
                     .attr("rx", rectW * 0.2)
-                    .attr("fill", color)
+                    .attr("fill", color);
 
                 if (value !== undefined) {
                     let mouseover = function(event) {
