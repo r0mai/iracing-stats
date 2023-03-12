@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import { svgTranslate, svgPx } from './Utility.js';
 import { theme } from './Theme.js';
+import './Plot.css';
 
 export function linePlot(
     div,
@@ -257,10 +258,16 @@ export function yearlyFrequencyMap(
     for (let session of data) {
         let date = dateFunc(session);
         let key = dateToKey(date);
-        let newValue = (frequencyMap.get(key) ?? 0) + valueFunc(session);
-        frequencyMap.set(key, newValue);
-
-        maxValue = Math.max(newValue, maxValue);
+        let value = frequencyMap.get(key);
+        if (value === undefined) {
+            value = {
+                date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
+                value: 0
+            };
+            frequencyMap.set(key, value);
+        }
+        value.value += valueFunc(session);
+        maxValue = Math.max(value.value, maxValue);
     }
 
     let rectW = 10;
@@ -282,46 +289,60 @@ export function yearlyFrequencyMap(
         .range(["#aaa", "blue"])
         ;
 
-    let defs = svg.append("defs");
-    let scaleGradient = defs.append("linearGradient")
-        .attr("id", "scaleGradient")
-        .attr("x1", "0%")
-        .attr("y1", "100%")
-        .attr("x2", "0%")
-        .attr("y2", "0%");
-    
-    scaleGradient.append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", colorScale(0));
-    scaleGradient.append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", colorScale(maxValue));
+    // legend
+    {
+        let defs = svg.append("defs");
+        let scaleGradient = defs.append("linearGradient")
+            .attr("id", "scaleGradient")
+            .attr("x1", "0%")
+            .attr("y1", "100%")
+            .attr("x2", "0%")
+            .attr("y2", "0%");
+        
+        scaleGradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", colorScale(0));
+        scaleGradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", colorScale(maxValue));
 
-    let legendG = svg.append("g")
-        .attr("transform", svgTranslate(55 * offsetX + leftMargin + offsetX, offsetY));
-    legendG.append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", rectW * 1)
-        .attr("height", offsetY * 5)
-        .attr("rx", rectW * 0.2)
-        .attr("fill", "url(#scaleGradient)")
-        ;
-    legendG.append("text")
-        .attr("x", rectW * 2)
-        .attr("y", 0)
-        .attr("dy", "0.5em")
-        .attr("fill", theme.palette.text.primary)
-        .text(formatValue(maxValue))
-        ;
-    legendG.append("text")
-        .attr("x", rectW * 2)
-        .attr("y", offsetY * 5)
-        .attr("dy", "0.5em")
-        .attr("fill", theme.palette.text.primary)
-        .text(formatValue(0))
-        ;
+        let legendG = svg.append("g")
+            .attr("transform", svgTranslate(55 * offsetX + leftMargin + offsetX, offsetY));
+        legendG.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", rectW * 1)
+            .attr("height", offsetY * 5)
+            .attr("rx", rectW * 0.2)
+            .attr("fill", "url(#scaleGradient)")
+            ;
+        legendG.append("text")
+            .attr("x", rectW * 2)
+            .attr("y", 0)
+            .attr("dy", "0.5em")
+            .attr("fill", theme.palette.text.primary)
+            .text(formatValue(maxValue))
+            ;
+        legendG.append("text")
+            .attr("x", rectW * 2)
+            .attr("y", offsetY * 5)
+            .attr("dy", "0.5em")
+            .attr("fill", theme.palette.text.primary)
+            .text(formatValue(0))
+            ;
+    }
 
+    // tooltip
+    let tooltipWidth = 150;
+    let tooltip = d3.select(div)
+        .append("div")
+        .style("visibility", "hidden")
+        .style("position", "absolute")
+        .style("width", svgPx(tooltipWidth))
+        .style("max-width", svgPx(tooltipWidth))
+        .style("background-color", "gray")
+        .style("text-align", "center")
+        ;
 
     for (let y = endYear; y >= startYear; --y) {
         let originY = (endYear - y) * yearOffsetY;
@@ -354,17 +375,34 @@ export function yearlyFrequencyMap(
                 if (value === undefined) {
                     color = "#444";
                 } else {
-                    color = colorScale(value);
+                    color = colorScale(value.value);
                 }
 
-                yearG.append("rect")
+                let rect = yearG.append("rect")
                     .attr("x", offsetX * w)
                     .attr("y", offsetY * d)
                     .attr("width", rectW)
                     .attr("height", rectH)
                     .attr("rx", rectW * 0.2)
                     .attr("fill", color)
-                    ;
+
+                if (value !== undefined) {
+                    let mouseover = function(event) {
+                        tooltip
+                            .html(value.date.toDateString() + "<br/>" + formatValue(value.value))
+                            .style("left", svgPx(event.pageX - tooltipWidth * 0.5))
+                            .style("top", svgPx(event.pageY + 10))
+                            .style("visibility", "visible");
+                    };
+                    let mouseleave = function(event) {
+                        tooltip.style("visibility", "hidden");
+                    };
+
+                    rect
+                        .on("mousemove", mouseover)
+                        .on("mouseout", mouseleave);
+                        ;
+                }
             }
         }
     }
