@@ -796,20 +796,26 @@ pub fn rebuild_db_schema() {
 pub fn rebuild_tracks_in_db() {
     let mut con = create_db_connection();
     let mut tx = con.transaction().unwrap();
-    tx.execute("DELETE FROM track", ()).unwrap();
-    tx.execute("DELETE FROM track_config", ()).unwrap();
+    {
+        tx.execute("DELETE FROM track", ()).unwrap();
+        tx.execute("DELETE FROM track_config", ()).unwrap();
 
-    let mut ctx = create_db_context(&mut tx);
-    rebuild_tracks(&mut ctx);
+        let mut ctx = create_db_context(&mut tx);
+        rebuild_tracks(&mut ctx);
+    }
+    tx.commit().unwrap();
 }
 
 pub fn rebuild_cars_in_db() {
     let mut con = create_db_connection();
     let mut tx = con.transaction().unwrap();
-    tx.execute("DELETE FROM car", ()).unwrap(); // deletes all rows
+    {
+        tx.execute("DELETE FROM car", ()).unwrap(); // deletes all rows
 
-    let mut ctx = create_db_context(&mut tx);
-    rebuild_cars(&mut ctx);
+        let mut ctx = create_db_context(&mut tx);
+        rebuild_cars(&mut ctx);
+    }
+    tx.commit().unwrap();
 }
 
 pub fn rebuild_db() {
