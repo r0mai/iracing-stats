@@ -347,18 +347,14 @@ export function yearlyFrequencyMap(
         let yearG = svg.append("g")
             .attr("transform", svgTranslate(leftMargin, originY));
 
-        yearG.append("text")
-            .attr("x", -75)
-            .attr("y", 0.5 * yearOffsetY)
-            .attr("fill", theme.palette.text.primary)
-            .text(`${y}`);
-
-        let firstDay = lookupOneJan(y);
-        let lastDay = new Date(y, 11, 31);
-
-        let firstDayDayIdx = getDay(firstDay);
-        let lastDayDayIdx = getDay(lastDay);
-        let lastWeekIdx = getWeekNumber(lastDay);
+        // year text
+        {
+            yearG.append("text")
+                .attr("x", -75)
+                .attr("y", 0.5 * yearOffsetY)
+                .attr("fill", theme.palette.text.primary)
+                .text(`${y}`);
+        }
 
         // week day names
         {
@@ -374,8 +370,14 @@ export function yearlyFrequencyMap(
                     .attr("fill", theme.palette.text.primary)
                     .text(names[i]);
             }
-
         }
+
+        let firstDay = lookupOneJan(y);
+        let lastDay = new Date(y, 11, 31);
+
+        let firstDayDayIdx = getDay(firstDay);
+        let lastDayDayIdx = getDay(lastDay);
+        let lastWeekIdx = getWeekNumber(lastDay);
 
         for (let w = 0; w <= lastWeekIdx; ++w) {
             let startD = w == 0 ? firstDayDayIdx : 0;
@@ -413,7 +415,6 @@ export function yearlyFrequencyMap(
                     rect
                         .on("mousemove", mouseover)
                         .on("mouseout", mouseleave);
-                        ;
                 }
             }
         }
