@@ -7,7 +7,6 @@ function collectCarUsage(sessions, trackMap, carMap) {
     sessions.forEach(session => {
         let carId = session["car_id"];
         if (!carUsage[carId]) {
-            console.log("carId", carId);
             carUsage[carId] = {
                 car_name: carMap[carId]["car_name"],
                 car_name_abbreviated: carMap[carId]["car_name_abbreviated"],

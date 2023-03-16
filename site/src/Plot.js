@@ -258,7 +258,7 @@ export function yearlyFrequencyMap(
         let value = frequencyMap.get(key);
         if (value === undefined) {
             value = {
-                date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
+                date: date,
                 value: 0
             };
             frequencyMap.set(key, value);
@@ -381,7 +381,7 @@ export function yearlyFrequencyMap(
 
         for (let w = 0; w <= lastWeekIdx; ++w) {
             let startD = w == 0 ? firstDayDayIdx : 0;
-            let lastD = w == lastWeekIdx ? lastDayDayIdx: 6;
+            let lastD = w == lastWeekIdx ? lastDayDayIdx : 6;
             for (let d = startD; d <= lastD; ++d) {
                 let key = ywdToKey(y, w, d);
                 let color = undefined;
@@ -391,6 +391,7 @@ export function yearlyFrequencyMap(
                 } else {
                     color = colorScale(value.value);
                 }
+
 
                 let rect = yearG.append("rect")
                     .attr("x", offsetX * w)
