@@ -204,7 +204,7 @@ export function verticalBarChart(
 const oneJanLookUpTable = (() => {
     let table = [];
     for (let y = 2000; y <= 2030; ++y) {
-        table[y - 2000] = new Date(y, 0, 1);
+        table[y - 2000] = new Date(Date.UTC(y, 0, 1));
     }
     return table;
 })();
@@ -215,27 +215,23 @@ function lookupOneJan(year) {
 
 // Makes Monday the 0th day
 function getDay(date) {
-    let idx = date.getDay();
+    let idx = date.getUTCDay();
     return [6, 0, 1, 2, 3, 4, 5][idx];
 }
 
 // Adapted from https://stackoverflow.com/questions/6117814/get-week-of-year-in-javascript-like-in-php
 function getWeekNumber(date) {
-    let onejan = lookupOneJan(date.getFullYear());
+    let onejan = lookupOneJan(date.getUTCFullYear());
     let dayIndex = (date.getTime() - onejan.getTime()) / 86400000;
     let week = Math.ceil((dayIndex + getDay(onejan) + 1) / 7);
     return week - 1;
 }
 
-function ywdToKey(year, week, day) {
-    return day + 10 * week + 1000 * year;
-}
-
-function dateToKey(date) {
-    let year = date.getFullYear();
-    let week = getWeekNumber(date);
-    let day = getDay(date);
-    return ywdToKey(year, week, day);
+function dateToYMDKey(date) {
+    let year = date.getUTCFullYear();
+    let month = date.getUTCMonth();
+    let day = date.getUTCDate();
+    return day + 100 * month + 10000 * year;
 }
 
 export function yearlyFrequencyMap(
@@ -246,25 +242,41 @@ export function yearlyFrequencyMap(
     formatValue)
 {
     let dateExtent = d3.extent(data, dateFunc);
-    let startYear = dateExtent[0].getFullYear();
-    let endYear = dateExtent[1].getFullYear();
+    let startYear = dateExtent[0].getUTCFullYear();
+    let endYear = dateExtent[1].getUTCFullYear();
 
-    let frequencyMap = new Map();
-
+    let frequencyData = [];
+    let currentDate = new Date(lookupOneJan(startYear).getTime());
+    let lastKey = dateToYMDKey(new Date(Date.UTC(endYear, 11, 31)));
+    let sessionIdx = 0;
     let maxValue = 0;
-    for (let session of data) {
-        let date = dateFunc(session);
-        let key = dateToKey(date);
-        let value = frequencyMap.get(key);
-        if (value === undefined) {
-            value = {
-                date: date,
-                value: 0
-            };
-            frequencyMap.set(key, value);
+    while (true) {
+        let currentKey = dateToYMDKey(currentDate);
+
+        let value = undefined;
+        while (sessionIdx < data.length) {
+            let session = data[sessionIdx];
+            let sessionDate = dateFunc(session);
+            let sessionKey = dateToYMDKey(sessionDate);
+            if (sessionKey !== currentKey) {
+                break;
+            }
+
+            value = value || 0;
+            value += valueFunc(session);
+            sessionIdx += 1;
         }
-        value.value += valueFunc(session);
-        maxValue = Math.max(value.value, maxValue);
+
+        maxValue = Math.max(value || 0, maxValue);
+        frequencyData.push({
+            date: new Date(currentDate.getTime()),
+            value: value
+        });
+
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+        if (currentKey === lastKey) {
+            break;
+        }
     }
 
     let rectW = 10;
@@ -341,20 +353,19 @@ export function yearlyFrequencyMap(
         .style("text-align", "center")
         ;
 
-    for (let y = endYear; y >= startYear; --y) {
+    let dataIdx = 0;
+    for (let y = startYear; y <= endYear; ++y) {
         let originY = (endYear - y) * yearOffsetY;
 
         let yearG = svg.append("g")
             .attr("transform", svgTranslate(leftMargin, originY));
 
         // year text
-        {
-            yearG.append("text")
-                .attr("x", -75)
-                .attr("y", 0.5 * yearOffsetY)
-                .attr("fill", theme.palette.text.primary)
-                .text(`${y}`);
-        }
+        yearG.append("text")
+            .attr("x", -75)
+            .attr("y", 0.5 * yearOffsetY)
+            .attr("fill", theme.palette.text.primary)
+            .text(`${y}`);
 
         // week day names
         {
@@ -380,43 +391,45 @@ export function yearlyFrequencyMap(
         let lastWeekIdx = getWeekNumber(lastDay);
 
         for (let w = 0; w <= lastWeekIdx; ++w) {
-            let startD = w == 0 ? firstDayDayIdx : 0;
-            let lastD = w == lastWeekIdx ? lastDayDayIdx : 6;
+            let startD = w === 0 ? firstDayDayIdx : 0;
+            let lastD = w === lastWeekIdx ? lastDayDayIdx : 6;
             for (let d = startD; d <= lastD; ++d) {
-                let key = ywdToKey(y, w, d);
+                let dayData = frequencyData[dataIdx];
+                dataIdx += 1;
+
                 let color = undefined;
-                let value = frequencyMap.get(key);
-                if (value === undefined) {
+                if (dayData.value === undefined) {
                     color = "#444";
                 } else {
-                    color = colorScale(value.value);
+                    color = colorScale(dayData.value);
                 }
 
+                let mouseover = function(event) {
+                    let year = dayData.date.getUTCFullYear();
+                    let month = dayData.date.getUTCMonth();
+                    let day = dayData.date.getUTCDate();
+                    tooltip
+                        .html(
+                            `${year}/${month + 1}/${day}` + "<br/>" +
+                            (dayData.value === undefined ? "No activity" : formatValue(dayData.value))
+                        )
+                        .style("left", svgPx(event.pageX - tooltipWidth * 0.5))
+                        .style("top", svgPx(event.pageY + 10))
+                        .style("visibility", "visible");
+                };
+                let mouseleave = function() {
+                    tooltip.style("visibility", "hidden");
+                };
 
-                let rect = yearG.append("rect")
+                yearG.append("rect")
                     .attr("x", offsetX * w)
                     .attr("y", offsetY * d)
                     .attr("width", rectW)
                     .attr("height", rectH)
                     .attr("rx", rectW * 0.2)
-                    .attr("fill", color);
-
-                if (value !== undefined) {
-                    let mouseover = function(event) {
-                        tooltip
-                            .html(value.date.toDateString() + "<br/>" + formatValue(value.value))
-                            .style("left", svgPx(event.pageX - tooltipWidth * 0.5))
-                            .style("top", svgPx(event.pageY + 10))
-                            .style("visibility", "visible");
-                    };
-                    let mouseleave = function(event) {
-                        tooltip.style("visibility", "hidden");
-                    };
-
-                    rect
-                        .on("mousemove", mouseover)
-                        .on("mouseout", mouseleave);
-                }
+                    .attr("fill", color)
+                    .on("mousemove", mouseover)
+                    .on("mouseout", mouseleave);
             }
         }
     }
