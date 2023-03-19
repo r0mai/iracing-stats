@@ -384,7 +384,7 @@ export function yearlyFrequencyMap(
         }
 
         let firstDay = lookupOneJan(y);
-        let lastDay = new Date(y, 11, 31);
+        let lastDay = new Date(Date.UTC(y, 11, 31));
 
         let firstDayDayIdx = getDay(firstDay);
         let lastDayDayIdx = getDay(lastDay);
@@ -408,9 +408,10 @@ export function yearlyFrequencyMap(
                     let year = dayData.date.getUTCFullYear();
                     let month = dayData.date.getUTCMonth();
                     let day = dayData.date.getUTCDate();
+                    let dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayData.date.getUTCDay()];
                     tooltip
                         .html(
-                            `${year}/${month + 1}/${day}` + "<br/>" +
+                            `${year}/${month + 1}/${day} ${dayName}` + "<br/>" +
                             (dayData.value === undefined ? "No activity" : formatValue(dayData.value))
                         )
                         .style("left", svgPx(event.pageX - tooltipWidth * 0.5))
