@@ -281,8 +281,10 @@ export function yearlyFrequencyMap(
 
     let rectW = 10;
     let rectH = 10;
-    let offsetX = rectW + 2;
-    let offsetY = rectH + 2;
+    let gapX = 2;
+    let gapY = 2;
+    let offsetX = rectW + gapX;
+    let offsetY = rectH + gapY;
     let yearOffsetY = 7 * offsetY + 6;
     let leftMargin = 80;
     let rightMargin = 100;
@@ -395,7 +397,6 @@ export function yearlyFrequencyMap(
             let lastD = w === lastWeekIdx ? lastDayDayIdx : 6;
             for (let d = startD; d <= lastD; ++d) {
                 let dayData = frequencyData[dataIdx];
-                dataIdx += 1;
 
                 let color = undefined;
                 if (dayData.value === undefined) {
@@ -404,11 +405,11 @@ export function yearlyFrequencyMap(
                     color = colorScale(dayData.value);
                 }
 
+                let year = dayData.date.getUTCFullYear();
+                let month = dayData.date.getUTCMonth();
+                let day = dayData.date.getUTCDate();
+                let dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayData.date.getUTCDay()];
                 let mouseover = function(event) {
-                    let year = dayData.date.getUTCFullYear();
-                    let month = dayData.date.getUTCMonth();
-                    let day = dayData.date.getUTCDate();
-                    let dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayData.date.getUTCDay()];
                     tooltip
                         .html(
                             `${year}/${month + 1}/${day} ${dayName}` + "<br/>" +
@@ -431,6 +432,46 @@ export function yearlyFrequencyMap(
                     .attr("fill", color)
                     .on("mousemove", mouseover)
                     .on("mouseout", mouseleave);
+
+                // month separators
+                {
+                    let strokeWidth = 1;
+                    let strokeColor = "#F77";
+                    // right
+                    if (dataIdx + 7 < frequencyData.length) {
+                        let rightData = frequencyData[dataIdx + 7];
+                        let rightYear = rightData.date.getUTCFullYear();
+                        let rightMonth = rightData.date.getUTCMonth();
+                        if (year === rightYear && month !== rightMonth) {
+                            yearG.append("line")
+                                .attr("x1", offsetX * w + rectW + gapX/2)
+                                .attr("y1", offsetY * d - gapY/2)
+                                .attr("x2", offsetX * w + rectW + gapX/2)
+                                .attr("y2", offsetY * d + rectH + gapY/2)
+                                .attr("stroke-width", strokeWidth)
+                                .attr("stroke", strokeColor);
+                        }
+
+                    }
+                    // bottom
+                    if (d != lastD && dataIdx + 1 < frequencyData.length) {
+                        let bottomData = frequencyData[dataIdx + 1];
+                        let bottomYear = bottomData.date.getUTCFullYear();
+                        let bottomMonth = bottomData.date.getUTCMonth();
+                        if (year === bottomYear && month !== bottomMonth) {
+                            yearG.append("line")
+                                .attr("x1", offsetX * w - gapX/2)
+                                .attr("y1", offsetY * d + rectH + gapY/2)
+                                .attr("x2", offsetX * w + rectW + gapX/2)
+                                .attr("y2", offsetY * d + rectH + gapY/2)
+                                .attr("stroke-width", strokeWidth)
+                                .attr("stroke", strokeColor);
+                        }
+
+                    }
+                }
+
+                dataIdx += 1;
             }
         }
     }
