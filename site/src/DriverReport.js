@@ -18,7 +18,7 @@ function preprocessDriverSessions(sessions) {
     sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
 }
 
-function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
+function DriverReport({driver, driverName, trackMap, carMap, state}) {
     let driverInfo;
     {
         let headers = { Accept: "application/json" }
@@ -34,7 +34,7 @@ function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
     preprocessDriverSessions(driverSessions);
 
     let report;
-    switch (ReportType.findIndex(reportState.type)) {
+    switch (ReportType.findIndex(state.type)) {
         case ReportType.kSummary:
             report = <DriverStats driverSessions={driverSessions} trackMap={trackMap} driverName={driverName}/>;
             break;
@@ -48,10 +48,10 @@ function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
             report = <TrackUsage driverSessions={driverSessions} trackMap={trackMap}/>;
             break;
         case ReportType.kIRacingHistory:
-            report = <IRatingHistory driverSessions={driverSessions} category={reportState.category}/>;
+            report = <IRatingHistory driverSessions={driverSessions} category={state.category}/>;
             break;
         case ReportType.kCPIHistory:
-            report = <IncidentHistory driverSessions={driverSessions} category={reportState.category}/>;
+            report = <IncidentHistory driverSessions={driverSessions} category={state.category}/>;
             break;
         case ReportType.kHistoryChart:
             report = <HistoryChart driverSessions={driverSessions}/>;

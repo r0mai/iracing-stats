@@ -5,15 +5,15 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import Stack from '@mui/system/Stack';
 
-function ReportSelector({reportState, setReportState}) {
+function ReportSelector({state, setState}) {
 
     let typeSelector = (
         <Select
             labelId="report-selector-label"
             id="report-selector-id"
-            value={ReportType.findIndex(reportState.type)}
+            value={ReportType.findIndex(state.type)}
             label="Report"
-            onChange={(event) => setReportState({...reportState, type: ReportType.findName(event.target.value)})}
+            onChange={(event) => setState({...state, type: ReportType.findName(event.target.value)})}
             sx={{ width: 200 }}
         >
             <MenuItem value={ReportType.kSummary}>Summary</MenuItem>
@@ -30,9 +30,9 @@ function ReportSelector({reportState, setReportState}) {
         <Select
             labelId="category-selector-label"
             id="category-selector-id"
-            value={Category.findIndex(reportState.category)}
+            value={Category.findIndex(state.category)}
             label="Category"
-            onChange={(event) => setReportState({...reportState, category: Category.findName(event.target.value)})}
+            onChange={(event) => setState({...state, category: Category.findName(event.target.value)})}
             sx={{ width: 200 }}
         >
             <MenuItem value={Category.kRoad}>Road</MenuItem>
@@ -43,24 +43,24 @@ function ReportSelector({reportState, setReportState}) {
     );
 
     let onPrevClick = () => {
-        let newType = ReportType.findIndex(reportState.type);
+        let newType = ReportType.findIndex(state.type);
         newType -= 1;
         if (newType < 0) {
             newType = ReportType.kReportTypeCount - 1;
         }
-        setReportState({...reportState, type: ReportType.findName(newType)});
+        setState({...state, type: ReportType.findName(newType)});
     };
     let onNextClick = () => {
-        let newType = ReportType.findIndex(reportState.type);
+        let newType = ReportType.findIndex(state.type);
         newType += 1;
         if (newType >= ReportType.kReportTypeCount) {
             newType = 0;
         }
-        setReportState({...reportState, type: ReportType.findName(newType)});
+        setState({...state, type: ReportType.findName(newType)});
     };
 
     let hasCategorySelector = () => {
-        let typeIdx = ReportType.findIndex(reportState.type);
+        let typeIdx = ReportType.findIndex(state.type);
         return typeIdx == ReportType.kIRacingHistory || typeIdx == ReportType.kCPIHistory;
     };
 

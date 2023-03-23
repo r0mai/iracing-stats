@@ -18,27 +18,13 @@ import * as ReportType from './ReportType.js';
 import * as Category from './LicenseCategory.js';
 
 function App() {
-    let [reportState, setReportState] = React.useState({
-        type: ReportType.kSummary,
-        category: Category.kRoad
-    });
+    let [state, setState] = useObjectSearchParams();
 
-    let [searchParams, setSearchParams] = useObjectSearchParams();
-
-    let paramString = window.location.search.split('?')[1];
-    let queryString = new URLSearchParams(paramString);
-
-    let urlDrivers = queryString.get('drivers');
-    if (!urlDrivers) {
-        return "Pass in a list of drivers <url>?drivers=Driver1;Driver2;Driver3";
-    }
-    let drivers = urlDrivers.split(';');
-    
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <Box sx={{ m: 1 }}>
-                <DriverList drivers={drivers} reportState={reportState} setReportState={setReportState}/>
+                <DriverList state={state} setState={setState}/>
             </Box>
         </ThemeProvider>
     );

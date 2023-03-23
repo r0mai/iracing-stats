@@ -9,10 +9,11 @@ import Tab from '@mui/material/Tab';
 import Grid from '@mui/material/Grid';
 import * as React from 'react';
 
-function DriverList({drivers, reportState, setReportState}) {
+function DriverList({state, setState}) {
 
     let driverViews = [];
     let custIDs = [];
+    let drivers = state["drivers"].split(';');
     for (let driver of drivers) {
         let view = {
             driver: driver,
@@ -79,15 +80,15 @@ function DriverList({drivers, reportState, setReportState}) {
                         return (
                             <TabPanel value={tabIndex} index={i}>
                                 <ReportSelector
-                                    reportState={reportState}
-                                    setReportState={setReportState}
+                                    state={state}
+                                    setState={setState}
                                 />
                                 <DriverReport
                                     driver={view.driver}
                                     driverName={view.displayName}
                                     trackMap={trackMap}
                                     carMap={carMap}
-                                    reportState={reportState}
+                                    state={state}
                                 />
                             </TabPanel>
                         );
