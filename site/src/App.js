@@ -7,6 +7,7 @@ import _default from 'react-async';
 import './App.css';
 import DriverList from './DriverList.js';
 import { theme } from './Theme.js';
+import { useObjectSearchParams } from './hooks/useObjectSearchParams.js';
 
 import React from 'react';
 import { ThemeProvider } from '@mui/material/styles';
@@ -21,6 +22,8 @@ function App() {
         type: ReportType.kSummary,
         category: Category.kRoad
     });
+
+    let [searchParams, setSearchParams] = useObjectSearchParams();
 
     let paramString = window.location.search.split('?')[1];
     let queryString = new URLSearchParams(paramString);

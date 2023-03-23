@@ -34,7 +34,7 @@ function DriverReport({driver, driverName, trackMap, carMap, reportState}) {
     preprocessDriverSessions(driverSessions);
 
     let report;
-    switch (reportState.type) {
+    switch (ReportType.findIndex(reportState.type)) {
         case ReportType.kSummary:
             report = <DriverStats driverSessions={driverSessions} trackMap={trackMap} driverName={driverName}/>;
             break;

@@ -6,13 +6,14 @@ import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import Stack from '@mui/system/Stack';
 
 function ReportSelector({reportState, setReportState}) {
+
     let typeSelector = (
         <Select
             labelId="report-selector-label"
             id="report-selector-id"
-            value={reportState.type}
+            value={ReportType.findIndex(reportState.type)}
             label="Report"
-            onChange={(event) => setReportState({...reportState, type: event.target.value})}
+            onChange={(event) => setReportState({...reportState, type: ReportType.findName(event.target.value)})}
             sx={{ width: 200 }}
         >
             <MenuItem value={ReportType.kSummary}>Summary</MenuItem>
@@ -42,20 +43,20 @@ function ReportSelector({reportState, setReportState}) {
     );
 
     let onPrevClick = () => {
-        let newType = reportState.type;
+        let newType = ReportType.findIndex(reportState.type);
         newType -= 1;
         if (newType < 0) {
             newType = ReportType.kReportTypeCount - 1;
         }
-        setReportState({...reportState, type: newType});
+        setReportState({...reportState, type: ReportType.findName(newType)});
     };
     let onNextClick = () => {
-        let newType = reportState.type;
+        let newType = ReportType.findIndex(reportState.type);
         newType += 1;
         if (newType >= ReportType.kReportTypeCount) {
             newType = 0;
         }
-        setReportState({...reportState, type: newType});
+        setReportState({...reportState, type: ReportType.findName(newType)});
     };
 
     return (
