@@ -13,6 +13,8 @@ function DriverList({state, setState}) {
 
     let driverViews = [];
     let custIDs = [];
+
+    // TODO check for empty drivers list
     let drivers = state["drivers"].split(';');
     for (let driver of drivers) {
         let view = {
@@ -60,13 +62,18 @@ function DriverList({state, setState}) {
         }
     }
 
-    const [tabIndex, setTabIndex] = React.useState(0);
-    let updateTabIndex = (event, newIndex) => setTabIndex(newIndex);
+    let findDriverIdx = (driver) => {
+        let idx = driverViews.findIndex((view) => view.driver === driver);
+        return idx === -1 ? 0 : idx;
+    };
+
+    let currentIdx = findDriverIdx(state["selected"]);
+    let updateTabIndex = (event, newIndex) => setState({...state, selected: driverViews[newIndex].driver}); 
 
     return (
             <Grid container sx={{ flexGrow: 1, display: 'flex', height: '100%' }}>
                 <Grid item xs={2} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs value={tabIndex} onChange={updateTabIndex} orientation="vertical" variant="scrollable">
+                    <Tabs value={currentIdx} onChange={updateTabIndex} orientation="vertical" variant="scrollable">
                         {
                             driverViews.map((view) => 
                                 <Tab label={view.displayName} key={view.driver} />
@@ -78,7 +85,7 @@ function DriverList({state, setState}) {
                 {
                     driverViews.map((view, i) => {
                         return (
-                            <TabPanel value={tabIndex} index={i}>
+                            <TabPanel currentValue={currentIdx} selfValue={i}>
                                 <ReportSelector
                                     state={state}
                                     setState={setState}

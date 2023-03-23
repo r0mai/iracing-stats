@@ -14,11 +14,14 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 
-import * as ReportType from './ReportType.js';
-import * as Category from './LicenseCategory.js';
-
 function App() {
     let [state, setState] = useObjectSearchParams();
+
+    // normalize states
+    state["drivers"] = state["drivers"] || ""; // TODO maybe a default driver?
+    state["selected"] = state["selected"] || "";
+    state["category"] = state["category"] || "road";
+    state["type"] = state["type"] || "summary";
 
     return (
         <ThemeProvider theme={theme}>

@@ -1,11 +1,11 @@
-function TabPanel({children, value, index}) {
+function TabPanel({children, currentValue, selfValue}) {
     return (
         <div
             role="tabpanel" // ???
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
+            hidden={currentValue !== selfValue}
+            id={`simple-tabpanel-${selfValue}`}
         >
-            {value === index && (
+            {currentValue === selfValue && (
                 <div>
                     {children}
                 </div>
