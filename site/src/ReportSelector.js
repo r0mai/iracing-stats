@@ -30,9 +30,9 @@ function ReportSelector({reportState, setReportState}) {
         <Select
             labelId="category-selector-label"
             id="category-selector-id"
-            value={reportState.category}
+            value={Category.findIndex(reportState.category)}
             label="Category"
-            onChange={(event) => setReportState({...reportState, category: event.target.value})}
+            onChange={(event) => setReportState({...reportState, category: Category.findName(event.target.value)})}
             sx={{ width: 200 }}
         >
             <MenuItem value={Category.kRoad}>Road</MenuItem>
@@ -59,6 +59,11 @@ function ReportSelector({reportState, setReportState}) {
         setReportState({...reportState, type: ReportType.findName(newType)});
     };
 
+    let hasCategorySelector = () => {
+        let typeIdx = ReportType.findIndex(reportState.type);
+        return typeIdx == ReportType.kIRacingHistory || typeIdx == ReportType.kCPIHistory;
+    };
+
     return (
         <FormControl>
             <Stack direction="row" spacing={2}>
@@ -69,7 +74,7 @@ function ReportSelector({reportState, setReportState}) {
                 <IconButton onClick={onNextClick}>
                     <NavigateNextIcon/>
                 </IconButton>
-                {(reportState.type == ReportType.kIRacingHistory || reportState.type == ReportType.kCPIHistory) && categorySelector}
+                {hasCategorySelector() && categorySelector}
             </Stack>
         </FormControl>
     );

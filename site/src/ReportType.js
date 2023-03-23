@@ -8,7 +8,7 @@ export const kSessionList = i++;
 export const kHistoryChart = i++;
 export const kReportTypeCount = i++;
 
-export const kNames = [
+const kNames = [
     "summary",
     "iracing-history",
     "track-usage",

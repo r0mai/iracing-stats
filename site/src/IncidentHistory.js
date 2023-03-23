@@ -1,14 +1,16 @@
 import { useD3 } from './hooks/useD3.js';
 import { linePlot } from './Plot.js';
 import { isRookie, isRace, isMainEvent, isCategory } from './Utility.js';
+import * as Category from './LicenseCategory.js';
 
 function plotIncidentHistory(div, sessions, category) {
+    let categoryIdx = Category.findIndex(category);
     let filtered = sessions.filter((session) => {
         return (
             !isRookie(session) &&
             isMainEvent(session) &&
             isRace(session) &&
-            isCategory(session, category)
+            isCategory(session, categoryIdx)
         );
     });
 
@@ -20,10 +22,14 @@ function plotIncidentHistory(div, sessions, category) {
         { min: 50, max: 5000, color: "#174189" },
     ];
 
-    linePlot(div, filtered, e => e["start_time"], e => e["new_cpi"], {
-        horizontalLanes: safetyRatingLanes,
-        lineColor: "#DDD"
-    });
+    if (filtered.length === 0) {
+        div.innerHTML = "No data";
+    } else {
+        linePlot(div, filtered, e => e["start_time"], e => e["new_cpi"], {
+            horizontalLanes: safetyRatingLanes,
+            lineColor: "#DDD"
+        });
+    }
 }
 
 function IncidentHistory({driverSessions, category}) {
