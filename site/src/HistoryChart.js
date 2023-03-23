@@ -5,13 +5,17 @@ import { formatTime, getTimeInSession } from './Utility.js';
 function HistoryChart({driverSessions}) {
     const ref = useD3(
         (root) => {
-            yearlyFrequencyMap(
-                root,
-                driverSessions,
-                e => e["start_time"],
-                e => getTimeInSession(e),
-                e => formatTime(e)
-            )
+            if (driverSessions.length === 0) {
+                root.innerHTML = "No data";
+            } else {
+                yearlyFrequencyMap(
+                    root,
+                    driverSessions,
+                    e => e["start_time"],
+                    e => getTimeInSession(e),
+                    e => formatTime(e)
+                );
+            }
         },
         [driverSessions]
     );
