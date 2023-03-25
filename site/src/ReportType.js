@@ -11,7 +11,6 @@ export const kReportTypeCount = i++;
 const kNames = [
     "summary",
     "iracing-history",
-    "track-usage",
     "cpi-history",
     "track-usage",
     "car-usage",
