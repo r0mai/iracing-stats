@@ -2,7 +2,7 @@ import { useD3 } from './hooks/useD3.js';
 import { yearlyFrequencyMap } from './Plot.js';
 import { formatTime, getTimeInSession } from './Utility.js';
 
-function HistoryChart({driverSessions}) {
+function ActivityHistory({driverSessions}) {
     const ref = useD3(
         (root) => {
             if (driverSessions.length === 0) {
@@ -23,4 +23,4 @@ function HistoryChart({driverSessions}) {
     return <div ref={ref}/>;
 }
 
-export default HistoryChart;
+export default ActivityHistory;

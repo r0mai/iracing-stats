@@ -5,7 +5,7 @@ import TrackUsage from './TrackUsage.js';
 import IRatingHistory from './IRatingHistory.js'
 import IncidentHistory from './IncidentHistory.js'
 import SessionList from "./SessionList.js";
-import HistoryChart from "./HistoryChart.js";
+import ActivityHistory from './ActivityHistory.js';
 import { driverToQueryParam } from './Utility.js';
 import * as ReportType from './ReportType.js'
 import Grid from '@mui/material/Grid';
@@ -53,8 +53,8 @@ function DriverReport({driver, driverName, trackMap, carMap, state}) {
         case ReportType.kCPIHistory:
             report = <IncidentHistory driverSessions={driverSessions} category={state.category}/>;
             break;
-        case ReportType.kHistoryChart:
-            report = <HistoryChart driverSessions={driverSessions}/>;
+        case ReportType.kActivityHistory:
+            report = <ActivityHistory driverSessions={driverSessions}/>;
             break;
     }
 
