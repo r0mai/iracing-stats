@@ -71,6 +71,7 @@ pub enum TrackConfig {
     PackageId,
     ConfigName,
     TrackConfigLength,
+    CategoryId, // road/oval/dirt road/dirt oval
 }
 
 #[derive(Iden)]

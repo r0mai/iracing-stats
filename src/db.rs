@@ -111,7 +111,8 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* track_id */
             ?, /* package_id */
             ?, /* config_name */
-            ?  /* track_config_length */
+            ?, /* track_config_length */
+            ?  /* category_id */
         );"#).unwrap();
     let insert_car_statement = tx.prepare(r#"
         INSERT INTO car VALUES(
@@ -230,7 +231,8 @@ fn add_track_to_db(ctx: &mut DbContext, track: &Value) {
         track["track_id"].as_i64().unwrap(),
         track["package_id"].as_i64().unwrap(),
         track["config_name"].as_str().unwrap_or(""),
-        miles_to_km(track["track_config_length"].as_f64().unwrap())
+        miles_to_km(track["track_config_length"].as_f64().unwrap()),
+        track["category_id"].as_i64().unwrap()
     )).unwrap();
 }
 
