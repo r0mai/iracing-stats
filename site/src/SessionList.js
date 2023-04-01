@@ -14,6 +14,7 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
         .map(session => {
             return {
                 "id": session["subsession_id"],
+                "start_time": session["start_time"],
                 "series_name": session["series_name"],
                 "car": carMap[session["car_id"]]["car_name"],
                 "track": trackMap[session["track_id"]]["track_name"],
@@ -39,6 +40,14 @@ function SessionList({driverSessions, trackMap, carMap}) {
                     </a>
                 );
             },
+        },
+        {
+            field: "start_time",
+            headerName: "Date",
+            width: 200,
+            valueFormatter: params => {
+                return params.value.toLocaleString();
+            }
         },
         {
             field: "series_name",
