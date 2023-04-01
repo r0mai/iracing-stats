@@ -745,7 +745,8 @@ pub struct TrackData {
     pub track_id: i64,
     pub track_name: String,
     pub config_name: String,
-    pub track_config_length: f32
+    pub track_config_length: f32,
+    pub category: CategoryType,
 }
 
 pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
@@ -755,6 +756,7 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
         .column((Track::Table, Track::TrackName))
         .column((TrackConfig::Table, TrackConfig::ConfigName))
         .column((TrackConfig::Table, TrackConfig::TrackConfigLength))
+        .column((TrackConfig::Table, TrackConfig::CategoryId))
         .from(TrackConfig::Table)
         .join_track_config_to_track()
         .build_rusqlite(SqliteQueryBuilder);
@@ -770,13 +772,15 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
         let track_name: String = row.get(2).unwrap();
         let config_name: String = row.get(3).unwrap();
         let track_config_length: f32 = row.get(4).unwrap();
+        let category = CategoryType::from_i32(row.get(5).unwrap()).unwrap();
 
         values.push(TrackData{
             package_id,
             track_id,
             track_name,
             config_name,
-            track_config_length
+            track_config_length,
+            category
         });
     }
 
