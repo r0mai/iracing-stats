@@ -111,6 +111,28 @@ impl IRacingClient {
         return res["members"][0]["member_since"].as_str().unwrap()[0..4].parse::<i32>().unwrap();
     }
 
+    // a.k.a series list
+    async fn get_season_list(&self, year: i32, quarter: i32) -> serde_json::Value {
+        let mut params = HashMap::from([
+            ("season_year", year.to_string()),
+            ("season_quarter", quarter.to_string()),
+        ]);
+        return self.get_and_read("/data/season/list", &params).await;
+    }
+
+    async fn get_all_season_list(&self) -> serde_json::Value {
+        let mut seasons = Vec::new();
+        for year in 2008..2023+1 {
+            for quarter in 1..4+1 {
+                println!("Syncing season {year}s{quarter}");
+                let mut current_season_list = self.get_season_list(year, quarter).await;
+                seasons.append(current_season_list["seasons"].as_array_mut().unwrap());
+
+            }
+        }
+        return serde_json::Value::Array(seasons);
+    }
+
     async fn search_series(&self, cust_id: Option<i64>, year: i32, quarter: i32, week: Option<i32>) -> serde_json::Value {
         let mut params = HashMap::from([
             ("season_year", year.to_string()),
@@ -271,6 +293,12 @@ pub async fn sync_car_infos_to_db(client: &mut IRacingClient) {
     let data = client.get_and_read("/data/car/get", &HashMap::new()).await;
     crate::db::write_cached_car_infos_json(&data);
     crate::db::rebuild_cars_in_db();
+}
+
+pub async fn sync_season_infos_to_db(client: &mut IRacingClient) {
+    let data = client.get_all_season_list().await;
+    crate::db::write_cached_seasons_json(&data);
+    crate::db::rebuild_seasons_in_db();
 }
 
 pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>) {

@@ -19,6 +19,21 @@ pub enum Driver {
 }
 
 #[derive(Iden)]
+pub enum Season {
+    Table,
+    SeasonId,
+    SeriesId,
+    SeasonName,
+    SeriesName,
+    Official,
+    SeasonYear,
+    SeasonQuarter,
+    LicenseGroupId, // ~= LicenseCategoryId
+    FixedSetup,
+    DriverChanges,
+}
+
+#[derive(Iden)]
 pub enum Session {
     Table,
     SessionId,

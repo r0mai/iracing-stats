@@ -15,6 +15,7 @@ use sea_query::{
 };
 use crate::schema::{
     Driver,
+    Season,
     Session,
     Subsession,
     DriverResult,
@@ -34,6 +35,7 @@ use crate::driverid::DriverId;
 const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
+const SEASON_DATA_FILE: &str = "data/seasons.json";
 const SQLITE_DB_FILE: &str = "stats.db";
 const BASE_DIR_ENV_VAR: &str = "IRACING_STATS_BASE_DIR";
 
@@ -70,6 +72,13 @@ pub fn get_car_data_file() -> &'static Path {
     return FILE.as_path();
 }
 
+pub fn get_season_data_file() -> &'static Path {
+    lazy_static! {
+        static ref FILE: PathBuf = get_base_dir().join(SEASON_DATA_FILE);
+    }
+    return FILE.as_path();
+}
+
 pub fn get_sessions_dir() -> &'static Path {
     lazy_static! {
         static ref DIR: PathBuf = get_base_dir().join(SESSIONS_DIR);
@@ -98,6 +107,7 @@ pub struct DbContext<'a> {
     insert_simsession_statement: rusqlite::Statement<'a>,
     insert_driver_statement: rusqlite::Statement<'a>,
     insert_driver_result_statement: rusqlite::Statement<'a>,
+    insert_season_statement: rusqlite::Statement<'a>,
 }
 
 pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a> {
@@ -140,12 +150,12 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* simsession_number */
             ?  /* simsession_type */
     );"#).unwrap();
-    let insert_driver_statement= tx.prepare(r#"
+    let insert_driver_statement = tx.prepare(r#"
         INSERT OR IGNORE INTO driver VALUES(
             ?, /* cust_id */
             ?  /* display_name */
     );"#).unwrap();
-    let insert_driver_result_statement= tx.prepare(r#"
+    let insert_driver_result_statement = tx.prepare(r#"
         INSERT INTO driver_result VALUES(
             ?, /* cust_id */
             ?, /* team_id */
@@ -162,6 +172,19 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* finish_position */
             ?  /* finish_position_in_class */
     );"#).unwrap();
+    let insert_season_statement = tx.prepare(r#"
+        INSERT INTO season VALUES(
+            ?, /* season_id */
+            ?, /* series_id */
+            ?, /* season_name */
+            ?, /* series_name */
+            ?, /* official */
+            ?, /* season_year */
+            ?, /* season_quarter */
+            ?, /* license_group_id */
+            ?, /* fixed_setup */
+            ?  /* driver_changes */
+    );"#).unwrap();
 
     return DbContext {
         insert_track_statement,
@@ -172,6 +195,7 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         insert_simsession_statement,
         insert_driver_statement,
         insert_driver_result_statement,
+        insert_season_statement,
     };
 }
 
@@ -241,6 +265,21 @@ fn add_car_to_db(ctx: &mut DbContext, car: &Value) {
         car["car_id"].as_i64().unwrap(),
         car["car_name"].as_str().unwrap(),
         car["car_name_abbreviated"].as_str().unwrap(),
+    )).unwrap();
+}
+
+fn add_season_to_db(ctx: &mut DbContext, season: &Value) {
+    ctx.insert_season_statement.execute((
+        season["season_id"].as_i64().unwrap(),
+        season["series_id"].as_i64().unwrap(),
+        season["season_name"].as_str().unwrap(),
+        season["series_name"].as_str().unwrap(),
+        season["official"].as_bool().unwrap(),
+        season["season_year"].as_i64().unwrap(),
+        season["season_quarter"].as_i64().unwrap(),
+        season["license_group"].as_i64().unwrap(),
+        season["fixed_setup"].as_bool().unwrap(),
+        season["driver_changes"].as_bool().unwrap(),
     )).unwrap();
 }
 
@@ -354,6 +393,19 @@ pub fn rebuild_cars(ctx: &mut DbContext) {
     }
 }
 
+pub fn rebuild_seasons(ctx: &mut DbContext) {
+    let contents = fs::read_to_string(get_season_data_file()).unwrap();
+    let seasons: Value = serde_json::from_str(&contents).unwrap();
+
+    for season in seasons.as_array().unwrap() {
+        // This is a duplicated season_id :/
+        if season["season_id"].as_i64().unwrap() == 4222 && season["season_year"].as_i64().unwrap() == 2023 {
+            return;
+        }
+        add_season_to_db(ctx, &season);
+    }
+}
+
 fn rebuild_sessions(ctx: &mut DbContext) {
     let paths = fs::read_dir(get_sessions_dir()).unwrap();
     add_sessions_to_db(ctx, paths.map(|e| e.unwrap().path()));
@@ -382,6 +434,13 @@ pub fn write_cached_car_infos_json(json: &Value) {
 pub fn write_cached_track_infos_json(json: &Value) {
     fs::write(
         get_track_data_file(),
+        serde_json::to_string(&json).unwrap()
+    ).unwrap();
+}
+
+pub fn write_cached_seasons_json(json: &Value) {
+    fs::write(
+        get_season_data_file(),
         serde_json::to_string(&json).unwrap()
     ).unwrap();
 }
@@ -824,6 +883,18 @@ pub fn rebuild_cars_in_db() {
     tx.commit().unwrap();
 }
 
+pub fn rebuild_seasons_in_db() {
+    let mut con = create_db_connection();
+    let mut tx = con.transaction().unwrap();
+    {
+        tx.execute("DELETE FROM season", ()).unwrap(); // deletes all rows
+
+        let mut ctx = create_db_context(&mut tx);
+        rebuild_seasons(&mut ctx);
+    }
+    tx.commit().unwrap();
+}
+
 pub fn rebuild_db() {
     fs::remove_file(get_sqlite_db_file()).ok(); // ignore error
 
@@ -838,6 +909,7 @@ pub fn rebuild_db() {
         let mut ctx = create_db_context(&mut tx);
         rebuild_tracks(&mut ctx);
         rebuild_cars(&mut ctx);
+        rebuild_seasons(&mut ctx);
         rebuild_sessions(&mut ctx);
     }
     build_db_indices(&tx);

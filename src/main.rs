@@ -43,6 +43,10 @@ struct Args {
     #[arg(short = 't', long)]
     sync_track_infos_to_db: bool,
 
+    /// Sync season infos
+    #[arg(short = 's', long)]
+    sync_season_infos_to_db: bool,
+
     /// Sync season year to db
     #[arg(short = 'y', long)]
     season_year: Option<i32>,
@@ -56,7 +60,7 @@ struct Args {
     season_week: Option<i32>,
 
     /// Start server
-    #[arg(short = 's', long = "server")]
+    #[arg(long = "server")]
     start_server: bool,
 
     /// Do the motec thing
@@ -70,7 +74,8 @@ fn has_async(args: &Args) -> bool {
         !args.sync_cust_ids_to_db.is_empty() ||
         args.season_year.is_some() ||
         args.sync_car_infos_to_db ||
-        args.sync_track_infos_to_db;
+        args.sync_track_infos_to_db ||
+        args.sync_season_infos_to_db;
 }
 
 async fn tokio_main(args: &Args) {
@@ -101,6 +106,10 @@ async fn tokio_main(args: &Args) {
 
     if args.sync_track_infos_to_db {
         iracing_client::sync_track_infos_to_db(&mut client).await;
+    }
+
+    if args.sync_season_infos_to_db {
+        iracing_client::sync_season_infos_to_db(&mut client).await;
     }
 }
 

@@ -3,6 +3,19 @@ CREATE TABLE driver(
     display_name TEXT NOT NULL
 );
 
+CREATE TABLE season(
+    season_id INTEGER PRIMARY KEY NOT NULL,
+    series_id INTEGER NOT NULL,
+    season_name TEXT NOT NULL,
+    series_name TEXT NOT NULL,
+    official INTEGER NOT NULL, /* boolean */
+    season_year INTEGER NOT NULL,
+    season_quarter INTEGER NOT NULL, /* 1,2,3,4 */
+    license_group_id INTEGER NOT NULL, /* 1 -> Oval, 2 -> Road, 3 -> Dirt Oval, 4 -> Dirt Road */
+    fixed_setup INTEGER NOT NULL, /* boolean */
+    driver_changes INTEGER NOT NULL /* boolean */
+);
+
 CREATE TABLE session(
     session_id INTEGER PRIMARY KEY NOT NULL,
     series_name TEXT NOT NULL
