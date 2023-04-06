@@ -31,12 +31,20 @@ struct Args {
     #[arg(short = 'D', long)]
     sync_drivers_to_db: Vec<String>,
 
-    /// Sync cust_ids to db
+    /// Sync driver to db (current season only)
+    #[arg(short = 'd', long)]
+    sync_drivers_to_db_partial: Vec<String>,
+
+    /// Sync cust_ids to db 
     #[arg(short = 'C', long)]
     sync_cust_ids_to_db: Vec<i64>,
 
-    /// Sync car infos
+    /// Sync cust_ids to db (current season only)
     #[arg(short = 'c', long)]
+    sync_cust_ids_to_db_partial: Vec<i64>,
+
+    /// Sync car infos (v as in vehicle)
+    #[arg(short = 'v', long)]
     sync_car_infos_to_db: bool,
 
     /// Sync track infos
@@ -72,6 +80,8 @@ fn has_async(args: &Args) -> bool {
     return
         !args.sync_drivers_to_db.is_empty() ||
         !args.sync_cust_ids_to_db.is_empty() ||
+        !args.sync_drivers_to_db_partial.is_empty() ||
+        !args.sync_cust_ids_to_db_partial.is_empty() ||
         args.season_year.is_some() ||
         args.sync_car_infos_to_db ||
         args.sync_track_infos_to_db ||
@@ -87,12 +97,12 @@ async fn tokio_main(args: &Args) {
 
     client.auth().await;
 
-    if !args.sync_drivers_to_db.is_empty() {
-        iracing_client::sync_drivers_to_db(&mut client, &args.sync_drivers_to_db).await;
+    if !args.sync_drivers_to_db.is_empty() || !args.sync_drivers_to_db_partial.is_empty() {
+        iracing_client::sync_drivers_to_db(&mut client, &args.sync_drivers_to_db, &args.sync_drivers_to_db_partial).await;
     }
 
-    if !args.sync_cust_ids_to_db.is_empty() {
-        iracing_client::sync_cust_ids_to_db(&mut client, &args.sync_cust_ids_to_db).await;
+    if !args.sync_cust_ids_to_db.is_empty() || !args.sync_cust_ids_to_db_partial.is_empty() {
+        iracing_client::sync_cust_ids_to_db(&mut client, &args.sync_cust_ids_to_db, &args.sync_cust_ids_to_db_partial).await;
     }
 
     if args.season_year.is_some() && args.season_quarter.is_some() {

@@ -151,17 +151,24 @@ impl IRacingClient {
         return self.get_and_read_chunked("/data/results/search_series", &params).await;
     }
 
-    async fn find_subsessions_for_driver(&self, cust_id: i64) -> Vec<i64> {
-        let member_since_year = self.get_member_since_year(cust_id).await;
-
-        let mut series = serde_json::Value::Array([].to_vec());
-        for year in member_since_year..=CURRENT_YEAR {
-            let last_quarter = if year == CURRENT_YEAR { CURRENT_QUARTER } else { 4 };
-            for quarter in 1..=last_quarter {
-                println!("Query {year}s{quarter}");
-                let mut series_q = self.search_series(Some(cust_id), year, quarter, None).await;
-                series.as_array_mut().unwrap().append(series_q.as_array_mut().unwrap());
+    async fn find_subsessions_for_driver(&self, cust_id: i64, partial: bool) -> Vec<i64> {
+        let mut seasons = Vec::new();
+        if partial {
+            seasons.push((CURRENT_YEAR, CURRENT_QUARTER));
+        } else {
+            let member_since_year = self.get_member_since_year(cust_id).await;
+            for year in member_since_year..=CURRENT_YEAR {
+                let last_quarter = if year == CURRENT_YEAR { CURRENT_QUARTER } else { 4 };
+                for quarter in 1..=last_quarter {
+                    seasons.push((year, quarter));
+                }
             }
+        }
+        let mut series = serde_json::Value::Array([].to_vec());
+        for (year, quarter) in seasons {
+            println!("Query {year}s{quarter}");
+            let mut series_q = self.search_series(Some(cust_id), year, quarter, None).await;
+            series.as_array_mut().unwrap().append(series_q.as_array_mut().unwrap());
         }
 
         return series.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
@@ -230,8 +237,8 @@ fn filter_non_cached(subsessions: Vec<i64>) -> Vec<i64> {
     return res;
 }
 
-async fn find_non_cached_subsessions_for_driver(client: &mut IRacingClient, cust_id: i64) -> Vec<i64> {
-    return filter_non_cached(client.find_subsessions_for_driver(cust_id).await);
+async fn find_non_cached_subsessions_for_driver(client: &mut IRacingClient, cust_id: i64, partial: bool) -> Vec<i64> {
+    return filter_non_cached(client.find_subsessions_for_driver(cust_id, partial).await);
 }
 
 async fn find_non_cached_subsessions_for_season(client: &mut IRacingClient, year: i32, quarter: i32, week: Option<i32>) -> Vec<i64> {
@@ -305,11 +312,14 @@ pub async fn sync_season_infos_to_db(client: &mut IRacingClient) {
     crate::db::rebuild_seasons_in_db();
 }
 
-pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>) {
+pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>, cust_ids_partial: &Vec<i64>) {
     let mut subsession_ids = HashSet::<i64>::new();
 
     for cust_id in cust_ids {
-        subsession_ids.extend(&mut find_non_cached_subsessions_for_driver(client, *cust_id).await.iter());
+        subsession_ids.extend(&mut find_non_cached_subsessions_for_driver(client, *cust_id, false).await.iter());
+    }
+    for cust_id in cust_ids_partial {
+        subsession_ids.extend(&mut find_non_cached_subsessions_for_driver(client, *cust_id, true).await.iter());
     }
 
     let subsession_ids_vec = Vec::from_iter(subsession_ids.into_iter());
@@ -317,15 +327,21 @@ pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>
     add_subsessions_to_db(&subsession_ids_vec);
 }
 
-pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<String>) {
+pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<String>, driver_names_partial: &Vec<String>) {
     let mut cust_ids = Vec::new();
+    let mut cust_ids_partial = Vec::new();
 
     for driver_name in driver_names {
         let cust_id = client.get_cust_id(driver_name).await;
         println!("{driver_name} -> {cust_id}");
         cust_ids.push(cust_id)
     }
-    sync_cust_ids_to_db(client, &cust_ids).await;
+    for driver_name in driver_names_partial {
+        let cust_id = client.get_cust_id(driver_name).await;
+        println!("{driver_name} -> {cust_id}");
+        cust_ids_partial.push(cust_id)
+    }
+    sync_cust_ids_to_db(client, &cust_ids, &cust_ids_partial).await;
 }
 
 pub async fn sync_season_to_db(client: &mut IRacingClient, year: i32, quarter: i32, week: Option<i32>) {
