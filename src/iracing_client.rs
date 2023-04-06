@@ -9,6 +9,8 @@ use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
 
 const BASEURL: &str = "https://members-ng.iracing.com";
+const CURRENT_YEAR: i32 = 2023;
+const CURRENT_QUARTER: i32 = 2;
 
 pub struct IRacingClient {
     pub client: Client,
@@ -113,7 +115,7 @@ impl IRacingClient {
 
     // a.k.a series list
     async fn get_season_list(&self, year: i32, quarter: i32) -> serde_json::Value {
-        let mut params = HashMap::from([
+        let params = HashMap::from([
             ("season_year", year.to_string()),
             ("season_quarter", quarter.to_string()),
         ]);
@@ -122,8 +124,9 @@ impl IRacingClient {
 
     async fn get_all_season_list(&self) -> serde_json::Value {
         let mut seasons = Vec::new();
-        for year in 2008..2023+1 {
-            for quarter in 1..4+1 {
+        for year in 2008..=CURRENT_YEAR {
+            let last_quarter = if year == CURRENT_YEAR { CURRENT_QUARTER } else { 4 };
+            for quarter in 1..=last_quarter {
                 println!("Syncing season {year}s{quarter}");
                 let mut current_season_list = self.get_season_list(year, quarter).await;
                 seasons.append(current_season_list["seasons"].as_array_mut().unwrap());
@@ -152,8 +155,9 @@ impl IRacingClient {
         let member_since_year = self.get_member_since_year(cust_id).await;
 
         let mut series = serde_json::Value::Array([].to_vec());
-        for year in member_since_year..2023+1 {
-            for quarter in 1..4+1 {
+        for year in member_since_year..=CURRENT_YEAR {
+            let last_quarter = if year == CURRENT_YEAR { CURRENT_QUARTER } else { 4 };
+            for quarter in 1..=last_quarter {
                 println!("Query {year}s{quarter}");
                 let mut series_q = self.search_series(Some(cust_id), year, quarter, None).await;
                 series.as_array_mut().unwrap().append(series_q.as_array_mut().unwrap());
