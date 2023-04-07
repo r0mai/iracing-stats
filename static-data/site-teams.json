@@ -1,7 +1,7 @@
 [
     {
         "name": "rsmr-all",
-        "members:": [
+        "members": [
             { "cust_id": 289904, "name": "Kertész Áron" },
             { "cust_id": 183567, "name": "Balassa Péter" },
             { "cust_id": 331981, "name": "Viski Róbert" },

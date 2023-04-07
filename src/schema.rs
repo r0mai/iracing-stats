@@ -104,6 +104,20 @@ pub enum Car {
     CarNameAbbreviated,
 }
 
+#[derive(Iden)]
+pub enum SiteTeam {
+    Table,
+    SiteTeamId,
+    SiteTeamName
+}
+
+#[derive(Iden)]
+pub enum SiteTeamMember {
+    Table,
+    SiteTeamId,
+    CustId
+}
+
 pub trait SchemaUtils {
     fn select_total_time(&mut self) -> &mut Self;
     fn select_laps_complete(&mut self) -> &mut Self;

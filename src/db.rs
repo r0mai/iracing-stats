@@ -36,7 +36,7 @@ const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
 const SEASON_DATA_FILE: &str = "data/seasons.json";
-const TEAMS_DATA_FILE: &str = "static-data/teams.json";
+const SITE_TEAMS_DATA_FILE: &str = "static-data/site-teams.json";
 const SQLITE_DB_FILE: &str = "stats.db";
 const BASE_DIR_ENV_VAR: &str = "IRACING_STATS_BASE_DIR";
 const STATIC_DIR_ENV_VAR: &str = "IRACING_STATS_STATIC_DIR";
@@ -100,9 +100,9 @@ pub fn get_sessions_dir() -> &'static Path {
     return DIR.as_path();
 }
 
-pub fn get_teams_data_file() -> &'static Path {
+pub fn get_site_teams_data_file() -> &'static Path {
     lazy_static! {
-        static ref FILE: PathBuf = get_static_dir().join(TEAMS_DATA_FILE);
+        static ref FILE: PathBuf = get_static_dir().join(SITE_TEAMS_DATA_FILE);
     }
     return FILE.as_path();
 }
@@ -129,6 +129,8 @@ pub struct DbContext<'a> {
     insert_driver_statement: rusqlite::Statement<'a>,
     insert_driver_result_statement: rusqlite::Statement<'a>,
     insert_season_statement: rusqlite::Statement<'a>,
+    insert_site_team_statement: rusqlite::Statement<'a>,
+    insert_site_team_member_statement: rusqlite::Statement<'a>,
 }
 
 pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a> {
@@ -206,6 +208,16 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* fixed_setup */
             ?  /* driver_changes */
     );"#).unwrap();
+    let insert_site_team_statement = tx.prepare(r#"
+        INSERT INTO site_team VALUES(
+            ?, /* site_team_id */
+            ?  /* site_team_name */
+    );"#).unwrap();
+    let insert_site_team_member_statement = tx.prepare(r#"
+        INSERT INTO site_team_member VALUES(
+            ?, /* site_team_id */
+            ?  /* cust_id */
+    );"#).unwrap();
 
     return DbContext {
         insert_track_statement,
@@ -217,6 +229,8 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         insert_driver_statement,
         insert_driver_result_statement,
         insert_season_statement,
+        insert_site_team_statement,
+        insert_site_team_member_statement,
     };
 }
 
@@ -302,6 +316,20 @@ fn add_season_to_db(ctx: &mut DbContext, season: &Value) {
         season["fixed_setup"].as_bool().unwrap(),
         season["driver_changes"].as_bool().unwrap(),
     )).unwrap();
+}
+
+fn add_site_team_to_db(ctx: &mut DbContext, id: usize, team: &Value) {
+    ctx.insert_site_team_statement.execute((
+        id,
+        team["name"].as_str().unwrap()
+    )).unwrap();
+
+    for member in team["members"].as_array().unwrap() {
+        ctx.insert_site_team_member_statement.execute((
+            id,
+            member["cust_id"].as_i64().unwrap()
+        )).unwrap();
+    }
 }
 
 fn add_driver_to_db(ctx: &mut DbContext, driver_result: &Value) {
@@ -430,6 +458,15 @@ pub fn rebuild_seasons(ctx: &mut DbContext) {
 fn rebuild_sessions(ctx: &mut DbContext) {
     let paths = fs::read_dir(get_sessions_dir()).unwrap();
     add_sessions_to_db(ctx, paths.map(|e| e.unwrap().path()));
+}
+
+fn rebuild_site_teams(ctx: &mut DbContext) {
+    let contents = fs::read_to_string(get_site_teams_data_file()).unwrap();
+    let teams: Value = serde_json::from_str(&contents).unwrap();
+
+    for (id, team) in teams.as_array().unwrap().into_iter().enumerate() {
+        add_site_team_to_db(ctx, id, team);
+    }
 }
 
 pub fn add_session_to_db_from_cache(ctx: &mut DbContext, subsession_id: i64) {
@@ -916,6 +953,19 @@ pub fn rebuild_seasons_in_db() {
     tx.commit().unwrap();
 }
 
+pub fn rebuild_site_teams_in_db() {
+    let mut con = create_db_connection();
+    let mut tx = con.transaction().unwrap();
+    {
+        tx.execute("DELETE FROM site_team", ()).unwrap(); // deletes all rows
+        tx.execute("DELETE FROM site_team_member", ()).unwrap(); // deletes all rows
+
+        let mut ctx = create_db_context(&mut tx);
+        rebuild_site_teams(&mut ctx);
+    }
+    tx.commit().unwrap();
+}
+
 pub fn rebuild_db() {
     fs::remove_file(get_sqlite_db_file()).ok(); // ignore error
 
@@ -931,6 +981,7 @@ pub fn rebuild_db() {
         rebuild_tracks(&mut ctx);
         rebuild_cars(&mut ctx);
         rebuild_seasons(&mut ctx);
+        rebuild_site_teams(&mut ctx);
         rebuild_sessions(&mut ctx);
     }
     build_db_indices(&tx);

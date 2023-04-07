@@ -72,4 +72,14 @@ CREATE TABLE car(
     car_id INTEGER PRIMARY KEY NOT NULL,
     car_name TEXT NOT NULL,
     car_name_abbreviated TEXT NOT NULL
-)
+);
+
+CREATE TABLE site_team(
+    site_team_id INTEGER PRIMARY KEY NOT NULL,
+    site_team_name TEXT NOT NULL
+);
+
+CREATE TABLE site_team_member(
+    site_team_id INTEGER NOT NULL,
+    cust_id INTEGER NOT NULL
+);

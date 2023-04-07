@@ -23,6 +23,10 @@ struct Args {
     #[arg(long)]
     rebuild_db_schema: bool,
 
+    /// Rebuild site teams
+    #[arg(long)]
+    rebuild_site_teams: bool,
+
     /// Add missing cached sessions to the database
     #[arg(short, long)]
     update_db: bool,
@@ -137,6 +141,9 @@ async fn main() {
     }
     if args.rebuild_db {
         db::rebuild_db();
+    }
+    if args.rebuild_site_teams {
+        db::rebuild_site_teams_in_db();
     }
     if args.update_db {
         db::update_db();
