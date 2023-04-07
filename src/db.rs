@@ -23,6 +23,8 @@ use crate::schema::{
     TrackConfig,
     Track,
     Car,
+    SiteTeam,
+    SiteTeamMember,
 
     is_event_type,
     is_category_type,
@@ -830,6 +832,39 @@ pub fn query_customer_names(con: &Connection, cust_ids: Vec<i64>) -> Vec<Custome
         .from(Driver::Table)
         .and_where(Expr::col(Driver::CustId).is_in(cust_ids))
         .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        let name: String = row.get(0).unwrap();
+        let cust_id: i64 = row.get(1).unwrap();
+
+        values.push(CustomerName{
+            cust_id, name
+        });
+    }
+
+    return values;
+}
+
+pub fn query_site_team_members(con: &Connection, team: &String) -> Vec<CustomerName> {
+    let (sql, params) = Query::select()
+        .column((Driver::Table, Driver::DisplayName))
+        .column((Driver::Table, Driver::CustId))
+        .from(SiteTeam::Table)
+        .join_site_team_to_site_team_member()
+        .join_site_team_member_to_driver()
+        .and_where(Expr::col(SiteTeam::SiteTeamName).eq(team))
+        .build_rusqlite(SqliteQueryBuilder);
+
+    // select display_name, site_team_member.cust_id
+    // from site_team
+    // join site_team_member on site_team.site_team_id == site_team_member.site_team_id
+    // join driver on driver.cust_id == site_team_member.cust_id
+    // where site_team_name == 'rsmr';
 
     let mut stmt = con.prepare(sql.as_str()).unwrap();
     let mut rows = stmt.query(&*params.as_params()).unwrap();

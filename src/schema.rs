@@ -129,6 +129,8 @@ pub trait SchemaUtils {
     fn join_subsession_to_session(&mut self) -> &mut Self;
     fn join_subsession_to_track_config(&mut self) -> &mut Self;
     fn join_track_config_to_track(&mut self) -> &mut Self;
+    fn join_site_team_to_site_team_member(&mut self) -> &mut Self;
+    fn join_site_team_member_to_driver(&mut self) -> &mut Self;
     fn match_driver_id(&mut self, driver_id: &DriverId, force_join: bool) -> &mut Self;
 }
 
@@ -185,6 +187,18 @@ impl SchemaUtils for SelectStatement {
     fn join_track_config_to_track(&mut self) -> &mut Self {
         return self.inner_join(Track::Table,
             Expr::col((Track::Table, Track::PackageId)).equals((TrackConfig::Table, TrackConfig::PackageId))
+        );
+    }
+
+    fn join_site_team_to_site_team_member(&mut self) -> &mut Self {
+        return self.inner_join(SiteTeamMember::Table,
+            Expr::col((SiteTeamMember::Table, SiteTeamMember::SiteTeamId)).equals((SiteTeam::Table, SiteTeam::SiteTeamId))
+        );
+    }
+
+    fn join_site_team_member_to_driver(&mut self) -> &mut Self {
+        return self.inner_join(Driver::Table,
+            Expr::col((Driver::Table, Driver::CustId)).equals((SiteTeamMember::Table, SiteTeamMember::CustId))
         );
     }
 

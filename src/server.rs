@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use rocket::fs::FileServer;
 use rocket::State;
 
+use rusqlite::Connection;
+
 use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
 use crate::db::{
@@ -19,7 +21,7 @@ use crate::db::{
     query_customer_cust_ids,
     query_driver_sessions,
     query_track_data,
-    query_car_data
+    query_car_data, query_site_team_members
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -277,8 +279,8 @@ async fn api_v1_track_car_data(db_pool: &State<DbPool>) -> Value {
     });
 }
 
-fn parse_team_customer_infos(team: &String) -> Option<Vec<CustomerName>> {
-    return None;
+fn parse_team_customer_infos(con: &Connection, team: &String) -> Vec<CustomerName> {
+    return query_site_team_members(con, team);
 }
 
 fn parse_drivers_customer_infos(drivers: &String) -> Option<Vec<CustomerName>> {
@@ -312,7 +314,7 @@ async fn api_v1_customers(
 
     let infos;
     if let Some(team) = team {
-        infos = parse_team_customer_infos(&team)?;
+        infos = parse_team_customer_infos(&con, &team);
     } else if let Some(drivers) = drivers {
         infos = parse_drivers_customer_infos(&drivers)?;
     } else {
@@ -322,25 +324,28 @@ async fn api_v1_customers(
     // fill out missing info
     let mut cust_ids = Vec::new();
     let mut names = Vec::new();
+    let mut result = Vec::new();
     for info in infos.into_iter() {
         if info.name.is_empty() {
             cust_ids.push(info.cust_id);
         } else if info.cust_id == -1 {
             names.push(info.name);
+        } else {
+            result.push(info);
         }
     }
 
-    let mut queried_names = query_customer_names(&con, cust_ids);
-    queried_names.append(&mut query_customer_cust_ids(&con, names));
+    result.append(&mut query_customer_names(&con, cust_ids));
+    result.append(&mut query_customer_cust_ids(&con, names));
 
-    let result = queried_names.iter().map(|name| {
+    let json_arr = result.iter().map(|name| {
         return json!({
             "name": name.name,
             "cust_id": name.cust_id
         });
     }).collect();
 
-    return Some(Value::Array(result));
+    return Some(Value::Array(json_arr));
 }
 
 #[get("/api/v1/customer-names?<cust_ids>")]
