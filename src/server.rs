@@ -8,6 +8,7 @@ use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
 use crate::db::{
     DbPool,
+    CustomerName,
     create_r2d2_db_connection_pool,
     query_irating_history,
     query_track_car_usage_matrix,
@@ -15,6 +16,7 @@ use crate::db::{
     query_car_usage,
     query_driver_stats,
     query_customer_names,
+    query_customer_cust_ids,
     query_driver_sessions,
     query_track_data,
     query_car_data
@@ -275,6 +277,72 @@ async fn api_v1_track_car_data(db_pool: &State<DbPool>) -> Value {
     });
 }
 
+fn parse_team_customer_infos(team: &String) -> Option<Vec<CustomerName>> {
+    return None;
+}
+
+fn parse_drivers_customer_infos(drivers: &String) -> Option<Vec<CustomerName>> {
+    let mut infos = Vec::new();
+    for driver in drivers.split(";") {
+        if driver.is_empty() {
+            continue;
+        }
+
+        if driver.chars().nth(0).unwrap() == '$' {
+            let cust_id_str: String = driver.chars().skip(1).collect();
+            if let Ok(cust_id) = cust_id_str.parse::<i64>() {
+                infos.push(CustomerName{name: "".to_owned(), cust_id})
+            } else {
+                return None;
+            }
+        } else {
+            infos.push(CustomerName{name: driver.to_owned(), cust_id: -1})
+        }
+    }
+    return Some(infos);
+}
+
+#[get("/api/v1/customers?<team>&<drivers>")]
+async fn api_v1_customers(
+    team: Option<String>,
+    drivers: Option<String>,
+    db_pool: &State<DbPool>) -> Option<Value>
+{
+    let con = db_pool.get().unwrap();
+
+    let infos;
+    if let Some(team) = team {
+        infos = parse_team_customer_infos(&team)?;
+    } else if let Some(drivers) = drivers {
+        infos = parse_drivers_customer_infos(&drivers)?;
+    } else {
+        return Option::None;
+    }
+
+    // fill out missing info
+    let mut cust_ids = Vec::new();
+    let mut names = Vec::new();
+    for info in infos.into_iter() {
+        if info.name.is_empty() {
+            cust_ids.push(info.cust_id);
+        } else if info.cust_id == -1 {
+            names.push(info.name);
+        }
+    }
+
+    let mut queried_names = query_customer_names(&con, cust_ids);
+    queried_names.append(&mut query_customer_cust_ids(&con, names));
+
+    let result = queried_names.iter().map(|name| {
+        return json!({
+            "name": name.name,
+            "cust_id": name.cust_id
+        });
+    }).collect();
+
+    return Some(Value::Array(result));
+}
+
 #[get("/api/v1/customer-names?<cust_ids>")]
 async fn api_v1_customer_names(
     cust_ids: String,
@@ -319,6 +387,7 @@ pub async fn start_rocket_server() {
             api_v1_track_usage_stats,
             api_v1_car_usage_stats,
             api_v1_driver_stats,
+            api_v1_customers,
             api_v1_customer_names,
             api_v1_driver_info,
             api_v1_track_car_data

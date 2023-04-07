@@ -798,6 +798,31 @@ pub struct CustomerName {
     pub name: String
 }
 
+pub fn query_customer_cust_ids(con: &Connection, names: Vec<String>) -> Vec<CustomerName> {
+    let (sql, params) = Query::select()
+        .column((Driver::Table, Driver::DisplayName))
+        .column((Driver::Table, Driver::CustId))
+        .from(Driver::Table)
+        .and_where(Expr::col(Driver::DisplayName).is_in(names))
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        let name: String = row.get(0).unwrap();
+        let cust_id: i64 = row.get(1).unwrap();
+
+        values.push(CustomerName{
+            cust_id, name
+        });
+    }
+
+    return values;
+}
+
 pub fn query_customer_names(con: &Connection, cust_ids: Vec<i64>) -> Vec<CustomerName> {
     let (sql, params) = Query::select()
         .column((Driver::Table, Driver::DisplayName))

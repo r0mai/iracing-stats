@@ -14,24 +14,22 @@ function DriverList({state, setState}) {
     let driverViews = [];
     let custIDs = [];
 
-    // TODO check for empty drivers list
-    let drivers = state["drivers"].split(';');
-    for (let driver of drivers) {
-        let view = {
-            driver: driver,
-            displayName: driver,
-            custID: null
-        };
-        if (isDriverCustomerID(driver)) {
-            let custID = extractCustomerID(driver);
-            view.displayName = "...";
-            view.custID = custID;
-            custIDs.push(custID);
-        }
-        driverViews.push(view);
-    }
+    let drivers = state["drivers"];
 
     let headers = { Accept: "application/json" }
+    let { data, error, isPending, run } = useFetch("/api/v1/customers?drivers=" + drivers, {headers});
+
+    let custNames = data;
+    if (custNames) {
+        for (let custName of custNames) {
+            let view = {
+                driver: custName["name"],
+                displayName: custName["name"],
+                custID: custName["cust_id"]
+            };
+            driverViews.push(view);
+        }
+    }
 
     let trackMap;
     let carMap;
@@ -40,25 +38,6 @@ function DriverList({state, setState}) {
         if (data) {
             trackMap = mapifyTrackData(data["tracks"]);
             carMap = mapifyCarData(data["cars"]);
-        }
-    }
-
-    // conditional useFetch is not allowed
-    /*if (custIDs.length != 0)*/ {
-        let { data, error, isPending, run } = useFetch("/api/v1/customer-names?cust_ids=" + custIDs.join(';'), {headers});
-
-        let custNames = data;
-        if (custNames) {
-            for (let view of driverViews) {
-                if (view.custID) {
-                    for (let custName of custNames) {
-                        if (custName["cust_id"].toString() === view.custID) {
-                            view.displayName = custName["name"];
-                            break;
-                        }
-                    }
-                }
-            }
         }
     }
 
