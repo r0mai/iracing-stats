@@ -8,6 +8,8 @@ use serde_json;
 use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
 
+use crate::db::query_all_site_team_members;
+
 const BASEURL: &str = "https://members-ng.iracing.com";
 const CURRENT_YEAR: i32 = 2023;
 const CURRENT_QUARTER: i32 = 2;
@@ -310,6 +312,16 @@ pub async fn sync_season_infos_to_db(client: &mut IRacingClient) {
     let data = client.get_all_season_list().await;
     crate::db::write_cached_seasons_json(&data);
     crate::db::rebuild_seasons_in_db();
+}
+
+pub async fn sync_site_teams_to_db(client: &mut IRacingClient, partial: bool) {
+    let mut con = crate::db::create_db_connection();
+    let cust_ids = query_all_site_team_members(&mut con);
+    if partial {
+        sync_cust_ids_to_db(client, &Vec::new(), &cust_ids).await;
+    } else {
+        sync_cust_ids_to_db(client, &cust_ids, &Vec::new()).await;
+    }
 }
 
 pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>, cust_ids_partial: &Vec<i64>) {

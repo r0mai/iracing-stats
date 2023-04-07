@@ -26,7 +26,7 @@ use crate::schema::{
 
     is_event_type,
     is_category_type,
-    SchemaUtils,
+    SchemaUtils, SiteTeamMember,
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
@@ -960,6 +960,23 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
     }
 
     return values;
+}
+
+pub fn query_all_site_team_members(con: &Connection) -> Vec<i64> {
+    let (sql, params) = Query::select()
+        .distinct()
+        .column((SiteTeamMember::Table, SiteTeamMember::CustId))
+        .from(SiteTeamMember::Table)
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut cust_ids = Vec::new();
+    while let Some(row) = rows.next().unwrap() {
+        cust_ids.push(row.get(0).unwrap());
+    }
+    return cust_ids;
 }
 
 pub fn rebuild_db_schema() {
