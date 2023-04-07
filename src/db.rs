@@ -36,8 +36,10 @@ const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
 const SEASON_DATA_FILE: &str = "data/seasons.json";
+const TEAMS_DATA_FILE: &str = "static-data/teams.json";
 const SQLITE_DB_FILE: &str = "stats.db";
 const BASE_DIR_ENV_VAR: &str = "IRACING_STATS_BASE_DIR";
+const STATIC_DIR_ENV_VAR: &str = "IRACING_STATS_STATIC_DIR";
 
 fn get_base_dir() -> &'static Path {
     lazy_static! {
@@ -49,6 +51,18 @@ fn get_base_dir() -> &'static Path {
         );
     }
     return BASE_DIR.as_path();
+}
+
+fn get_static_dir() -> &'static Path {
+    lazy_static! {
+        static ref STATIC_DIR: PathBuf = PathBuf::from(
+            match env::var(STATIC_DIR_ENV_VAR) {
+                Ok(value) => value,
+                Err(_error) => ".".to_owned()
+            }
+        );
+    }
+    return STATIC_DIR.as_path();
 }
 
 pub fn get_sqlite_db_file() -> &'static Path {
@@ -84,6 +98,13 @@ pub fn get_sessions_dir() -> &'static Path {
         static ref DIR: PathBuf = get_base_dir().join(SESSIONS_DIR);
     }
     return DIR.as_path();
+}
+
+pub fn get_teams_data_file() -> &'static Path {
+    lazy_static! {
+        static ref FILE: PathBuf = get_static_dir().join(TEAMS_DATA_FILE);
+    }
+    return FILE.as_path();
 }
 
 pub fn create_db_connection() -> rusqlite::Connection {

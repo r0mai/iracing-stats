@@ -1,0 +1,57 @@
+[
+    {
+        "name": "rsmr-all",
+        "members:": [
+            { "cust_id": 289904, "name": "Kertész Áron" },
+            { "cust_id": 183567, "name": "Balassa Péter" },
+            { "cust_id": 331981, "name": "Viski Róbert" },
+            { "cust_id": 577403, "name": "Polczer Bence" },
+            { "cust_id": 402105, "name": "Kovács Dániel" },
+            { "cust_id": 380750, "name": "Stang Szabolcs" },
+            { "cust_id": 638197, "name": "Ambrus István" },
+            { "cust_id": 347941, "name": "Pilaú Tivadar" },
+            { "cust_id": 431427, "name": "Varga Bence" },
+            { "cust_id": 141354, "name": "Takács Gergely" },
+            { "cust_id": 228542, "name": "Kovács Dávid" },
+            { "cust_id": 183362, "name": "Mihalik Dániel" },
+            { "cust_id": 446433, "name": "Asbóth Tamás" },
+            { "cust_id": 390384, "name": "Cs. Nagy Balázs" },
+            { "cust_id": 449760, "name": "Lázár Ferenc" },
+            { "cust_id": 288175, "name": "Borsányi Péter" },
+            { "cust_id": 200622, "name": "Varga Endre Tibor" },
+            { "cust_id": 701014, "name": "Deme Zoltán" },
+            { "cust_id": 727595, "name": "Kucsma András" },
+            { "cust_id": 329241, "name": "Szabó Bence" },
+            { "cust_id": 611539, "name": "Godzsa István Zsolt" },
+            { "cust_id": 808067, "name": "Borsányi Ákos" },
+            { "cust_id": 571620, "name": "Béres Bálint" },
+            { "cust_id": 432861, "name": "Tóth Dávid Archibald" },
+            { "cust_id": 208174, "name": "Ács-Szabó András" },
+            { "cust_id": 226029, "name": "Rudas István" },
+            { "cust_id": 457446, "name": "Plagány Dávid" },
+            { "cust_id": 268280, "name": "Rosner Bence" },
+            { "cust_id": 636468, "name": "Pázsy Tamás" },
+            { "cust_id": 169978, "name": "Vasvári Máté" },
+            { "cust_id": 90590, "name": "Szijjártó Krisztián" },
+            { "cust_id": 552970, "name": "Gazsi Ádám" },
+            { "cust_id": 295507, "name": "Lovassy Árpád" }
+        ]
+    },
+    {
+        "name": "rsmr",
+        "members": [
+            { "cust_id": 289904, "name": "Kertész Áron" },
+            { "cust_id": 183567, "name": "Balassa Péter" },
+            { "cust_id": 577403, "name": "Polczer Bence" },
+            { "cust_id": 380750, "name": "Stang Szabolcs" },
+            { "cust_id": 638197, "name": "Ambrus István" },
+            { "cust_id": 228542, "name": "Kovács Dávid" },
+            { "cust_id": 446433, "name": "Asbóth Tamás" },
+            { "cust_id": 701014, "name": "Deme Zoltán" },
+            { "cust_id": 727595, "name": "Kucsma András" },
+            { "cust_id": 808067, "name": "Borsányi Ákos" },
+            { "cust_id": 432861, "name": "Tóth Dávid Archibald" },
+            { "cust_id": 226029, "name": "Rudas István" }
+        ]
+    }
+]
