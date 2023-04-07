@@ -17,12 +17,6 @@ import Box from '@mui/material/Box';
 function App() {
     let [state, setState] = useObjectSearchParams();
 
-    // normalize states
-    state["drivers"] = state["drivers"] || ""; // TODO maybe a default driver?
-    state["selected"] = state["selected"] || "";
-    state["category"] = state["category"] || "road";
-    state["type"] = state["type"] || "summary";
-
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
