@@ -15,9 +15,17 @@ function DriverList({state, setState}) {
     let custIDs = [];
 
     let drivers = state["drivers"];
+    let team = state["team"];
+
+    let suffix = "";
+    if (drivers) {
+        suffix = "?drivers=" + drivers;
+    } else if (team) {
+        suffix = "?team=" + team;
+    }
 
     let headers = { Accept: "application/json" }
-    let { data, error, isPending, run } = useFetch("/api/v1/customers?drivers=" + drivers, {headers});
+    let { data, error, isPending, run } = useFetch("/api/v1/customers" + suffix, {headers});
 
     let custNames = data;
     if (custNames) {
