@@ -15,7 +15,6 @@ use sea_query::{
 };
 use crate::schema::{
     Driver,
-    Season,
     Session,
     Subsession,
     DriverResult,
@@ -24,7 +23,6 @@ use crate::schema::{
     Track,
     Car,
     SiteTeam,
-    SiteTeamMember,
 
     is_event_type,
     is_category_type,

@@ -53,5 +53,13 @@
             { "cust_id": 432861, "name": "Tóth Dávid Archibald" },
             { "cust_id": 226029, "name": "Rudas István" }
         ]
+    },
+    {
+        "name": "kuplung",
+        "members": [
+            { "cust_id": 727595, "name": "Kucsma András" },
+            { "cust_id": 728356, "name": "Gábor Rosta" },
+            { "cust_id": 729118, "name": "György Horváth6" }
+        ]
     }
 ]
