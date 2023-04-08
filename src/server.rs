@@ -1,7 +1,7 @@
 use std::env;
 use std::collections::HashMap;
 
-use rocket::fs::FileServer;
+use rocket::fs::{FileServer, Options};
 use rocket::State;
 
 use rusqlite::Connection;
@@ -385,7 +385,7 @@ pub async fn start_rocket_server() {
     };
     let _result = rocket::build()
         // .mount("/static", FileServer::from("static"))
-        .mount("/", FileServer::from(site_dir))
+        .mount("/iracing-stats", FileServer::new(site_dir, Options::Index))
         .mount("/", routes![
             api_v1_irating_history,
             api_v1_car_track_usage_stats,

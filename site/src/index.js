@@ -6,7 +6,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 const router = createBrowserRouter([
   {
-    path: "index.html",
+    path: "/iracing-stats",
     element: (
       <React.StrictMode>
         <App />
