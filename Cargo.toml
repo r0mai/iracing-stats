@@ -15,7 +15,7 @@ chrono = "0.4.23"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.11.13", features = ["blocking", "cookies", "json", "serde_json"] }
 clap = { version = "4.0.29", features = ["derive"] }
-rocket = { version = "0.5.0-rc.2", features = ["json"] }
+rocket = { version = "0.5.0-rc.3", features = ["json", "tls"] }
 futures = "0.3.25"
 lazy_static = "1.4.0"
 sea-query = "0.28.3"
