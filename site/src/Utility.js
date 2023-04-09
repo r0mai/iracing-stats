@@ -77,6 +77,10 @@ export function isCategory(session, category) {
     return session["license_category"] === category ;
 }
 
+export function isTrackCategory(session, trackMap, category) {
+    return trackMap[session["track_id"]]["category"] == category;
+}
+
 export function getHighestIRating(driverSessions, category) {
     let filteredIRating = driverSessions.filter(session => isCategory(session, category)).map(session => session["new_irating"]);
     return Math.max.apply(null, filteredIRating);

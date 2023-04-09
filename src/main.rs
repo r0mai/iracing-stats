@@ -83,6 +83,10 @@ struct Args {
     #[arg(long = "server")]
     start_server: bool,
 
+    /// Use HTTPS when running the server
+    #[arg(long = "enable-https")]
+    enable_https: bool,
+
     /// Do the motec thing
     #[arg(short = 'm', long = "motec")]
     motec_thing: bool,
@@ -167,7 +171,7 @@ async fn main() {
         db::update_db();
     }
     if args.start_server {
-        crate::server::start_rocket_server().await;
+        crate::server::start_rocket_server(args.enable_https).await;
     } else {
         tokio_main(&args).await;
     }

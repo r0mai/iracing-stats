@@ -374,16 +374,23 @@ async fn api_v1_customer_names(
     return Some(Value::Array(result));
 }
 
-pub async fn start_rocket_server() {
+pub async fn start_rocket_server(enable_https: bool) {
     const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
 
     let db_pool = create_r2d2_db_connection_pool();
+
+    let mut figment = rocket::Config::figment();
+    if enable_https {
+        figment = figment
+            .merge(("tls.certs", "path/to/certs.pem"))
+            .merge(("tls.key", vec![0; 32]));
+    }
 
     let site_dir = match env::var(SITE_DIR_ENV_VAR) {
         Ok(value) => value,
         Err(_error) => "site/build".to_owned()
     };
-    let _result = rocket::build()
+    let _result = rocket::custom(figment)
         // .mount("/static", FileServer::from("static"))
         .mount("/iracing-stats", FileServer::new(site_dir, Options::Index))
         .mount("/", routes![
