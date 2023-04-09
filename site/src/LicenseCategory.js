@@ -10,6 +10,13 @@ const kNames = [
     "dirt-road",
 ];
 
+const kNiceNames = [
+    "Oval",
+    "Road",
+    "Dirt Oval",
+    "Dirt Road",
+];
+
 export function findIndex(licenseName) {
     // 1 based index
     let idx = kNames.indexOf(licenseName);
@@ -26,5 +33,14 @@ export function findName(licenseIdx) {
         return kNames[kRoad - 1];
     } else {
         return kNames[licenseIdx - 1];
+    }
+}
+
+export function toNiceName(licenseIdx) {
+    // 1 based index
+    if (licenseIdx < 0 || licenseIdx > 4) {
+        return kNiceNames[kRoad - 1];
+    } else {
+        return kNiceNames[licenseIdx - 1];
     }
 }

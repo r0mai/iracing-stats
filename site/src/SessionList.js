@@ -1,6 +1,6 @@
 import { DataGrid } from '@mui/x-data-grid';
-import Box from '@mui/material/Box';
 import './SessionList.css';
+import * as Category from './LicenseCategory.js';
 
 function preprocessSessions(driverSessions, trackMap, carMap) {
     return (driverSessions 
@@ -20,6 +20,9 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
                 "track": trackMap[session["track_id"]]["track_name"],
                 "irating_delta": session["new_irating"] - session["old_irating"],
                 "finish_position_in_class": session["finish_position_in_class"] + 1,
+                "new_irating": session["new_irating"],
+                "license_category": Category.toNiceName(session["license_category"]),
+                "track_category": Category.toNiceName(trackMap[session["track_id"]]["category"]),
             };
         })
         .reverse()
@@ -85,7 +88,22 @@ function SessionList({driverSessions, trackMap, carMap}) {
                     return '';
                 }
             },
-        }
+        },
+        {
+            field: "new_irating",
+            headerName: "New IR",
+            width: 60,
+        },
+        {
+            field: "license_category",
+            headerName: "Cat",
+            width: 100
+        },
+        {
+            field: "track_category",
+            headerName: "Track Cat",
+            width: 100
+        },
     ];
     return (
         <div style={{ width: "100%", height: 660 }}>

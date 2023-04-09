@@ -12,7 +12,6 @@ import * as React from 'react';
 function DriverList({state, setState}) {
 
     let driverViews = [];
-    let custIDs = [];
 
     let drivers = state["drivers"];
     let team = state["team"];
