@@ -10,8 +10,8 @@ function plotIRatingHistory(div, sessions, trackMap, category) {
             !isRookie(session) &&
             isMainEvent(session) &&
             isRace(session) &&
-            // isCategory(session, categoryIdx)
-            isTrackCategory(session, trackMap, categoryIdx)
+            isCategory(session, categoryIdx)
+            // isTrackCategory(session, trackMap, categoryIdx)
         );
     });
 
