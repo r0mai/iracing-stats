@@ -74,7 +74,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
         },
         {
             field: "irating_delta",
-            headerName: "IR",
+            headerName: "IR Δ",
             width: 60,
             valueFormatter: params => {
                 return (params.value > 0 ? "+" : "") + params.value;
@@ -94,16 +94,16 @@ function SessionList({driverSessions, trackMap, carMap}) {
             headerName: "New IR",
             width: 60,
         },
-        {
-            field: "license_category",
-            headerName: "Cat",
-            width: 100
-        },
-        {
-            field: "track_category",
-            headerName: "Track Cat",
-            width: 100
-        },
+        // {
+        //     field: "license_category",
+        //     headerName: "Cat",
+        //     width: 100
+        // },
+        // {
+        //     field: "track_category",
+        //     headerName: "Track Cat",
+        //     width: 100
+        // },
     ];
     return (
         <div style={{ width: "100%", height: 660 }}>
