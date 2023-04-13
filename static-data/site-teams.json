@@ -34,7 +34,8 @@
             { "cust_id": 169978, "name": "Vasvári Máté" },
             { "cust_id": 90590, "name": "Szijjártó Krisztián" },
             { "cust_id": 552970, "name": "Gazsi Ádám" },
-            { "cust_id": 295507, "name": "Lovassy Árpád" }
+            { "cust_id": 295507, "name": "Lovassy Árpád" },
+            { "cust_id": 571085, "name": "Bruckner Bertalan" }
         ]
     },
     {
@@ -51,7 +52,8 @@
             { "cust_id": 727595, "name": "Kucsma András" },
             { "cust_id": 808067, "name": "Borsányi Ákos" },
             { "cust_id": 432861, "name": "Tóth Dávid Archibald" },
-            { "cust_id": 226029, "name": "Rudas István" }
+            { "cust_id": 226029, "name": "Rudas István" },
+            { "cust_id": 571085, "name": "Bruckner Bertalan" }
         ]
     },
     {
