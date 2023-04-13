@@ -1,5 +1,6 @@
 use std::env;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use rocket::fs::{FileServer, Options};
 use rocket::State;
@@ -376,6 +377,7 @@ async fn api_v1_customer_names(
 
 pub async fn start_rocket_server(enable_https: bool) {
     const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
+    const LOG_FILE_ENV_VAR: &str = "IRACING_STATS_LOG_FILE";
 
     let db_pool = create_r2d2_db_connection_pool();
 
@@ -390,6 +392,13 @@ pub async fn start_rocket_server(enable_https: bool) {
         Ok(value) => value,
         Err(_error) => "site/build".to_owned()
     };
+
+    let log_file = match env::var(LOG_FILE_ENV_VAR) {
+        Ok(value) => value,
+        Err(_error) => "server.log".to_owned()
+    };
+    let server_logger = crate::server_logger::ServerLogger::new(PathBuf::from(log_file));
+
     let _result = rocket::custom(figment)
         // .mount("/static", FileServer::from("static"))
         .mount("/iracing-stats", FileServer::new(site_dir, Options::Index))
@@ -406,6 +415,6 @@ pub async fn start_rocket_server(enable_https: bool) {
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)
-        .attach(crate::response_timer::ResponseTimer::new())
+        .attach(server_logger)
         .launch().await.unwrap();
 }
