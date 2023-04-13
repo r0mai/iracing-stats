@@ -50,6 +50,7 @@ ENV IRACING_TOKEN=${IRACING_TOKEN}
 ENV IRACING_STATS_BASE_DIR=/iracing-stats-dir
 ENV IRACING_STATS_STATIC_DIR=/iracing-stats-static
 ENV IRACING_STATS_SITE_DIR=/iracing-stats-site
+ENV IRACING_STATS_LOG_FILE=/iracing-stats-dir/server.log
 
 EXPOSE 8000
 
