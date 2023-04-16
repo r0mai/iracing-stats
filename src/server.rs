@@ -16,7 +16,8 @@ use crate::db::{
     query_customer_names,
     query_customer_cust_ids,
     query_driver_sessions,
-    query_site_team_members
+    query_site_team_members,
+    query_team_results
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -163,18 +164,23 @@ async fn api_v1_customers(
     return Some(Value::Array(json_arr));
 }
 
+fn semi_colon_string_to_i64s(ids: &String) -> Vec<i64> {
+    let id_strs = ids.split(";");
+    let mut id_nums = vec![];
+    for str in id_strs {
+        if let Ok(num) = str.parse::<i64>() {
+            id_nums.push(num);
+        }
+    }
+    return id_nums;
+}
+
 #[get("/api/v1/customer-names?<cust_ids>")]
 async fn api_v1_customer_names(
     cust_ids: String,
-    db_pool: &State<DbPool>) -> Option<Value>
+    db_pool: &State<DbPool>) -> Value
 {
-    let cust_id_strs = cust_ids.split(";");
-    let mut cust_id_nums = vec![];
-    for str in cust_id_strs {
-        if let Ok(num) = str.parse::<i64>() {
-            cust_id_nums.push(num);
-        }
-    }
+    let cust_id_nums = semi_colon_string_to_i64s(&cust_ids);
 
     let con = db_pool.get().unwrap();
     let names = query_customer_names(&con, cust_id_nums);
@@ -186,7 +192,37 @@ async fn api_v1_customer_names(
         });
     }).collect();
 
-    return Some(Value::Array(result));
+    return Value::Array(result);
+}
+
+#[get("/api/v1/team-results?<team_ids>")]
+async fn api_v1_team_results(
+    team_ids: String,
+    db_pool: &State<DbPool>) -> Value
+{
+    let team_ids = semi_colon_string_to_i64s(&team_ids);
+
+    let con = db_pool.get().unwrap();
+
+    let raw_data = query_team_results(&con, team_ids);
+
+    let values: Vec<Value> = raw_data.iter().map(|data| json!({
+        "subsession_id": data.subsession_id,
+        "cust_id": data.cust_id,
+        "team_id": data.team_id,
+        "driver_name": data.driver_name,
+        "track_id": data.track_id,
+        "package_id": data.package_id,
+        "car_id": data.car_id,
+        "laps_complete": data.laps_complete,
+        "finish_position_in_class": data.finish_position_in_class,
+        "incidents": data.incidents,
+        "start_time": data.start_time,
+    })).collect();
+
+    return json!({
+        "results": values
+    });
 }
 
 pub async fn start_rocket_server(enable_https: bool) {
@@ -220,7 +256,8 @@ pub async fn start_rocket_server(enable_https: bool) {
             api_v1_customers,
             api_v1_customer_names,
             api_v1_driver_info,
-            api_v1_track_car_data
+            api_v1_track_car_data,
+            api_v1_team_results,
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)

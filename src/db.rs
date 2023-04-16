@@ -10,6 +10,7 @@ use sea_query_rusqlite::RusqliteBinder;
 use sea_query::{
     Query,
     Expr,
+    Order,
     SqliteQueryBuilder,
 };
 use crate::schema::{
@@ -583,6 +584,68 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
     }
 
     return Some(values);
+}
+
+pub struct TeamResult {
+    pub subsession_id: i64,
+    pub cust_id: i64,
+    pub team_id: i64,
+    pub driver_name: String,
+    pub track_id: i32,
+    pub package_id: i32,
+    pub car_id: i32,
+    // pub car_name: String,
+    pub laps_complete: i32,
+    pub finish_position_in_class: i32,
+    pub incidents: i32,
+    pub start_time: String,
+}
+
+pub fn query_team_results(con: &Connection, team_ids: Vec<i64>) -> Vec<TeamResult> {
+    let (sql, params) = Query::select()
+        .column((DriverResult::Table, DriverResult::SubsessionId))
+        .column((DriverResult::Table, DriverResult::CustId))
+        .column((DriverResult::Table, DriverResult::TeamId))
+        .column((Driver::Table, Driver::DisplayName))
+        .column((TrackConfig::Table, TrackConfig::TrackId))
+        .column((TrackConfig::Table, TrackConfig::PackageId))
+        .column((DriverResult::Table, DriverResult::CarId))
+        .column((DriverResult::Table, DriverResult::LapsComplete))
+        .column((DriverResult::Table, DriverResult::FinishPositionInClass))
+        .column((DriverResult::Table, DriverResult::Incidents))
+        .column((Subsession::Table, Subsession::StartTime))
+        .from(DriverResult::Table)
+        .join_driver_result_to_subsession()
+        .join_driver_result_to_simsession()
+        .join_driver_result_to_driver()
+        .join_subsession_to_session()
+        .join_subsession_to_track_config()
+        .and_where(Expr::col((DriverResult::Table, DriverResult::TeamId)).is_in(team_ids))
+        .order_by((Subsession::Table, Subsession::StartTime), Order::Asc)
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut values = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        values.push(TeamResult{
+            subsession_id: row.get(0).unwrap(),
+            cust_id: row.get(1).unwrap(),
+            team_id: row.get(2).unwrap(),
+            driver_name: row.get(3).unwrap(),
+            track_id: row.get(4).unwrap(),
+            package_id: row.get(5).unwrap(),
+            car_id: row.get(6).unwrap(),
+            laps_complete: row.get(7).unwrap(),
+            finish_position_in_class: row.get(8).unwrap(),
+            incidents: row.get(9).unwrap(),
+            start_time: row.get(10).unwrap()
+        });
+    }
+
+    return values;
 }
 
 pub struct CustomerName {
