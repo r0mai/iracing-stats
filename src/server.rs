@@ -1,6 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 
+use std::io::BufWriter;
 use rocket::fs::{FileServer, Options};
 use rocket::State;
 
@@ -195,6 +196,59 @@ async fn api_v1_customer_names(
     return Value::Array(result);
 }
 
+enum TeamResultsFormat {
+    Json,
+    Csv
+}
+
+#[get("/api/v1/team-results-csv?<team_ids>")]
+async fn api_v1_team_results_csv(
+    team_ids: String,
+    db_pool: &State<DbPool>) -> String
+{
+    let team_ids = semi_colon_string_to_i64s(&team_ids);
+
+    let con = db_pool.get().unwrap();
+
+    let raw_data = query_team_results(&con, team_ids);
+
+    let mut writer = csv::Writer::from_writer(Vec::new());
+
+    // header
+    writer.write_record(&[
+        "subsession_id",
+        "cust_id",
+        "team_id",
+        "driver_name",
+        "track_id",
+        "package_id",
+        "car_id",
+        "laps_complete",
+        "finish_position_in_class",
+        "incidents",
+        "start_time"
+    ]).unwrap();
+
+    // values
+    raw_data.iter().for_each(|data| {
+        writer.write_record(&[
+            data.subsession_id.to_string(),
+            data.cust_id.to_string(),
+            data.team_id.to_string(),
+            data.driver_name.to_string(),
+            data.track_id.to_string(),
+            data.package_id.to_string(),
+            data.car_id.to_string(),
+            data.laps_complete.to_string(),
+            data.finish_position_in_class.to_string(),
+            data.incidents.to_string(),
+            data.start_time.to_string()
+        ]).unwrap();
+    });
+
+    return String::from_utf8(writer.into_inner().unwrap()).unwrap();
+}
+
 #[get("/api/v1/team-results?<team_ids>")]
 async fn api_v1_team_results(
     team_ids: String,
@@ -258,6 +312,7 @@ pub async fn start_rocket_server(enable_https: bool) {
             api_v1_driver_info,
             api_v1_track_car_data,
             api_v1_team_results,
+            api_v1_team_results_csv,
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)

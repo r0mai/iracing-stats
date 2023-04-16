@@ -21,3 +21,4 @@ lazy_static = "1.4.0"
 sea-query = "0.28.3"
 sea-query-rusqlite = { version = "0.2.0" }
 simple-xml-builder = "1.1.0"
+csv = "1.2.1"
