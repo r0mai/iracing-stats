@@ -219,6 +219,10 @@ impl SchemaUtils for SelectStatement {
     }
 }
 
+pub fn is_main_event() -> SimpleExpr {
+    return Expr::col((Simsession::Table, Simsession::SimsessionNumber)).eq(0);
+}
+
 pub fn is_event_type(event_type: EventType) -> SimpleExpr {
     return Expr::col((Subsession::Table, Subsession::EventType)).eq(event_type.to_db_type());
 }

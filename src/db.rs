@@ -25,6 +25,8 @@ use crate::schema::{
     SiteTeam,
     SchemaUtils,
     SiteTeamMember,
+    is_event_type,
+    is_main_event
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
@@ -621,6 +623,8 @@ pub fn query_team_results(con: &Connection, team_ids: Vec<i64>) -> Vec<TeamResul
         .join_subsession_to_session()
         .join_subsession_to_track_config()
         .and_where(Expr::col((DriverResult::Table, DriverResult::TeamId)).is_in(team_ids))
+        .and_where(is_event_type(EventType::Race))
+        .and_where(is_main_event())
         .order_by((Subsession::Table, Subsession::StartTime), Order::Asc)
         .build_rusqlite(SqliteQueryBuilder);
 
