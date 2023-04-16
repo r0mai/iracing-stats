@@ -37,9 +37,6 @@ RUN apt-get update && apt-get install -y ca-certificates curl procps
 COPY --from=rust-builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
 COPY --from=node-builder /iracing-stats-site/build /iracing-stats-site
 
-# no longer needed:
-COPY static /static 
-
 COPY static-data /iracing-stats-static/static-data
 
 ARG IRACING_USER
