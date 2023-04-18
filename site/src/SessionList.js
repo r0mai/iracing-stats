@@ -23,6 +23,7 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
                 "new_irating": session["new_irating"],
                 "license_category": Category.toNiceName(session["license_category"]),
                 "track_category": Category.toNiceName(trackMap[session["track_id"]]["category"]),
+                "incidents": session["incidents"]
             };
         })
         .reverse()
@@ -70,6 +71,11 @@ function SessionList({driverSessions, trackMap, carMap}) {
         {
             field: "finish_position_in_class",
             headerName: "Pos",
+            width: 60,
+        },
+        {
+            field: "incidents",
+            headerName: "Inc",
             width: 60,
         },
         {
