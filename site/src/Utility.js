@@ -89,3 +89,7 @@ export function getHighestIRating(driverSessions, category) {
 export function getTimeInSession(session) {
     return session["average_lap"] * session["laps_complete"];
 }
+
+export function calcSessionCPI(driverSession, trackMap) {
+    return driverSession["laps_complete"] * trackMap[driverSession["track_id"]]["corners_per_lap"] / driverSession["incidents"];
+}

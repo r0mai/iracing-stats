@@ -1,6 +1,7 @@
 import { DataGrid } from '@mui/x-data-grid';
 import './SessionList.css';
 import * as Category from './LicenseCategory.js';
+import { calcSessionCPI, round } from './Utility';
 
 function preprocessSessions(driverSessions, trackMap, carMap) {
     return (driverSessions 
@@ -23,7 +24,8 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
                 "new_irating": session["new_irating"],
                 "license_category": Category.toNiceName(session["license_category"]),
                 "track_category": Category.toNiceName(trackMap[session["track_id"]]["category"]),
-                "incidents": session["incidents"]
+                "incidents": session["incidents"],
+                "cpi": calcSessionCPI(session, trackMap)
             };
         })
         .reverse()
@@ -77,6 +79,14 @@ function SessionList({driverSessions, trackMap, carMap}) {
             field: "incidents",
             headerName: "Inc",
             width: 60,
+        },
+        {
+            field: "cpi",
+            headerName: "CPI",
+            width: 60,
+            valueFormatter: params => {
+                return isFinite(params.value) ? round(params.value, 1) : "∞";
+            }
         },
         {
             field: "irating_delta",
