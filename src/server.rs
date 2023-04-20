@@ -77,6 +77,7 @@ async fn api_v1_track_car_data(db_pool: &State<DbPool>) -> Value {
             "track_name": track.track_name,
             "config_name": track.config_name,
             "track_config_length": track.track_config_length,
+            "corners_per_lap": track.corners_per_lap,
             "category": track.category.to_db_type()
         }));
     }

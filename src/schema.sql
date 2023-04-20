@@ -60,6 +60,7 @@ CREATE TABLE track_config(
     package_id INTEGER NOT NULL, /* a.k.a track_id */
     config_name TEXT NOT NULL,
     track_config_length REAL NOT NULL, /* converted to km during db build */
+    corners_per_lap INTEGER NOT NULL,
     category_id INTEGER NOT NULL
 );
 

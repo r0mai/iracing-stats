@@ -145,6 +145,7 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* package_id */
             ?, /* config_name */
             ?, /* track_config_length */
+            ?, /* corners_per_lap */
             ?  /* category_id */
         );"#).unwrap();
     let insert_car_statement = tx.prepare(r#"
@@ -291,6 +292,7 @@ fn add_track_to_db(ctx: &mut DbContext, track: &Value) {
         track["package_id"].as_i64().unwrap(),
         track["config_name"].as_str().unwrap_or(""),
         miles_to_km(track["track_config_length"].as_f64().unwrap()),
+        track["corners_per_lap"].as_i64().unwrap(),
         track["category_id"].as_i64().unwrap()
     )).unwrap();
 }
@@ -780,6 +782,7 @@ pub struct TrackData {
     pub track_name: String,
     pub config_name: String,
     pub track_config_length: f32,
+    pub corners_per_lap: i32,
     pub category: CategoryType,
 }
 
@@ -790,6 +793,7 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
         .column((Track::Table, Track::TrackName))
         .column((TrackConfig::Table, TrackConfig::ConfigName))
         .column((TrackConfig::Table, TrackConfig::TrackConfigLength))
+        .column((TrackConfig::Table, TrackConfig::CornersPerLap))
         .column((TrackConfig::Table, TrackConfig::CategoryId))
         .from(TrackConfig::Table)
         .join_track_config_to_track()
@@ -806,7 +810,8 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
         let track_name: String = row.get(2).unwrap();
         let config_name: String = row.get(3).unwrap();
         let track_config_length: f32 = row.get(4).unwrap();
-        let category = CategoryType::from_i32(row.get(5).unwrap()).unwrap();
+        let corners_per_lap: i32 = row.get(5).unwrap();
+        let category = CategoryType::from_i32(row.get(6).unwrap()).unwrap();
 
         values.push(TrackData{
             package_id,
@@ -814,6 +819,7 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
             track_name,
             config_name,
             track_config_length,
+            corners_per_lap,
             category
         });
     }

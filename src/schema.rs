@@ -86,6 +86,7 @@ pub enum TrackConfig {
     PackageId,
     ConfigName,
     TrackConfigLength,
+    CornersPerLap,
     CategoryId, // road/oval/dirt road/dirt oval
 }
 
