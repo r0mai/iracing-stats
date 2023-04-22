@@ -278,7 +278,8 @@ async fn sync_subsessions(client: &mut IRacingClient, subsession_ids: &Vec<i64>)
     for (i, subsession_id) in subsession_ids.into_iter().enumerate() {
         let elapsed_secs = start.elapsed().as_secs_f32();
         let rate = i as f32 / elapsed_secs;
-        sync_subsession(client, *subsession_id, format!("{i}/{len} {rate:.2}/s ").as_str()).await;
+        let ip1 = i+1;
+        sync_subsession(client, *subsession_id, format!("{ip1}/{len} {rate:.2}/s ").as_str()).await;
     }
 }
 
