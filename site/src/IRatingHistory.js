@@ -18,7 +18,9 @@ function plotIRatingHistory(div, sessions, trackMap, category) {
     if (filtered.length === 0) {
         div.innerHTML = "No data";
     } else {
-        linePlot(div, filtered, e => e["start_time"], e => e["new_irating"], {});
+        linePlot(div, filtered, e => e["start_time"], e => e["new_irating"], {
+            showHorizontalGridLines: true
+        });
     }
 }
 

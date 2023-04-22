@@ -9,13 +9,17 @@ export function linePlot(
     yFunc, // e => e["new_irating"]
     // {
     //    horizontalLanes: [{min: X, max: Y, color: C}, ...]
-    //    lineColor: color
+    //    lineColor: color,
+    //    showHorizontalGridLines: bool,
+    //    showVerticalGridLines: bool
     // }
     style, 
 ) {
 
     let lineColor = style.lineColor || "red";
     let horizontalLanes = style.horizontalLanes || [];
+    let showHorizontalGridLines = style.showHorizontalGridLines || false;
+    let showVerticalGridLines = style.showVerticalGridLines || false;
 
     let margin = {top: 10, right: 30, bottom: 30, left: 60},
         width = 1200 - margin.left - margin.right,
@@ -65,6 +69,33 @@ export function linePlot(
 
     svg.append("g")
         .call(d3.axisLeft(y));
+
+    // Grid lines:
+    // https://www.essycode.com/posts/adding-gridlines-chart-d3/
+    if (showHorizontalGridLines) {
+        svg.append("g")
+            .call(d3.axisLeft(y)
+                .tickSize(-width)
+                .tickFormat(''))
+            .call(g => g.selectAll(".tick line")
+                .attr("stroke-opacity", 0.3))
+            .call(g => g.selectAll(".domain")
+                .remove())
+            ;
+    }
+
+    if (showVerticalGridLines) {
+        svg.append("g")
+            .call(d3.axisBottom(x)
+                .tickSize(height)
+                .tickFormat(''))
+            .call(g => g.selectAll(".tick line")
+                .attr("stroke-opacity", 0.3))
+            .call(g => g.selectAll(".domain")
+                .remove())
+            ;
+    }
+
 
     let line = d3.line()
         .curve(d3.curveStepAfter)
