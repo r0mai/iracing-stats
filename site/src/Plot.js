@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import { svgTranslate, svgPx } from './Utility.js';
 import { theme } from './Theme.js';
+import { svgRotate } from './Utility.js';
 
 export function linePlot(
     div,
@@ -505,5 +506,104 @@ export function yearlyFrequencyMap(
                 dataIdx += 1;
             }
         }
+    }
+}
+
+export function heatMap(
+    div,
+    matrix,
+    xLabels,
+    yLabels,
+    style)
+{
+    console.log(matrix);
+    console.log(xLabels);
+    console.log(yLabels);
+    let width = matrix.length;
+    if (width === 0) {
+        return;
+    }
+
+    let height = matrix[0].length;
+
+    // TODO make these global styles or something
+    let rectW = 10;
+    let rectH = 10;
+    let gapX = 2;
+    let gapY = 2;
+    let offsetX = rectW + gapX;
+    let offsetY = rectH + gapY;
+    let leftMargin = 200;
+    let rightMargin = 100;
+    let topMargin = 200;
+
+    let maxValue = 0;
+    for (let x = 0; x < width; ++x) {
+        for (let y = 0; y < height; ++y) {
+            let value = matrix[x][y];
+            if (value !== undefined) {
+                maxValue = Math.max(maxValue, value);
+            }
+        }
+    }
+    console.log(maxValue);
+
+    let svg = d3.select(div)
+        .append('svg')
+        .attr("width", width * offsetX + leftMargin + rightMargin)
+        .attr("height", height * offsetY + topMargin)
+        ;
+
+    let colorScale = d3.scaleLinear()
+        .domain([0, maxValue])
+        .range(["#aaa", "blue"])
+        ;
+
+    let matrixG = svg.append("g")
+        .attr("transform", svgTranslate(leftMargin, topMargin))
+        ;
+
+    for (let y = 0; y < height; ++y) {
+        for (let x = 0; x < width; ++x) {
+            let value = matrix[x][y];
+
+            let color;
+            if (value === undefined) {
+                color = "#444";
+            } else {
+                color = colorScale(value);
+            }
+            matrixG.append("rect")
+                .attr("x", x * offsetX)
+                .attr("y", y * offsetY)
+                .attr("width", rectW)
+                .attr("height", rectH)
+                .attr("rx", rectW * 0.2)
+                .attr("fill", color)
+                ;
+        }
+    }
+
+    let createLabel = (group, y, textAnchor, text) => {
+        group.append("text")
+            .attr("x", 0)
+            .attr("y", y)
+            .attr("dy", "0.9em")
+            .attr("text-anchor", textAnchor)
+            .attr("font-size", rectH)
+            .attr("fill", theme.palette.text.primary)
+            .text(text);
+    };
+
+    let yLabelsG = svg.append("g")
+        .attr("transform", svgTranslate(leftMargin - gapY, topMargin));
+    for (let y = 0; y < height; ++y) {
+        createLabel(yLabelsG, y * offsetY, "end", yLabels[y]);
+    }
+
+    let xLabelsG = svg.append("g")
+        .attr("transform", svgTranslate(leftMargin - gapY, topMargin - gapY) + svgRotate(-90));
+    for (let x = 0; x < width; ++x) {
+        createLabel(xLabelsG, x * offsetX, "start", xLabels[x]);
     }
 }

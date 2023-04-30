@@ -6,6 +6,7 @@ export const kTrackUsage = i++;
 export const kCarUsage = i++;
 export const kSessionList = i++;
 export const kActivityHistory = i++;
+export const kCarTrackMatrix = i++;
 export const kReportTypeCount = i++;
 
 const kNames = [
@@ -16,6 +17,7 @@ const kNames = [
     "car-usage",
     "session-list",
     "activity-history",
+    "car-track-matrix",
 ];
 
 export function findIndex(reportName) {

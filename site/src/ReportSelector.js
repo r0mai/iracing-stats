@@ -23,6 +23,7 @@ function ReportSelector({state, setState}) {
             <MenuItem value={ReportType.kTrackUsage}>Track Usage</MenuItem>
             <MenuItem value={ReportType.kCarUsage}>Car Usage</MenuItem>
             <MenuItem value={ReportType.kActivityHistory}>Activity History</MenuItem>
+            <MenuItem value={ReportType.kCarTrackMatrix}>Car/Track Matrix</MenuItem>
         </Select>
     );
 

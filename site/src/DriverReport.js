@@ -10,6 +10,7 @@ import { driverToQueryParam } from './Utility.js';
 import * as ReportType from './ReportType.js'
 import Grid from '@mui/material/Grid';
 import * as React from 'react';
+import CarTrackMatrix from "./CarTrackMatrix.js";
 
 function preprocessDriverSessions(sessions) {
     sessions.forEach(session => {
@@ -55,6 +56,9 @@ function DriverReport({driver, driverName, trackMap, carMap, state}) {
             break;
         case ReportType.kActivityHistory:
             report = <ActivityHistory driverSessions={driverSessions}/>;
+            break;
+        case ReportType.kCarTrackMatrix:
+            report = <CarTrackMatrix driverSessions={driverSessions} carMap={carMap} trackMap={trackMap}/>;
             break;
     }
 
