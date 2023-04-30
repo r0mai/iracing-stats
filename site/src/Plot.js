@@ -435,7 +435,7 @@ export function yearlyFrequencyMap(
                 let day = dayData.date.getUTCDate();
                 let dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayData.date.getUTCDay()];
                 let tooltipHtml =
-                    `${year}/${month + 1}/${day} ${dayName}<br/>${formatValue(dayData.value)}`;
+                    `${year}/${month + 1}/${day} ${dayName}<br/><b>${formatValue(dayData.value)}</b>`;
 
                 let rect = yearG.append("rect")
                     .attr("x", offsetX * w)
