@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import { svgTranslate, svgPx } from './Utility.js';
 import { theme } from './Theme.js';
 import { svgRotate } from './Utility.js';
+import { attachTooltipToElement, createTooltip } from './Tooltip.js';
 
 export function linePlot(
     div,
@@ -377,15 +378,7 @@ export function yearlyFrequencyMap(
 
     // tooltip
     let tooltipWidth = 150;
-    let tooltip = d3.select(div)
-        .append("div")
-        .style("visibility", "hidden")
-        .style("position", "absolute")
-        .style("width", svgPx(tooltipWidth))
-        .style("max-width", svgPx(tooltipWidth))
-        .style("background-color", "gray")
-        .style("text-align", "center")
-        ;
+    let tooltip = createTooltip(div, tooltipWidth);
 
     let dataIdx = 0;
     for (let y = startYear; y <= endYear; ++y) {
@@ -441,29 +434,18 @@ export function yearlyFrequencyMap(
                 let month = dayData.date.getUTCMonth();
                 let day = dayData.date.getUTCDate();
                 let dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayData.date.getUTCDay()];
-                let mouseover = function(event) {
-                    tooltip
-                        .html(
-                            `${year}/${month + 1}/${day} ${dayName}` + "<br/>" +
-                            (dayData.value === undefined ? "No activity" : formatValue(dayData.value))
-                        )
-                        .style("left", svgPx(event.pageX - tooltipWidth * 0.5))
-                        .style("top", svgPx(event.pageY + 10))
-                        .style("visibility", "visible");
-                };
-                let mouseleave = function() {
-                    tooltip.style("visibility", "hidden");
-                };
+                let tooltipHtml =
+                    `${year}/${month + 1}/${day} ${dayName}<br/>${formatValue(dayData.value)}`;
 
-                yearG.append("rect")
+                let rect = yearG.append("rect")
                     .attr("x", offsetX * w)
                     .attr("y", offsetY * d)
                     .attr("width", rectW)
                     .attr("height", rectH)
                     .attr("rx", rectW * 0.2)
-                    .attr("fill", color)
-                    .on("mousemove", mouseover)
-                    .on("mouseout", mouseleave);
+                    .attr("fill", color);
+
+                attachTooltipToElement(rect, tooltip, tooltipWidth, tooltipHtml);
 
                 // month separators
                 {
@@ -514,6 +496,7 @@ export function heatMap(
     matrix,
     xLabels,
     yLabels,
+    formatValue,
     style)
 {
     console.log(matrix);
@@ -563,9 +546,17 @@ export function heatMap(
         .attr("transform", svgTranslate(leftMargin, topMargin))
         ;
 
+    let tooltipWidth = 300;
+    let tooltip = createTooltip(div, tooltipWidth);
+
     for (let y = 0; y < height; ++y) {
         for (let x = 0; x < width; ++x) {
             let value = matrix[x][y];
+
+            let xLabel = xLabels[x];
+            let yLabel = yLabels[y];
+
+            let tooltipHtml = `${xLabel}<br/>${yLabel}<br/><b>${formatValue(value)}</b>`;
 
             let color;
             if (value === undefined) {
@@ -573,7 +564,7 @@ export function heatMap(
             } else {
                 color = colorScale(value);
             }
-            matrixG.append("rect")
+            let rect = matrixG.append("rect")
                 .attr("x", x * offsetX)
                 .attr("y", y * offsetY)
                 .attr("width", rectW)
@@ -581,6 +572,8 @@ export function heatMap(
                 .attr("rx", rectW * 0.2)
                 .attr("fill", color)
                 ;
+
+            attachTooltipToElement(rect, tooltip, tooltipWidth, tooltipHtml);
         }
     }
 

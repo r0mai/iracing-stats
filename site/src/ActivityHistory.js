@@ -12,8 +12,8 @@ function ActivityHistory({driverSessions}) {
                     root,
                     driverSessions,
                     e => e["start_time"],
-                    e => getTimeInSession(e),
-                    e => formatTime(e)
+                    getTimeInSession,
+                    e => e === undefined ? "No Activity" : formatTime(e)
                 );
             }
         },

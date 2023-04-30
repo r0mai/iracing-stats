@@ -1,6 +1,6 @@
 import { useD3 } from './hooks/useD3.js';
 import { heatMap } from './Plot.js';
-import { getTimeInSession } from './Utility.js';
+import { formatTime, getTimeInSession } from './Utility.js';
 
 function createIndexMapping(data, keyFunc, labelFunc) {
     let indexMap = new Map();
@@ -96,7 +96,13 @@ function plotCarTrackMatrix(div, matrix, xLabels, yLabels) {
     if (matrix.length === 0 || matrix[0].length === 0) {
         div.innerHTML = "No data";
     } else {
-        heatMap(div, matrix, xLabels, yLabels, {});
+        heatMap(
+            div,
+            matrix,
+            xLabels,
+            yLabels,
+            e => e === undefined ? "No Activity" : formatTime(e),
+            {});
     }
 }
 
