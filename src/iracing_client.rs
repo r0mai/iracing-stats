@@ -2,11 +2,13 @@ use std::{
     collections::HashMap,
     collections::HashSet,
     sync::atomic::AtomicI64,
-    sync::atomic::Ordering
+    sync::atomic::Ordering, thread::current
 };
+use chrono::{Utc, DateTime, Days, Datelike, NaiveDateTime, NaiveDate, FixedOffset, TimeZone, NaiveTime};
 use serde_json;
 use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
+use lazy_static::lazy_static;
 
 use crate::db::query_all_site_team_members;
 
@@ -19,6 +21,21 @@ pub struct IRacingClient {
     pub rate_limit_limit: AtomicI64,
     pub rate_limit_remaining: AtomicI64,
     pub rate_limit_reset: AtomicI64,
+}
+
+fn cached_now() -> DateTime<Utc> {
+    lazy_static! {
+        static ref NOW: DateTime<Utc> = Utc::now();
+    }
+    return *NOW;
+}
+
+fn to_api_date_string(date: &DateTime<Utc>) -> String {
+    return date.to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+}
+
+fn extract_subsession_ids_from_response(response: &serde_json::Value) -> Vec<i64> {
+    return response.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
 }
 
 impl IRacingClient {
@@ -105,14 +122,24 @@ impl IRacingClient {
         return result_array;
     }
 
-    async fn get_member_since_year(&self, cust_id: i64) -> i32 {
+    async fn get_member_since_date(&self, cust_id: i64) -> DateTime<Utc> {
         let params = HashMap::from([
             ("cust_ids", cust_id.to_string())
         ]);
 
         let res = self.get_and_read("/data/member/get", &params).await;
 
-        return res["members"][0]["member_since"].as_str().unwrap()[0..4].parse::<i32>().unwrap();
+        let date_str = res["members"][0]["member_since"].as_str().unwrap();
+        println!("date {date_str}");
+
+        // TODO this can be probably done without involving timezones at all
+        let tz_utc = FixedOffset::east_opt(0).unwrap(); // hope this is UTC
+
+        let naive_date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d").unwrap();
+        let naive_time = NaiveTime::from_hms_opt(0, 0, 0).unwrap(); // midnight?
+        let naive_date_time = NaiveDateTime::new(naive_date, naive_time);
+
+        return tz_utc.from_local_datetime(&naive_date_time).unwrap().with_timezone(&Utc);
     }
 
     // a.k.a series list
@@ -153,27 +180,59 @@ impl IRacingClient {
         return self.get_and_read_chunked("/data/results/search_series", &params).await;
     }
 
+    async fn search_hosted(&self, cust_id: i64, start_date: &DateTime<Utc>, end_date: &DateTime<Utc>) -> serde_json::Value {
+        let params = HashMap::from([
+            ("cust_id", cust_id.to_string()),
+            ("start_range_begin", to_api_date_string(start_date)),
+            ("start_range_end", to_api_date_string(end_date)),
+        ]);
+        return self.get_and_read_chunked("/data/results/search_hosted", &params).await;
+    }
+
+    // return subsession_ids may contain duplicates
     async fn find_subsessions_for_driver(&self, cust_id: i64, partial: bool) -> Vec<i64> {
         let mut seasons = Vec::new();
+        let start_date;
         if partial {
             seasons.push((CURRENT_YEAR, CURRENT_QUARTER));
+            start_date = cached_now().checked_sub_days(Days::new(10)).unwrap();
         } else {
-            let member_since_year = self.get_member_since_year(cust_id).await;
+            let member_since = self.get_member_since_date(cust_id).await;
+            let member_since_year = member_since.year();
             for year in member_since_year..=CURRENT_YEAR {
                 let last_quarter = if year == CURRENT_YEAR { CURRENT_QUARTER } else { 4 };
                 for quarter in 1..=last_quarter {
                     seasons.push((year, quarter));
                 }
             }
-        }
-        let mut series = serde_json::Value::Array([].to_vec());
-        for (year, quarter) in seasons {
-            println!("Query {year}s{quarter}");
-            let mut series_q = self.search_series(Some(cust_id), year, quarter, None).await;
-            series.as_array_mut().unwrap().append(series_q.as_array_mut().unwrap());
+            start_date = member_since;
         }
 
-        return series.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
+        let mut subsession_ids = Vec::new();
+
+        // official
+        for (year, quarter) in seasons {
+            println!("Query official {year}s{quarter}");
+            let series_q = self.search_series(Some(cust_id), year, quarter, None).await;
+            let mut new_ids = extract_subsession_ids_from_response(&series_q);
+            subsession_ids.append(&mut new_ids);
+        }
+
+        // hosted
+        let mut current_date = start_date;
+        while current_date < cached_now() {
+            // max range allowed is 90. be safe with 89
+            let next_date = current_date.checked_add_days(Days::new(89)).unwrap();
+
+            println!("Query hosted {current_date} -> {next_date}");
+            let hosted_q = self.search_hosted(cust_id, &current_date, &next_date).await;
+            let mut new_ids = extract_subsession_ids_from_response(&hosted_q);
+            subsession_ids.append(&mut new_ids);
+            
+            current_date = next_date;
+        }
+
+        return subsession_ids;
     }
 
     async fn find_subsessions_for_season(&self, year: i32, quarter: i32, week: Option<i32>) -> Vec<i64> {
