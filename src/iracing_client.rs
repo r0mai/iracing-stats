@@ -130,7 +130,6 @@ impl IRacingClient {
         let res = self.get_and_read("/data/member/get", &params).await;
 
         let date_str = res["members"][0]["member_since"].as_str().unwrap();
-        println!("date {date_str}");
 
         // TODO this can be probably done without involving timezones at all
         let tz_utc = FixedOffset::east_opt(0).unwrap(); // hope this is UTC
