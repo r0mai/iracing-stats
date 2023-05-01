@@ -219,7 +219,8 @@ impl IRacingClient {
 
         // hosted
         let mut current_date = start_date;
-        while current_date < cached_now() {
+        let last_date = cached_now().checked_add_days(Days::new(1)).unwrap();
+        while current_date < last_date {
             // max range allowed is 90. be safe with 89
             let next_date = current_date.checked_add_days(Days::new(89)).unwrap();
 
