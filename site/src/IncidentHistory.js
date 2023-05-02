@@ -1,6 +1,6 @@
 import { useD3 } from './hooks/useD3.js';
 import { linePlot } from './Plot.js';
-import { isRookie, isRace, isMainEvent, isCategory } from './Utility.js';
+import { isRookie, isRace, isMainEvent, isCategory, isOfficial } from './Utility.js';
 import * as Category from './LicenseCategory.js';
 
 function plotIncidentHistory(div, sessions, category) {
@@ -10,6 +10,7 @@ function plotIncidentHistory(div, sessions, category) {
             !isRookie(session) &&
             isMainEvent(session) &&
             isRace(session) &&
+            isOfficial(session) &&
             isCategory(session, categoryIdx)
         );
     });

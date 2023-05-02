@@ -1,6 +1,6 @@
 import { useD3 } from './hooks/useD3.js';
 import { linePlot } from './Plot.js';
-import { isRookie, isRace, isMainEvent, isCategory, isTrackCategory } from './Utility.js';
+import { isRookie, isRace, isMainEvent, isCategory, isTrackCategory, isOfficial } from './Utility.js';
 import * as Category from './LicenseCategory.js';
 
 function plotIRatingHistory(div, sessions, trackMap, category) {
@@ -10,6 +10,7 @@ function plotIRatingHistory(div, sessions, trackMap, category) {
             !isRookie(session) &&
             isMainEvent(session) &&
             isRace(session) &&
+            isOfficial(session) &&
             isCategory(session, categoryIdx)
             // isTrackCategory(session, trackMap, categoryIdx)
         );

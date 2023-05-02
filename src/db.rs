@@ -161,7 +161,8 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* start_time */
             ?, /* license_category_id */
             ?, /* event_type */
-            ?  /* track_id */
+            ?, /* track_id */
+            ?  /* official_session */
         );"#).unwrap();
     let insert_session_statement = tx.prepare(r#"
         INSERT OR IGNORE INTO session VALUES(
@@ -395,7 +396,8 @@ fn add_subsession_to_db(ctx: &mut DbContext, subsession: &Value) {
         parse_date(subsession["start_time"].as_str().unwrap()),
         subsession["license_category_id"].as_i64().unwrap(),
         subsession["event_type"].as_i64().unwrap(),
-        subsession["track"]["track_id"].as_i64().unwrap()
+        subsession["track"]["track_id"].as_i64().unwrap(),
+        subsession["official_session"].as_bool().unwrap(),
     )).unwrap();
 
     ctx.insert_session_statement.execute((
@@ -531,6 +533,7 @@ pub struct DriverSession {
     pub event_type: EventType,
     pub series_name: String,
     pub simsession_number: i32,
+    pub official_session: bool,
 }
 
 pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<Vec<DriverSession>> {
@@ -552,6 +555,7 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
         .column((Subsession::Table, Subsession::EventType))
         .column((Session::Table, Session::SeriesName))
         .column((Simsession::Table, Simsession::SimsessionNumber))
+        .column((Subsession::Table, Subsession::OfficialSession))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -584,6 +588,7 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
             event_type: EventType::from_i32(row.get(14).unwrap()).ok()?,
             series_name: row.get(15).unwrap(),
             simsession_number: row.get(16).unwrap(),
+            official_session: row.get(17).unwrap(),
         });
     }
 

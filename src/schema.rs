@@ -49,6 +49,7 @@ pub enum Subsession {
     LicenseCategoryId,
     EventType,
     TrackId,
+    OfficialSession,
 }
 
 #[derive(Iden)]

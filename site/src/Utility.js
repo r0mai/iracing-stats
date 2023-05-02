@@ -73,6 +73,10 @@ export function isMainEvent(session) {
     return session["simsession_number"] === 0;
 }
 
+export function isOfficial(session) {
+    return session["official_session"];
+}
+
 export function isCategory(session, category) {
     return session["license_category"] === category ;
 }

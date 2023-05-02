@@ -51,6 +51,7 @@ async fn api_v1_driver_info(
             "event_type": data.event_type.to_db_type(),
             "series_name": data.series_name,
             "simsession_number": data.simsession_number,
+            "official_session": data.official_session,
         })).collect();
 
         return Some(json!({
