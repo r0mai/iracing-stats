@@ -53,9 +53,14 @@ impl IRacingClient {
         return v.to_str().unwrap().parse::<i64>().unwrap();
     }
 
-    async fn get_with_retry(&self, url: String, params: &HashMap<&str, String>) -> serde_json::Value {
+    async fn get_with_retry(&self, url: String, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
         for _ in 0..10 {
-            let response = self.client.get(&url).query(&params).send().await.unwrap();
+            let response_res = self.client.get(&url).query(&params).send().await;
+            if let Err(error) = response_res {
+                println!("Error {error} while requesting {url}");
+                continue;
+            }
+            let response = response_res.unwrap();
             let status = response.status();
             let headers = response.headers();
             let rl_limit = headers.get("x-ratelimit-limit");
@@ -69,7 +74,7 @@ impl IRacingClient {
             let text = response.text().await.unwrap();
             status.is_server_error();
             if status.is_success() {
-                return serde_json::from_str(&text).unwrap();
+                return Some(serde_json::from_str(&text).unwrap());
             }
 
             if status.is_server_error() {
@@ -81,6 +86,12 @@ impl IRacingClient {
             if status.as_u16() == 401 {
                 self.auth().await;
                 continue;
+            }
+
+            // unauthorized to view session
+            if status.as_u16() == 403 {
+                println!("Request to {url} was unauthorized (403)");
+                return None;
             }
 
             // rate limit
@@ -96,30 +107,30 @@ impl IRacingClient {
         panic!("Failed after several retries :(");
     }
 
-    async fn get_and_read(&self, suffix: &str, params: &HashMap<&str, String>) -> serde_json::Value {
-        let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await;
+    async fn get_and_read(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
+        let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await?;
         return self.get_with_retry(String::from(pointer_json["link"].as_str().unwrap()), params).await;
     }
 
-    async fn get_and_read_chunked(&self, suffix: &str, params: &HashMap<&str, String>) -> serde_json::Value {
-        let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await;
+    async fn get_and_read_chunked(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
+        let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await?;
         let chunk_info = &pointer_json["data"]["chunk_info"];
         let base_url_res= &chunk_info["base_download_url"].as_str();
 
         let mut result_array = serde_json::Value::Array([].to_vec());
         if base_url_res.is_none() {
-            return result_array;
+            return Some(result_array);
         }
 
         let base_url = base_url_res.unwrap();
 
         for file in chunk_info["chunk_file_names"].as_array().unwrap() {
             let suffix = file.as_str().unwrap();
-            let mut partial_result = self.get_with_retry(format!("{base_url}{suffix}"), &HashMap::new()).await;
+            let mut partial_result = self.get_with_retry(format!("{base_url}{suffix}"), &HashMap::new()).await?;
             result_array.as_array_mut().unwrap().append(partial_result.as_array_mut().unwrap());
         }
 
-        return result_array;
+        return Some(result_array);
     }
 
     async fn get_member_since_date(&self, cust_id: i64) -> DateTime<Utc> {
@@ -127,7 +138,7 @@ impl IRacingClient {
             ("cust_ids", cust_id.to_string())
         ]);
 
-        let res = self.get_and_read("/data/member/get", &params).await;
+        let res = self.get_and_read("/data/member/get", &params).await.unwrap();
 
         let date_str = res["members"][0]["member_since"].as_str().unwrap();
 
@@ -147,7 +158,7 @@ impl IRacingClient {
             ("season_year", year.to_string()),
             ("season_quarter", quarter.to_string()),
         ]);
-        return self.get_and_read("/data/season/list", &params).await;
+        return self.get_and_read("/data/season/list", &params).await.unwrap();
     }
 
     async fn get_all_season_list(&self) -> serde_json::Value {
@@ -176,7 +187,7 @@ impl IRacingClient {
         if let Some(week) = week {
             params.insert("race_week_num", week.to_string());
         }
-        return self.get_and_read_chunked("/data/results/search_series", &params).await;
+        return self.get_and_read_chunked("/data/results/search_series", &params).await.unwrap();
     }
 
     async fn search_hosted(&self, cust_id: i64, start_date: &DateTime<Utc>, end_date: &DateTime<Utc>) -> serde_json::Value {
@@ -185,7 +196,7 @@ impl IRacingClient {
             ("start_range_begin", to_api_date_string(start_date)),
             ("start_range_end", to_api_date_string(end_date)),
         ]);
-        return self.get_and_read_chunked("/data/results/search_hosted", &params).await;
+        return self.get_and_read_chunked("/data/results/search_hosted", &params).await.unwrap();
     }
 
     // return subsession_ids may contain duplicates
@@ -243,7 +254,7 @@ impl IRacingClient {
     async fn get_cust_id(&self, driver_name: &String) -> i64 {
         let res = self.get_and_read("/data/lookup/drivers", &HashMap::from([
             ("search_term", driver_name.clone())
-        ])).await;
+        ])).await.unwrap();
         let arr = res.as_array().unwrap();
         let len = arr.len();
         if len == 0 {
@@ -260,17 +271,17 @@ impl IRacingClient {
     async fn lookup_driver(&self, cust_id: i64) -> serde_json::Value {
         return self.get_and_read("/data/lookup/drivers", &HashMap::from([
             ("cust_id", cust_id.to_string())
-        ])).await;
+        ])).await.unwrap();
     }
 
     pub async fn get_member_profile(&self, cust_id: i64) -> serde_json::Value {
         return self.get_and_read("/data/member/profile", &HashMap::from([
             ("cust_id", cust_id.to_string())
-        ])).await;
+        ])).await.unwrap();
     }
 
 
-    pub async fn get_subsession(&self, subsession_id: i64) -> serde_json::Value {
+    pub async fn get_subsession(&self, subsession_id: i64) -> Option<serde_json::Value> {
         return self.get_and_read("/data/results/get", &HashMap::from([
             ("subsession_id", subsession_id.to_string())
         ])).await;
@@ -306,22 +317,26 @@ async fn find_non_cached_subsessions_for_season(client: &mut IRacingClient, year
     return filter_non_cached(client.find_subsessions_for_season(year, quarter, week).await);
 }
 
-async fn sync_subsession(client: &mut IRacingClient, subsession_id: i64, prefix: &str) {
+async fn sync_subsession(client: &mut IRacingClient, subsession_id: i64, prefix: &str) -> bool {
     if crate::db::is_session_cached(subsession_id) {
-        return;
+        return true;
     }
 
     println!("{prefix}Syncing session {subsession_id}");
 
-    let res = client.get_subsession(subsession_id).await;
-
-    crate::db::write_cached_session_json(subsession_id, &res);
+    if let Some(res) = client.get_subsession(subsession_id).await {
+        crate::db::write_cached_session_json(subsession_id, &res);
+        return true;
+    }
+    return false;
 }
 
-async fn sync_subsessions(client: &mut IRacingClient, subsession_ids: &Vec<i64>) {
+async fn sync_subsessions(client: &mut IRacingClient, subsession_ids: &Vec<i64>) -> Vec<i64> {
 
     let len = subsession_ids.len();
     println!("Syncing {len} subsessions");
+
+    let mut synced_subsession_ids = Vec::new();
 
     // Tried concurent stuff. Failed
     // let results = stream::iter(subsession_ids).map(|subsession_id| {
@@ -338,8 +353,14 @@ async fn sync_subsessions(client: &mut IRacingClient, subsession_ids: &Vec<i64>)
         let elapsed_secs = start.elapsed().as_secs_f32();
         let rate = i as f32 / elapsed_secs;
         let ip1 = i+1;
-        sync_subsession(client, *subsession_id, format!("{ip1}/{len} {rate:.2}/s ").as_str()).await;
+
+        // This can fail if we don't have permission to view the subsession
+        let success = sync_subsession(client, *subsession_id, format!("{ip1}/{len} {rate:.2}/s ").as_str()).await;
+        if success {
+            synced_subsession_ids.push(*subsession_id);
+        }
     }
+    return synced_subsession_ids;
 }
 
 fn add_subsessions_to_db(subsession_ids: &Vec<i64>) {
@@ -357,13 +378,13 @@ fn add_subsessions_to_db(subsession_ids: &Vec<i64>) {
 }
 
 pub async fn sync_track_infos_to_db(client: &mut IRacingClient) {
-    let data = client.get_and_read("/data/track/get", &HashMap::new()).await;
+    let data = client.get_and_read("/data/track/get", &HashMap::new()).await.unwrap();
     crate::db::write_cached_track_infos_json(&data);
     crate::db::rebuild_tracks_in_db();
 }
 
 pub async fn sync_car_infos_to_db(client: &mut IRacingClient) {
-    let data = client.get_and_read("/data/car/get", &HashMap::new()).await;
+    let data = client.get_and_read("/data/car/get", &HashMap::new()).await.unwrap();
     crate::db::write_cached_car_infos_json(&data);
     crate::db::rebuild_cars_in_db();
 }
@@ -395,8 +416,8 @@ pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>
     }
 
     let subsession_ids_vec = Vec::from_iter(subsession_ids.into_iter());
-    sync_subsessions(client, &subsession_ids_vec).await;
-    add_subsessions_to_db(&subsession_ids_vec);
+    let synced_subsession_ids = sync_subsessions(client, &subsession_ids_vec).await;
+    add_subsessions_to_db(&synced_subsession_ids);
 }
 
 pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<String>, driver_names_partial: &Vec<String>) {
@@ -418,6 +439,6 @@ pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<S
 
 pub async fn sync_season_to_db(client: &mut IRacingClient, year: i32, quarter: i32, week: Option<i32>) {
     let subsession_ids = find_non_cached_subsessions_for_season(client, year, quarter, week).await;
-    sync_subsessions(client, &subsession_ids).await;
-    add_subsessions_to_db(&subsession_ids);
+    let synced_subsession_ids = sync_subsessions(client, &subsession_ids).await;
+    add_subsessions_to_db(&synced_subsession_ids);
 }
