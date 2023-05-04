@@ -13,10 +13,14 @@ import * as React from 'react';
 import CarTrackMatrix from "./CarTrackMatrix.js";
 
 function preprocessDriverSessions(sessions) {
+    sessions = sessions.filter(
+        session => session["car_id"] !== -1 && session["package_id"] !== -1 && session["track_id"] !== -1
+    );
     sessions.forEach(session => {
         session['start_time'] = new Date(session['start_time']);
     });
     sessions.sort((a, b) => a['start_time'].getTime() - b['start_time'].getTime());
+    return sessions;
 }
 
 function DriverReport({driver, driverName, trackMap, carMap, state}) {
@@ -32,7 +36,7 @@ function DriverReport({driver, driverName, trackMap, carMap, state}) {
     }
 
     let driverSessions = driverInfo["sessions"];
-    preprocessDriverSessions(driverSessions);
+    driverSessions = preprocessDriverSessions(driverSessions);
 
     let report;
     switch (ReportType.findIndex(state.type)) {
