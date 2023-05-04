@@ -499,9 +499,6 @@ export function heatMap(
     formatValue,
     style)
 {
-    console.log(matrix);
-    console.log(xLabels);
-    console.log(yLabels);
     let width = matrix.length;
     if (width === 0) {
         return;
@@ -529,7 +526,6 @@ export function heatMap(
             }
         }
     }
-    console.log(maxValue);
 
     let svg = d3.select(div)
         .append('svg')
