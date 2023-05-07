@@ -35,7 +35,7 @@ CREATE TABLE driver_result(
     cust_id INTEGER NOT NULL,
     team_id INTEGER NOT NULL,
     subsession_id INTEGER NOT NULL,
-    simsession_number INTEGER NOT NULL,
+    simsession_number INTEGER NOT NULL, /* 0 -> Main event, negative values are pre-events */
     oldi_rating INTEGER NOT NULL,
     newi_rating INTEGER NOT NULL,
     old_cpi REAL NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE driver_result(
 CREATE TABLE simsession(
     subsession_id INTEGER NOT NULL,
     simsession_number INTEGER NOT NULL, /* 0 = main event ? */
-    simsession_type INTEGER NOT NULL,
+    simsession_type INTEGER NOT NULL, /* 3 -> Open Practice, 4 -> Lone Qualifying, 6 -> Race */
     PRIMARY KEY(subsession_id, simsession_number)
 );
 
