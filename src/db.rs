@@ -533,6 +533,7 @@ pub struct DriverSession {
     pub event_type: EventType,
     pub series_name: String,
     pub simsession_number: i32,
+    pub simsession_type: i32,
     pub official_session: bool,
 }
 
@@ -555,6 +556,7 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
         .column((Subsession::Table, Subsession::EventType))
         .column((Session::Table, Session::SeriesName))
         .column((Simsession::Table, Simsession::SimsessionNumber))
+        .column((Simsession::Table, Simsession::SimsessionType))
         .column((Subsession::Table, Subsession::OfficialSession))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
@@ -588,7 +590,8 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
             event_type: EventType::from_i32(row.get(14).unwrap()).ok()?,
             series_name: row.get(15).unwrap(),
             simsession_number: row.get(16).unwrap(),
-            official_session: row.get(17).unwrap(),
+            simsession_type: row.get(17).unwrap(),
+            official_session: row.get(18).unwrap(),
         });
     }
 

@@ -1,7 +1,7 @@
 import { DataGrid } from '@mui/x-data-grid';
 import './SessionList.css';
 import * as Category from './LicenseCategory.js';
-import { calcSessionCPI, isMainEvent, round } from './Utility';
+import { calcSessionCPI, isMainEvent, isRace, round } from './Utility';
 
 function preprocessSessions(driverSessions, trackMap, carMap) {
     return (driverSessions 

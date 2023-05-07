@@ -66,7 +66,7 @@ export function isRookie(session) {
 }
 
 export function isRace(session) {
-    return session["event_type"] === 5;
+    return session["simsession_type"] === 6;
 }
 
 export function isMainEvent(session) {
