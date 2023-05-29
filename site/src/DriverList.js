@@ -1,5 +1,5 @@
 import { useFetch } from "react-async";
-import { isDriverCustomerID, extractCustomerID, mapifyTrackData, mapifyCarData } from './Utility';
+import { mapifyTrackData, mapifyCarData } from './Utility';
 import DriverReport from './DriverReport';
 import ReportSelector from './ReportSelector.js';
 import TabPanel from "./TabPanel";

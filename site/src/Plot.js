@@ -471,7 +471,7 @@ export function yearlyFrequencyMap(
 
                     }
                     // bottom
-                    if (d != lastD && dataIdx + 1 < frequencyData.length) {
+                    if (d !== lastD && dataIdx + 1 < frequencyData.length) {
                         let bottomData = frequencyData[dataIdx + 1];
                         let bottomYear = bottomData.date.getUTCFullYear();
                         let bottomMonth = bottomData.date.getUTCMonth();

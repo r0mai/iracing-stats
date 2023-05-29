@@ -107,7 +107,7 @@ function plotCarTrackMatrix(div, matrix, xLabels, yLabels) {
 }
 
 function CarTrackMatrix({driverSessions, carMap, trackMap}) {
-    let {matrix: matrix, xLabels: xLabels, yLabels: yLabels} = createUsageMatrix(driverSessions, carMap, trackMap);
+    let {matrix, xLabels, yLabels} = createUsageMatrix(driverSessions, carMap, trackMap);
     const ref = useD3(
         (root) => {
             plotCarTrackMatrix(root, matrix, xLabels, yLabels);

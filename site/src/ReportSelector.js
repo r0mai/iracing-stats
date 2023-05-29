@@ -62,7 +62,7 @@ function ReportSelector({state, setState}) {
 
     let hasCategorySelector = () => {
         let typeIdx = ReportType.findIndex(state.type);
-        return typeIdx == ReportType.kIRacingHistory || typeIdx == ReportType.kCPIHistory;
+        return typeIdx === ReportType.kIRacingHistory || typeIdx === ReportType.kCPIHistory;
     };
 
     return (

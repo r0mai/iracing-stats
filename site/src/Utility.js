@@ -82,7 +82,7 @@ export function isCategory(session, categoryIdx) {
 }
 
 export function isTrackCategory(session, trackMap, categoryIdx) {
-    return trackMap[session["track_id"]]["category"] == categoryIdx;
+    return trackMap[session["track_id"]]["category"] === categoryIdx;
 }
 
 let categoryCutoffDate = Date.UTC(2020, 11, 8);
