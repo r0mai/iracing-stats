@@ -267,6 +267,48 @@ function dateToYMDKey(date) {
     return day + 100 * month + 10000 * year;
 }
 
+function appendColorScaleLegend(parent, colorScale, width, height, maxValue, formatValue) {
+    let legendG = parent.append("g");
+    let defs = legendG.append("defs");
+    let scaleGradient = defs.append("linearGradient")
+        .attr("id", "scaleGradient")
+        .attr("x1", "0%")
+        .attr("y1", "100%")
+        .attr("x2", "0%")
+        .attr("y2", "0%");
+    
+    scaleGradient.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", colorScale(0));
+    scaleGradient.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", colorScale(maxValue));
+
+    legendG.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", width)
+        .attr("height", height)
+        .attr("rx", width * 0.2)
+        .attr("fill", "url(#scaleGradient)")
+        ;
+    legendG.append("text")
+        .attr("x", width * 2)
+        .attr("y", 0)
+        .attr("dy", "0.5em")
+        .attr("fill", theme.palette.text.primary)
+        .text(formatValue(maxValue))
+        ;
+    legendG.append("text")
+        .attr("x", width * 2)
+        .attr("y", height)
+        .attr("dy", "0.5em")
+        .attr("fill", theme.palette.text.primary)
+        .text(formatValue(0))
+        ;
+    return legendG;
+}
+
 export function yearlyFrequencyMap(
     div,
     data,
@@ -334,47 +376,8 @@ export function yearlyFrequencyMap(
         ;
 
     // legend
-    {
-        let defs = svg.append("defs");
-        let scaleGradient = defs.append("linearGradient")
-            .attr("id", "scaleGradient")
-            .attr("x1", "0%")
-            .attr("y1", "100%")
-            .attr("x2", "0%")
-            .attr("y2", "0%");
-        
-        scaleGradient.append("stop")
-            .attr("offset", "0%")
-            .attr("stop-color", colorScale(0));
-        scaleGradient.append("stop")
-            .attr("offset", "100%")
-            .attr("stop-color", colorScale(maxValue));
-
-        let legendG = svg.append("g")
-            .attr("transform", svgTranslate(55 * offsetX + leftMargin + offsetX, offsetY));
-        legendG.append("rect")
-            .attr("x", 0)
-            .attr("y", 0)
-            .attr("width", rectW * 1)
-            .attr("height", offsetY * 5)
-            .attr("rx", rectW * 0.2)
-            .attr("fill", "url(#scaleGradient)")
-            ;
-        legendG.append("text")
-            .attr("x", rectW * 2)
-            .attr("y", 0)
-            .attr("dy", "0.5em")
-            .attr("fill", theme.palette.text.primary)
-            .text(formatValue(maxValue))
-            ;
-        legendG.append("text")
-            .attr("x", rectW * 2)
-            .attr("y", offsetY * 5)
-            .attr("dy", "0.5em")
-            .attr("fill", theme.palette.text.primary)
-            .text(formatValue(0))
-            ;
-    }
+    appendColorScaleLegend(svg, colorScale, rectW, offsetY * 5, maxValue, formatValue)
+        .attr("transform", svgTranslate(55 * offsetX + leftMargin + offsetX, offsetY));
 
     // tooltip
     let tooltipWidth = 150;
@@ -537,6 +540,9 @@ export function heatMap(
         .domain([0, maxValue])
         .range(["#aaa", "blue"])
         ;
+
+    appendColorScaleLegend(svg, colorScale, rectW, offsetY * 5, maxValue, formatValue)
+        .attr("transform", svgTranslate(width * offsetX + leftMargin + offsetX, topMargin));
 
     let matrixG = svg.append("g")
         .attr("transform", svgTranslate(leftMargin, topMargin))
