@@ -77,12 +77,22 @@ export function isOfficial(session) {
     return session["official_session"];
 }
 
-export function isCategory(session, category) {
-    return session["license_category"] === category ;
+export function isCategory(session, categoryIdx) {
+    return session["license_category"] === categoryIdx;
 }
 
-export function isTrackCategory(session, trackMap, category) {
-    return trackMap[session["track_id"]]["category"] == category;
+export function isTrackCategory(session, trackMap, categoryIdx) {
+    return trackMap[session["track_id"]]["category"] == categoryIdx;
+}
+
+let categoryCutoffDate = Date.UTC(2020, 11, 8);
+export function isDateCorrectedCategory(session, trackMap, categoryIdx) {
+    // https://forums.iracing.com/discussion/15068/general-availability-of-data-api/p26
+    if (session["start_time"] > categoryCutoffDate) {
+        return isTrackCategory(session, trackMap, categoryIdx);
+    } else {
+        return isCategory(session, categoryIdx);
+    }
 }
 
 export function getHighestIRating(driverSessions, category) {

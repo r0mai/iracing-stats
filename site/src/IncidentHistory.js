@@ -1,9 +1,9 @@
 import { useD3 } from './hooks/useD3.js';
 import { linePlot } from './Plot.js';
-import { isRookie, isRace, isMainEvent, isCategory, isOfficial } from './Utility.js';
+import { isRookie, isRace, isMainEvent, isOfficial, isDateCorrectedCategory } from './Utility.js';
 import * as Category from './LicenseCategory.js';
 
-function plotIncidentHistory(div, sessions, category) {
+function plotIncidentHistory(div, sessions, trackMap, category) {
     let categoryIdx = Category.findIndex(category);
     let filtered = sessions.filter((session) => {
         return (
@@ -11,7 +11,7 @@ function plotIncidentHistory(div, sessions, category) {
             isMainEvent(session) &&
             isRace(session) &&
             isOfficial(session) &&
-            isCategory(session, categoryIdx)
+            isDateCorrectedCategory(session, trackMap, categoryIdx)
         );
     });
 
@@ -33,10 +33,10 @@ function plotIncidentHistory(div, sessions, category) {
     }
 }
 
-function IncidentHistory({driverSessions, category}) {
+function IncidentHistory({driverSessions, trackMap, category}) {
     const ref = useD3(
         (root) => {
-            plotIncidentHistory(root, driverSessions, category);
+            plotIncidentHistory(root, driverSessions, trackMap, category);
         },
         [driverSessions, category]
     );

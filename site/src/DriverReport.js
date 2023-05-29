@@ -56,7 +56,7 @@ function DriverReport({driver, driverName, trackMap, carMap, state}) {
             report = <IRatingHistory driverSessions={driverSessions} trackMap={trackMap} category={state.category}/>;
             break;
         case ReportType.kCPIHistory:
-            report = <IncidentHistory driverSessions={driverSessions} category={state.category}/>;
+            report = <IncidentHistory driverSessions={driverSessions} trackMap={trackMap} category={state.category}/>;
             break;
         case ReportType.kActivityHistory:
             report = <ActivityHistory driverSessions={driverSessions}/>;
