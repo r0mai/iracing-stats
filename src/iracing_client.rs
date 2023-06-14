@@ -14,7 +14,7 @@ use crate::db::query_all_site_team_members;
 
 const BASEURL: &str = "https://members-ng.iracing.com";
 const CURRENT_YEAR: i32 = 2023;
-const CURRENT_QUARTER: i32 = 2;
+const CURRENT_QUARTER: i32 = 3;
 
 pub struct IRacingClient {
     pub client: Client,
