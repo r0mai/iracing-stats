@@ -342,14 +342,14 @@ fn add_driver_to_db(ctx: &mut DbContext, driver_result: &Value) {
     )).unwrap();
 }
 
-fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_number: i64, team_id: i64, driver_result: &Value) {
+fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_number: i64, driver_result: &Value) {
     add_driver_to_db(ctx, driver_result);
 
     // TODO cust_id could be factored out
 
     ctx.insert_driver_result_statement.execute((
         driver_result["cust_id"].as_i64().unwrap(), 
-        team_id,
+        driver_result["team_id"].as_i64().unwrap_or(0),
         subsession_id,
         simsession_number,
         driver_result["oldi_rating"].as_i64().unwrap(),
@@ -376,11 +376,10 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value
 
     for participant in simsession["results"].as_array().unwrap() {
         if participant["cust_id"].as_i64().is_some() {
-            add_driver_result_to_db(ctx, subsession_id, simsession_number, 0, participant);
+            add_driver_result_to_db(ctx, subsession_id, simsession_number, participant);
         } else { // team
-            let team_id = participant["team_id"].as_i64().unwrap();
             for driver in participant["driver_results"].as_array().unwrap() {
-                add_driver_result_to_db(ctx, subsession_id, simsession_number, team_id, driver);
+                add_driver_result_to_db(ctx, subsession_id, simsession_number, driver);
             }
         }
     }
