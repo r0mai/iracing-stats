@@ -267,6 +267,20 @@ function dateToYMDKey(date) {
     return day + 100 * month + 10000 * year;
 }
 
+function lerp(min, max, t) {
+    return (1-t) * min + t * max;
+}
+
+function createColorScale(minValue, maxValue) {
+    return d3.scaleLinear()
+        .domain([
+            minValue,
+            lerp(minValue, maxValue, 0.5),
+            maxValue])
+        .range(["#d1cef1", "#443cc6", "#25226d"])
+        ;
+}
+
 function appendColorScaleLegend(parent, colorScale, width, height, maxValue, formatValue) {
     let legendG = parent.append("g");
     let defs = legendG.append("defs");
@@ -280,6 +294,9 @@ function appendColorScaleLegend(parent, colorScale, width, height, maxValue, for
     scaleGradient.append("stop")
         .attr("offset", "0%")
         .attr("stop-color", colorScale(0));
+    scaleGradient.append("stop")
+        .attr("offset", "50%")
+        .attr("stop-color", colorScale(maxValue * 0.5));
     scaleGradient.append("stop")
         .attr("offset", "100%")
         .attr("stop-color", colorScale(maxValue));
@@ -370,10 +387,7 @@ export function yearlyFrequencyMap(
         .attr("height", (endYear - startYear + 1) * yearOffsetY)
         ;
 
-    let colorScale = d3.scaleLinear()
-        .domain([0, maxValue])
-        .range(["#aaa", "blue"])
-        ;
+    let colorScale = createColorScale(0, maxValue);
 
     // legend
     appendColorScaleLegend(svg, colorScale, rectW, offsetY * 5, maxValue, formatValue)
@@ -536,10 +550,7 @@ export function heatMap(
         .attr("height", height * offsetY + topMargin)
         ;
 
-    let colorScale = d3.scaleLinear()
-        .domain([0, maxValue])
-        .range(["#aaa", "blue"])
-        ;
+    let colorScale = createColorScale(0, maxValue);
 
     appendColorScaleLegend(svg, colorScale, rectW, offsetY * 5, maxValue, formatValue)
         .attr("transform", svgTranslate(width * offsetX + leftMargin + offsetX, topMargin));
