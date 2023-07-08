@@ -9,6 +9,7 @@ mod category_type;
 mod event_type;
 mod driverid;
 mod motec_xml;
+mod discord_bot;
 
 use clap::Parser;
 use std::fs;
@@ -90,6 +91,11 @@ struct Args {
     /// Do the motec thing
     #[arg(short = 'm', long = "motec")]
     motec_thing: bool,
+
+
+    /// Discord bot test
+    #[arg(long)]
+    discord_bot: bool,
 }
 
 fn has_async(args: &Args) -> bool {
@@ -103,11 +109,17 @@ fn has_async(args: &Args) -> bool {
         args.season_year.is_some() ||
         args.sync_car_infos_to_db ||
         args.sync_track_infos_to_db ||
-        args.sync_season_infos_to_db;
+        args.sync_season_infos_to_db ||
+        args.discord_bot;
 }
 
 async fn tokio_main(args: &Args) {
     if !has_async(&args) {
+        return;
+    }
+
+    if args.discord_bot {
+        discord_bot::discord_bot_main().await;
         return;
     }
 
