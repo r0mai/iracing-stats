@@ -10,6 +10,7 @@ mod event_type;
 mod driverid;
 mod motec_xml;
 mod discord_bot;
+mod discord_hook;
 
 use clap::Parser;
 use std::fs;
@@ -96,6 +97,10 @@ struct Args {
     /// Discord bot test
     #[arg(long)]
     discord_bot: bool,
+
+    /// Discord hook test
+    #[arg(long)]
+    discord_hook: bool,
 }
 
 fn has_async(args: &Args) -> bool {
@@ -110,7 +115,8 @@ fn has_async(args: &Args) -> bool {
         args.sync_car_infos_to_db ||
         args.sync_track_infos_to_db ||
         args.sync_season_infos_to_db ||
-        args.discord_bot;
+        args.discord_bot ||
+        args.discord_hook;
 }
 
 async fn tokio_main(args: &Args) {
@@ -119,7 +125,12 @@ async fn tokio_main(args: &Args) {
     }
 
     if args.discord_bot {
-        discord_bot::discord_bot_main().await;
+        // discord_bot::discord_bot_main().await;
+        return;
+    }
+
+    if args.discord_hook {
+        discord_hook::send_discord_message(&"Sent from Rust".to_owned()).await;
         return;
     }
 
