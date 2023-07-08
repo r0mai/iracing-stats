@@ -1,3 +1,5 @@
+// All this is not finished, as I transitioned to webhooks
+
 use std::env;
 
 use serenity::async_trait;
@@ -36,11 +38,9 @@ impl EventHandler for Handler {
     }
 }
 
-pub async fn discord_bot_main() {
-    println!("main start");
-
-    // Login with a bot token from the environment
+pub async fn report_subsessions(site_team_name: &String, subsession_ids: &Vec<i64>) {
     let token = env::var("DISCORD_TOKEN").expect("token");
+
     let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
     let mut client = Client::builder(token, intents)
         .event_handler(Handler)
