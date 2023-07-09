@@ -8,6 +8,7 @@ pub async fn send_discord_update(subsession_ids: &Vec<i64>) {
 
     let msg = format!("Synced {} subsessions", subsession_ids.len());
 
+    println!("DISCORD_HOOK_URL = {} - msg {}", hook_url, msg);
     send_discord_message(&client, &hook_url, &msg).await;
 }
 
