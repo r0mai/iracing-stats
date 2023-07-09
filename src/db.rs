@@ -1,6 +1,5 @@
 use std::{fs, path::PathBuf, path::Path, io::Write, env};
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::types::Null;
 use serde_json::{self, Value};
 use rusqlite;
 use rusqlite::Connection;
@@ -327,7 +326,7 @@ fn add_site_team_to_db(ctx: &mut DbContext, id: usize, team: &Value) {
     ctx.insert_site_team_statement.execute((
         id,
         team["name"].as_str().unwrap(),
-        Null,
+        team["discord_hook_url"].as_str(), // kept as optional to allow NULL inserts
     )).unwrap();
 
     for member in team["members"].as_array().unwrap() {
