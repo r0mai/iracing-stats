@@ -78,7 +78,8 @@ CREATE TABLE car(
 
 CREATE TABLE site_team(
     site_team_id INTEGER PRIMARY KEY NOT NULL,
-    site_team_name TEXT NOT NULL
+    site_team_name TEXT NOT NULL,
+    discord_hook_url TEXT /* may be null */
 );
 
 CREATE TABLE site_team_member(

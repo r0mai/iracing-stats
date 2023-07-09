@@ -1,5 +1,6 @@
 use std::{fs, path::PathBuf, path::Path, io::Write, env};
 use r2d2_sqlite::SqliteConnectionManager;
+use rusqlite::types::Null;
 use serde_json::{self, Value};
 use rusqlite;
 use rusqlite::Connection;
@@ -213,7 +214,8 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
     let insert_site_team_statement = tx.prepare(r#"
         INSERT INTO site_team VALUES(
             ?, /* site_team_id */
-            ?  /* site_team_name */
+            ?, /* site_team_name */
+            ?  /* discord_hook_url */
     );"#).unwrap();
     let insert_site_team_member_statement = tx.prepare(r#"
         INSERT INTO site_team_member VALUES(
@@ -324,7 +326,8 @@ fn add_season_to_db(ctx: &mut DbContext, season: &Value) {
 fn add_site_team_to_db(ctx: &mut DbContext, id: usize, team: &Value) {
     ctx.insert_site_team_statement.execute((
         id,
-        team["name"].as_str().unwrap()
+        team["name"].as_str().unwrap(),
+        Null,
     )).unwrap();
 
     for member in team["members"].as_array().unwrap() {
