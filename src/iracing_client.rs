@@ -395,17 +395,17 @@ pub async fn sync_season_infos_to_db(client: &mut IRacingClient) {
     crate::db::rebuild_seasons_in_db();
 }
 
-pub async fn sync_site_teams_to_db(client: &mut IRacingClient, partial: bool) {
+pub async fn sync_site_teams_to_db(client: &mut IRacingClient, partial: bool) -> Vec<i64> {
     let mut con = crate::db::create_db_connection();
     let cust_ids = query_all_site_team_members(&mut con);
     if partial {
-        sync_cust_ids_to_db(client, &Vec::new(), &cust_ids).await;
+        return sync_cust_ids_to_db(client, &Vec::new(), &cust_ids).await;
     } else {
-        sync_cust_ids_to_db(client, &cust_ids, &Vec::new()).await;
+        return sync_cust_ids_to_db(client, &cust_ids, &Vec::new()).await;
     }
 }
 
-pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>, cust_ids_partial: &Vec<i64>) {
+pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>, cust_ids_partial: &Vec<i64>) -> Vec<i64> {
     let mut subsession_ids = HashSet::<i64>::new();
 
     for cust_id in cust_ids {
@@ -417,7 +417,9 @@ pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>
 
     let subsession_ids_vec = Vec::from_iter(subsession_ids.into_iter());
     let synced_subsession_ids = sync_subsessions(client, &subsession_ids_vec).await;
+
     add_subsessions_to_db(&synced_subsession_ids);
+    return synced_subsession_ids;
 }
 
 pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<String>, driver_names_partial: &Vec<String>) {

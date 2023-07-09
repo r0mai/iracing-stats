@@ -94,13 +94,9 @@ struct Args {
     motec_thing: bool,
 
 
-    /// Discord bot test
-    #[arg(long)]
-    discord_bot: bool,
-
     /// Discord hook test
     #[arg(long)]
-    discord_hook: bool,
+    send_discord_update: bool,
 }
 
 fn has_async(args: &Args) -> bool {
@@ -115,22 +111,11 @@ fn has_async(args: &Args) -> bool {
         args.sync_car_infos_to_db ||
         args.sync_track_infos_to_db ||
         args.sync_season_infos_to_db ||
-        args.discord_bot ||
-        args.discord_hook;
+        args.send_discord_update;
 }
 
 async fn tokio_main(args: &Args) {
     if !has_async(&args) {
-        return;
-    }
-
-    if args.discord_bot {
-        // discord_bot::discord_bot_main().await;
-        return;
-    }
-
-    if args.discord_hook {
-        discord_hook::send_discord_message(&"Sent from Rust".to_owned()).await;
         return;
     }
 
@@ -151,7 +136,10 @@ async fn tokio_main(args: &Args) {
     }
 
     if args.sync_site_teams_to_db_partial {
-        iracing_client::sync_site_teams_to_db(&mut client, true).await;
+        let subsession_ids = iracing_client::sync_site_teams_to_db(&mut client, true).await;
+        if args.send_discord_update {
+            discord_hook::send_discord_update(&subsession_ids).await;
+        }
     }
 
     if args.season_year.is_some() && args.season_quarter.is_some() {

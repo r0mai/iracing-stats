@@ -1,13 +1,17 @@
 use std::{env, collections::HashMap};
 
-use reqwest::header::HeaderName;
-
-pub async fn send_discord_message(msg: &String) {
-    let hook_url = env::var("DISCORD_HOOK_URL").expect("hook url");
-
+pub async fn send_discord_update(subsession_ids: &Vec<i64>) {
     // TODO iracing_client also has a request::Client. maybe we should have only one
     let client = reqwest::Client::new();
 
+    let hook_url = env::var("DISCORD_HOOK_URL").expect("hook url");
+
+    let msg = format!("Synced {} subsessions", subsession_ids.len());
+
+    send_discord_message(&client, &hook_url, &msg).await;
+}
+
+pub async fn send_discord_message(client: &reqwest::Client, hook_url: &String, msg: &String) {
     let mut body = HashMap::new();
     body.insert("content", msg);
 
