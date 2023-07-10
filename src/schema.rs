@@ -110,7 +110,8 @@ pub enum Car {
 pub enum SiteTeam {
     Table,
     SiteTeamId,
-    SiteTeamName
+    SiteTeamName,
+    DiscordHookUrl,
 }
 
 #[derive(Iden)]
@@ -132,7 +133,9 @@ pub trait SchemaUtils {
     fn join_subsession_to_track_config(&mut self) -> &mut Self;
     fn join_track_config_to_track(&mut self) -> &mut Self;
     fn join_site_team_to_site_team_member(&mut self) -> &mut Self;
+    fn join_site_team_member_to_site_team(&mut self) -> &mut Self;
     fn join_site_team_member_to_driver(&mut self) -> &mut Self;
+    fn join_driver_to_site_team_member(&mut self) -> &mut Self;
     fn match_driver_id(&mut self, driver_id: &DriverId, force_join: bool) -> &mut Self;
 }
 
@@ -198,9 +201,22 @@ impl SchemaUtils for SelectStatement {
         );
     }
 
-    fn join_site_team_member_to_driver(&mut self) -> &mut Self {
-        return self.inner_join(Driver::Table,
+    fn join_site_team_member_to_site_team(&mut self) -> &mut Self {
+        return self.inner_join(SiteTeam::Table,
+            Expr::col((SiteTeam::Table, SiteTeam::SiteTeamId)).equals((SiteTeamMember::Table, SiteTeamMember::SiteTeamId))
+        );
+    }
+
+
+    fn join_driver_to_site_team_member(&mut self) -> &mut Self {
+        return self.inner_join(SiteTeamMember::Table,
             Expr::col((Driver::Table, Driver::CustId)).equals((SiteTeamMember::Table, SiteTeamMember::CustId))
+        );
+    }
+
+    fn join_site_team_member_to_driver(&mut self) -> &mut Self {
+        return self.inner_join(SiteTeam::Table,
+            Expr::col((SiteTeamMember::Table, SiteTeamMember::CustId)).equals((Driver::Table, Driver::CustId))
         );
     }
 

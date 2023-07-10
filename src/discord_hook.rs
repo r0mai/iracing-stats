@@ -1,15 +1,49 @@
-use std::{env, collections::HashMap};
+use std::collections::HashMap;
 
-pub async fn send_discord_update(subsession_ids: &Vec<i64>) {
+use crate::db::{query_discord_report, create_db_connection, DiscordSiteTeamReport, DiscordResultReport};
+
+fn placement_string(mut position: i32) -> String {
+    position += 1;
+    let emoji = match position {
+        1 => " :first_place:",
+        2 => " :second_place:",
+        3 => " :third_place:",
+        _ => ""
+    };
+    return format!("**P{}**{}", position, emoji);
+}
+
+fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
+    let url = format!(
+        "http://r0mai.io/iracing-stats?team={}&type=session-list&selected={}",
+        urlencoding::encode(team_name.as_str()),
+        urlencoding::encode(result.driver_name.as_str())
+    );
+
+    return format!(
+        "**{}** finished {} in **{}**  :race_car: {} :motorway: {}\n<{}>",
+        result.driver_name,
+        placement_string(result.finish_position_in_class),
+        result.series_name,
+        result.car_name,
+        result.track_name,
+        url,
+    );
+}
+
+pub async fn send_discord_update(subsession_ids: Vec<i64>) {
+    let connection = create_db_connection();
+    let teams = query_discord_report(&connection, subsession_ids);
+
     // TODO iracing_client also has a request::Client. maybe we should have only one
     let client = reqwest::Client::new();
 
-    let hook_url = env::var("DISCORD_HOOK_URL").expect("hook url");
-
-    let msg = format!("Synced {} subsessions", subsession_ids.len());
-
-    println!("DISCORD_HOOK_URL = {} - msg {}", hook_url, msg);
-    send_discord_message(&client, &hook_url, &msg).await;
+    for team in &teams.teams {
+        for result in &team.results {
+            let msg = create_result_message_string(&team.site_team_name, result);
+            send_discord_message(&client, &team.hook_url, &msg).await;
+        }
+    }
 }
 
 pub async fn send_discord_message(client: &reqwest::Client, hook_url: &String, msg: &String) {

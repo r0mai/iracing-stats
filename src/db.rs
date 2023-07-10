@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::{fs, path::PathBuf, path::Path, io::Write, env};
 use r2d2_sqlite::SqliteConnectionManager;
 use serde_json::{self, Value};
@@ -852,6 +853,87 @@ pub fn query_all_site_team_members(con: &Connection) -> Vec<i64> {
     }
     return cust_ids;
 }
+
+pub struct DiscordResultReport {
+    pub subsession_id: i64,
+    pub driver_name: String,
+    pub series_name: String,
+    pub car_name: String,
+    pub track_name: String,
+    pub finish_position_in_class: i32,
+}
+
+pub struct DiscordSiteTeamReport {
+    pub site_team_name: String,
+    pub hook_url: String,
+    pub results: Vec<DiscordResultReport>,
+}
+
+pub struct DiscordReport {
+    pub teams: Vec<DiscordSiteTeamReport>,
+}
+
+
+pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> DiscordReport {
+    let (sql, params) = Query::select()
+        .column((SiteTeam::Table, SiteTeam::SiteTeamName))
+        .column((SiteTeam::Table, SiteTeam::DiscordHookUrl))
+        .column((Driver::Table, Driver::DisplayName))
+        .column((Subsession::Table, Subsession::SubsessionId))
+        .column((Session::Table, Session::SeriesName))
+        .column((Car::Table, Car::CarName))
+        .column((Track::Table, Track::TrackName))
+        .column((DriverResult::Table, DriverResult::FinishPositionInClass))
+        .from(DriverResult::Table)
+        .join_driver_result_to_subsession()
+        .join_driver_result_to_simsession()
+        .join_driver_result_to_driver()
+        .join_driver_result_to_car()
+        .join_subsession_to_session()
+        .join_subsession_to_track_config()
+        .join_track_config_to_track()
+        .join_driver_to_site_team_member()
+        .join_site_team_member_to_site_team()
+        .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
+        .and_where(is_main_event())
+        .and_where(is_event_type(EventType::Race))
+        .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut teams = HashMap::new();
+    while let Some(row) = rows.next().unwrap() {
+        let site_team_name: String = row.get(0).unwrap();
+        let hook_url: String = row.get(1).unwrap();
+        let driver_name: String = row.get(2).unwrap();
+        let subsession_id: i64 = row.get(3).unwrap();
+        let series_name: String = row.get(4).unwrap();
+        let car_name: String = row.get(5).unwrap();
+        let track_name: String = row.get(6).unwrap();
+        let finish_position_in_class: i32 = row.get(7).unwrap();
+
+        let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
+            site_team_name,
+            hook_url,
+            results: Vec::new()
+        });
+
+        let driver_result = DiscordResultReport{
+            subsession_id,
+            driver_name,
+            series_name,
+            car_name,
+            track_name,
+            finish_position_in_class
+        };
+
+        team_entries.results.push(driver_result);
+    }
+    return DiscordReport{teams: teams.into_values().collect()};
+}
+
 
 pub fn rebuild_db_schema() {
     fs::remove_file(get_sqlite_db_file()).ok(); // ignore error
