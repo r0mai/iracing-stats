@@ -30,7 +30,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
             "∞".to_owned()
         } else {
             let corners_complete = result.corners_per_lap * result.laps_complete;
-            format!("{}", corners_complete / result.incidents)
+            format!("{:.1}", (corners_complete as f32) / (result.incidents as f32))
         };
         let irating_gain = result.newi_rating - result.oldi_rating;
         let irating_gain_str = if irating_gain > 0 {
