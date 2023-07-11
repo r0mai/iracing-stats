@@ -860,7 +860,12 @@ pub struct DiscordResultReport {
     pub series_name: String,
     pub car_name: String,
     pub track_name: String,
+    pub corners_per_lap: i32,
     pub finish_position_in_class: i32,
+    pub incidents: i32,
+    pub oldi_rating: i32,
+    pub newi_rating: i32,
+    pub laps_complete: i32,
     pub event_type: EventType,
 }
 
@@ -884,7 +889,12 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((Session::Table, Session::SeriesName))
         .column((Car::Table, Car::CarName))
         .column((Track::Table, Track::TrackName))
+        .column((TrackConfig::Table, TrackConfig::CornersPerLap))
         .column((DriverResult::Table, DriverResult::FinishPositionInClass))
+        .column((DriverResult::Table, DriverResult::Incidents))
+        .column((DriverResult::Table, DriverResult::OldiRating))
+        .column((DriverResult::Table, DriverResult::NewiRating))
+        .column((DriverResult::Table, DriverResult::LapsComplete))
         .column((Subsession::Table, Subsession::EventType))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
@@ -914,8 +924,13 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let series_name: String = row.get(4).unwrap();
         let car_name: String = row.get(5).unwrap();
         let track_name: String = row.get(6).unwrap();
-        let finish_position_in_class: i32 = row.get(7).unwrap();
-        let event_type = EventType::from_i32(row.get(8).unwrap()).unwrap();
+        let corners_per_lap: i32 = row.get(7).unwrap();
+        let finish_position_in_class: i32 = row.get(8).unwrap();
+        let incidents: i32 = row.get(9).unwrap();
+        let oldi_rating: i32 = row.get(10).unwrap();
+        let newi_rating: i32 = row.get(11).unwrap();
+        let laps_complete: i32 = row.get(12).unwrap();
+        let event_type = EventType::from_i32(row.get(13).unwrap()).unwrap();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -929,8 +944,13 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             series_name,
             car_name,
             track_name,
+            corners_per_lap,
             finish_position_in_class,
-            event_type
+            incidents,
+            oldi_rating,
+            newi_rating,
+            laps_complete,
+            event_type,
         };
 
         team_entries.results.push(driver_result);

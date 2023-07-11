@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::db::{query_discord_report, create_db_connection, DiscordSiteTeamReport, DiscordResultReport};
+use crate::{db::{query_discord_report, create_db_connection, DiscordSiteTeamReport, DiscordResultReport}, event_type::EventType};
 
 fn placement_string(mut position: i32) -> String {
     position += 1;
@@ -25,14 +25,33 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
         result.subsession_id
     );
 
+    let race_details_str = if result.event_type == EventType::Race {
+        let cpi_str = if result.incidents == 0 {
+            "∞".to_owned()
+        } else {
+            let corners_complete = result.corners_per_lap * result.laps_complete;
+            format!("{}", corners_complete / result.incidents)
+        };
+        let irating_gain = result.newi_rating - result.oldi_rating;
+        let irating_gain_str = if irating_gain > 0 {
+            format!("+{}", irating_gain)
+        } else {
+            format!("{}", irating_gain)
+        };
+        format!("IRating: {} ({}), CPI: {} ({}x)\n", result.newi_rating, irating_gain_str, cpi_str, result.incidents)
+    } else {
+        "".to_owned()
+    };
+
     return format!(
-        "**{}** finished {} in **{}** [{}] :race_car: {} :motorway: {}\n<{}>\n<{}>",
+        "**{}** finished {} in **{}** [{}] :race_car: {} :motorway: {}\n{}<{}>\n<{}>",
         result.driver_name,
         placement_string(result.finish_position_in_class),
         result.series_name,
         result.event_type.to_nice_string(),
         result.car_name,
         result.track_name,
+        race_details_str,
         r0mai_io_url,
         iracing_url
     );
