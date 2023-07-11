@@ -139,13 +139,13 @@ async fn tokio_main(args: &Args) {
     }
 
     if args.test_send_discord_update {
-        discord_hook::send_discord_update(vec![61268227i64, 61145537, 13059307]).await;
+        discord_hook::send_discord_update(vec![61268227i64, 61145537, 13059307], true).await;
     }
 
     if args.sync_site_teams_to_db_partial {
         let subsession_ids = iracing_client::sync_site_teams_to_db(&mut client, true).await;
         if args.send_discord_update {
-            discord_hook::send_discord_update(subsession_ids).await;
+            discord_hook::send_discord_update(subsession_ids, false).await;
         }
     }
 

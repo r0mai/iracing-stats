@@ -38,7 +38,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     );
 }
 
-pub async fn send_discord_update(subsession_ids: Vec<i64>) {
+pub async fn send_discord_update(subsession_ids: Vec<i64>, dry: bool) {
     let connection = create_db_connection();
     let teams = query_discord_report(&connection, subsession_ids);
 
@@ -48,17 +48,21 @@ pub async fn send_discord_update(subsession_ids: Vec<i64>) {
     for team in &teams.teams {
         for result in &team.results {
             let msg = create_result_message_string(&team.site_team_name, result);
-            send_discord_message(&client, &team.hook_url, &msg).await;
+            send_discord_message(&client, &team.hook_url, &msg, dry).await;
         }
     }
 }
 
-pub async fn send_discord_message(client: &reqwest::Client, hook_url: &String, msg: &String) {
-    let mut body = HashMap::new();
-    body.insert("content", msg);
+pub async fn send_discord_message(client: &reqwest::Client, hook_url: &String, msg: &String, dry: bool) {
+    if dry {
+        println!("{}\n->\n{}", msg, hook_url);
+    } else {
+        let mut body = HashMap::new();
+        body.insert("content", msg);
 
-    client.post(hook_url)
-        .json(&body)
-        .send()
-        .await.unwrap();
+        client.post(hook_url)
+            .json(&body)
+            .send()
+            .await.unwrap();
+    }
 }
