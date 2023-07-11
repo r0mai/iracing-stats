@@ -14,20 +14,26 @@ fn placement_string(mut position: i32) -> String {
 }
 
 fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
-    let url = format!(
+    let r0mai_io_url = format!(
         "http://r0mai.io/iracing-stats?team={}&type=session-list&selected={}",
         urlencoding::encode(team_name.as_str()),
         urlencoding::encode(result.driver_name.as_str())
     );
 
+    let iracing_url = format!(
+        "https://members.iracing.com/membersite/member/EventResult.do?&subsessionid={}",
+        result.subsession_id
+    );
+
     return format!(
-        "**{}** finished {} in **{}**  :race_car: {} :motorway: {}\n<{}>",
+        "**{}** finished {} in **{}** :race_car: {} :motorway: {}\n<{}>\n<{}>",
         result.driver_name,
         placement_string(result.finish_position_in_class),
         result.series_name,
         result.car_name,
         result.track_name,
-        url,
+        r0mai_io_url,
+        iracing_url
     );
 }
 
