@@ -93,10 +93,13 @@ struct Args {
     #[arg(short = 'm', long = "motec")]
     motec_thing: bool,
 
-
     /// Discord hook test
     #[arg(long)]
     send_discord_update: bool,
+
+    /// Test Discord hook test
+    #[arg(long)]
+    test_send_discord_update: bool,
 }
 
 fn has_async(args: &Args) -> bool {
@@ -111,7 +114,7 @@ fn has_async(args: &Args) -> bool {
         args.sync_car_infos_to_db ||
         args.sync_track_infos_to_db ||
         args.sync_season_infos_to_db ||
-        args.send_discord_update;
+        args.test_send_discord_update;
 }
 
 async fn tokio_main(args: &Args) {
@@ -135,7 +138,7 @@ async fn tokio_main(args: &Args) {
         iracing_client::sync_site_teams_to_db(&mut client, false).await;
     }
 
-    if args.send_discord_update {
+    if args.test_send_discord_update {
         discord_hook::send_discord_update(vec![61268227i64, 61145537, 13059307]).await;
     }
 
