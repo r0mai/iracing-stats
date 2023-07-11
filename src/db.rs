@@ -724,8 +724,8 @@ pub fn query_site_team_members(con: &Connection, team: &String) -> Vec<CustomerN
         .column((Driver::Table, Driver::DisplayName))
         .column((Driver::Table, Driver::CustId))
         .from(SiteTeam::Table)
-        .join_site_team_to_site_team_member()
         .join_site_team_member_to_driver()
+        .join_site_team_to_site_team_member()
         .and_where(Expr::col(SiteTeam::SiteTeamName).eq(team))
         .build_rusqlite(SqliteQueryBuilder);
 

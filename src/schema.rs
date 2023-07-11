@@ -215,7 +215,7 @@ impl SchemaUtils for SelectStatement {
     }
 
     fn join_site_team_member_to_driver(&mut self) -> &mut Self {
-        return self.inner_join(SiteTeam::Table,
+        return self.inner_join(Driver::Table,
             Expr::col((SiteTeamMember::Table, SiteTeamMember::CustId)).equals((Driver::Table, Driver::CustId))
         );
     }
