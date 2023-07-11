@@ -861,6 +861,7 @@ pub struct DiscordResultReport {
     pub car_name: String,
     pub track_name: String,
     pub finish_position_in_class: i32,
+    pub event_type: EventType,
 }
 
 pub struct DiscordSiteTeamReport {
@@ -884,6 +885,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((Car::Table, Car::CarName))
         .column((Track::Table, Track::TrackName))
         .column((DriverResult::Table, DriverResult::FinishPositionInClass))
+        .column((Subsession::Table, Subsession::EventType))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -896,7 +898,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .join_site_team_member_to_site_team()
         .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
         .and_where(is_main_event())
-        .and_where(is_event_type(EventType::Race))
+        //.and_where(is_event_type(EventType::Race))
         .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
         .build_rusqlite(SqliteQueryBuilder);
 
@@ -913,6 +915,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let car_name: String = row.get(5).unwrap();
         let track_name: String = row.get(6).unwrap();
         let finish_position_in_class: i32 = row.get(7).unwrap();
+        let event_type = EventType::from_i32(row.get(8).unwrap()).unwrap();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -926,7 +929,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             series_name,
             car_name,
             track_name,
-            finish_position_in_class
+            finish_position_in_class,
+            event_type
         };
 
         team_entries.results.push(driver_result);

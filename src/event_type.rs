@@ -19,4 +19,12 @@ impl EventType {
     pub fn to_db_type(&self) -> i32 {
         return *self as i32;
     }
+    pub fn to_nice_string(&self) -> &str {
+        return match self {
+            EventType::Practice => "Practice",
+            EventType::Qualify => "Qualify",
+            EventType::TimeTrial => "Time Trial",
+            EventType::Race => "Race",
+        };
+    }
 }

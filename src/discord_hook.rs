@@ -26,10 +26,11 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     );
 
     return format!(
-        "**{}** finished {} in **{}** :race_car: {} :motorway: {}\n<{}>\n<{}>",
+        "**{}** finished {} in **{}** [{}] :race_car: {} :motorway: {}\n<{}>\n<{}>",
         result.driver_name,
         placement_string(result.finish_position_in_class),
         result.series_name,
+        result.event_type.to_nice_string(),
         result.car_name,
         result.track_name,
         r0mai_io_url,
