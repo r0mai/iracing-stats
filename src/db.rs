@@ -908,7 +908,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .join_site_team_member_to_site_team()
         .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
         .and_where(is_main_event())
-        //.and_where(is_event_type(EventType::Race))
+        .and_where(is_event_type(EventType::Race))
         .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
         .build_rusqlite(SqliteQueryBuilder);
 
