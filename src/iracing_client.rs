@@ -175,18 +175,23 @@ impl IRacingClient {
         return serde_json::Value::Array(seasons);
     }
 
-    async fn search_series(&self, cust_id: Option<i64>, year: i32, quarter: i32, week: Option<i32>) -> serde_json::Value {
+    async fn search_series_by_season(&self, year: i32, quarter: i32, week: Option<i32>) -> serde_json::Value {
         let mut params = HashMap::from([
             ("season_year", year.to_string()),
             ("season_quarter", quarter.to_string()),
         ]);
-
-        if let Some(cust_id) = cust_id {
-            params.insert("cust_id", cust_id.to_string());
-        }
         if let Some(week) = week {
             params.insert("race_week_num", week.to_string());
         }
+        return self.get_and_read_chunked("/data/results/search_series", &params).await.unwrap();
+    }
+
+    async fn search_series(&self, cust_id: i64, start_date: &DateTime<Utc>, end_date: &DateTime<Utc>) -> serde_json::Value {
+        let params = HashMap::from([
+            ("cust_id", cust_id.to_string()),
+            ("start_range_begin", to_api_date_string(start_date)),
+            ("start_range_end", to_api_date_string(end_date)),
+        ]);
         return self.get_and_read_chunked("/data/results/search_series", &params).await.unwrap();
     }
 
@@ -201,32 +206,14 @@ impl IRacingClient {
 
     // return subsession_ids may contain duplicates
     async fn find_subsessions_for_driver(&self, cust_id: i64, partial: bool) -> Vec<i64> {
-        let mut seasons = Vec::new();
         let start_date;
         if partial {
-            seasons.push((CURRENT_YEAR, CURRENT_QUARTER));
             start_date = cached_now().checked_sub_days(Days::new(10)).unwrap();
         } else {
-            let member_since = self.get_member_since_date(cust_id).await;
-            let member_since_year = member_since.year();
-            for year in member_since_year..=CURRENT_YEAR {
-                let last_quarter = if year == CURRENT_YEAR { CURRENT_QUARTER } else { 4 };
-                for quarter in 1..=last_quarter {
-                    seasons.push((year, quarter));
-                }
-            }
-            start_date = member_since;
+            start_date = self.get_member_since_date(cust_id).await;
         }
 
         let mut subsession_ids = Vec::new();
-
-        // official
-        for (year, quarter) in seasons {
-            println!("Query official {year}s{quarter}");
-            let series_q = self.search_series(Some(cust_id), year, quarter, None).await;
-            let mut new_ids = extract_subsession_ids_from_response(&series_q);
-            subsession_ids.append(&mut new_ids);
-        }
 
         // hosted
         let mut current_date = start_date;
@@ -235,10 +222,19 @@ impl IRacingClient {
             // max range allowed is 90. be safe with 89
             let next_date = current_date.checked_add_days(Days::new(89)).unwrap();
 
-            println!("Query hosted {current_date} -> {next_date}");
-            let hosted_q = self.search_hosted(cust_id, &current_date, &next_date).await;
-            let mut new_ids = extract_subsession_ids_from_response(&hosted_q);
-            subsession_ids.append(&mut new_ids);
+            {
+                println!("Query hosted {current_date} -> {next_date}");
+                let hosted_q = self.search_hosted(cust_id, &current_date, &next_date).await;
+                let mut new_ids = extract_subsession_ids_from_response(&hosted_q);
+                subsession_ids.append(&mut new_ids);
+            }
+
+            {
+                println!("Query official {current_date} -> {next_date}");
+                let official_q = self.search_series(cust_id, &current_date, &next_date).await;
+                let mut new_ids = extract_subsession_ids_from_response(&official_q);
+                subsession_ids.append(&mut new_ids);
+            }
             
             current_date = next_date;
         }
@@ -247,7 +243,7 @@ impl IRacingClient {
     }
 
     async fn find_subsessions_for_season(&self, year: i32, quarter: i32, week: Option<i32>) -> Vec<i64> {
-        let series = self.search_series(None, year, quarter, week).await;
+        let series = self.search_series_by_season(year, quarter, week).await;
         return series.as_array().unwrap().iter().map(|ses| ses["subsession_id"].as_i64().unwrap()).collect();
     }
 
