@@ -248,3 +248,7 @@ pub fn is_event_type(event_type: EventType) -> SimpleExpr {
 pub fn is_category_type(category_type: CategoryType) -> SimpleExpr {
     return Expr::col((Subsession::Table, Subsession::LicenseCategoryId)).eq(category_type.to_db_type());
 }
+
+pub fn is_official() -> SimpleExpr {
+    return Expr::col((Subsession::Table, Subsession::OfficialSession)).is(true);
+}

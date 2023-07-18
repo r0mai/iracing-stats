@@ -27,7 +27,7 @@ use crate::schema::{
     SchemaUtils,
     SiteTeamMember,
     is_event_type,
-    is_main_event
+    is_main_event, is_official
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
@@ -910,6 +910,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .and_where(is_main_event())
         .and_where(is_event_type(EventType::Race))
         .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
+        .and_where(is_official())
         .build_rusqlite(SqliteQueryBuilder);
 
     let mut stmt = con.prepare(sql.as_str()).unwrap();
