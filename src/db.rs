@@ -196,7 +196,8 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* average_lap */
             ?, /* car_id */
             ?, /* finish_position */
-            ?  /* finish_position_in_class */
+            ?, /* finish_position_in_class */
+            ?  /* reason_out_id */
     );"#).unwrap();
     let insert_season_statement = tx.prepare(r#"
         INSERT INTO season VALUES(
@@ -365,6 +366,7 @@ fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_n
         driver_result["car_id"].as_i64().unwrap(),
         driver_result["finish_position"].as_i64().unwrap(),
         driver_result["finish_position_in_class"].as_i64().unwrap(),
+        driver_result["reason_out_id"].as_i64().unwrap(),
     )).unwrap();
 }
 

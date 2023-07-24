@@ -46,6 +46,7 @@ CREATE TABLE driver_result(
     car_id INTEGER NOT NULL,
     finish_position INTEGER NOT NULL, /* 0 based! */
     finish_position_in_class INTEGER NOT NULL, /* 0 based! */
+    reason_out_id INTEGER NOT NULL,
     PRIMARY KEY(cust_id, team_id, subsession_id, simsession_number)
 );
 
