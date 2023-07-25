@@ -57,6 +57,11 @@ CREATE TABLE simsession(
     PRIMARY KEY(subsession_id, simsession_number)
 );
 
+CREATE TABLE reason_out(
+    reason_out_id INTEGER PRIMARY KEY NOT NULL,
+    reason_out TEXT NOT NULL
+);
+
 CREATE TABLE track_config(
     track_id INTEGER PRIMARY KEY NOT NULL,
     package_id INTEGER NOT NULL, /* a.k.a track_id */

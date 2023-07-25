@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{db::{query_discord_report, create_db_connection, DiscordSiteTeamReport, DiscordResultReport}, event_type::EventType};
+use crate::{db::{query_discord_report, create_db_connection, DiscordResultReport}, event_type::EventType};
 
 fn placement_string(mut position: i32) -> String {
     position += 1;
@@ -11,6 +11,18 @@ fn placement_string(mut position: i32) -> String {
         _ => ""
     };
     return format!("**P{}**{}", position, emoji);
+}
+
+fn finish_reason_string(reason_out: &String) -> String {
+    if reason_out == "Running" {
+        return "".to_string();
+    }
+
+    if reason_out == "" {
+        return " [Unknown out reason]".to_string();
+    }
+
+    return format!(" [{}]", reason_out);
 }
 
 fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
@@ -44,11 +56,11 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     };
 
     return format!(
-        "**{}** finished {} in **{}** [{}] :race_car: {} :motorway: {}\n{}<{}>\n<{}>",
+        "**{}** finished {} in **{}**{} :race_car: {} :motorway: {}\n{}\n<{}>\n<{}>",
         result.driver_name,
         placement_string(result.finish_position_in_class),
         result.series_name,
-        result.event_type.to_nice_string(),
+        finish_reason_string(&result.reason_out),
         result.car_name,
         result.track_name,
         race_details_str,

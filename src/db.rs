@@ -27,7 +27,7 @@ use crate::schema::{
     SchemaUtils,
     SiteTeamMember,
     is_event_type,
-    is_main_event, is_official
+    is_main_event, is_official, ReasonOut
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
@@ -132,6 +132,7 @@ pub struct DbContext<'a> {
     insert_season_statement: rusqlite::Statement<'a>,
     insert_site_team_statement: rusqlite::Statement<'a>,
     insert_site_team_member_statement: rusqlite::Statement<'a>,
+    insert_reason_out_statement: rusqlite::Statement<'a>,
 }
 
 pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a> {
@@ -223,6 +224,11 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* site_team_id */
             ?  /* cust_id */
     );"#).unwrap();
+    let insert_reason_out_statement = tx.prepare(r#"
+        INSERT OR IGNORE INTO reason_out VALUES(
+            ?, /* reason_out_id */
+            ?  /* reason_out */
+    );"#).unwrap();
 
     return DbContext {
         insert_track_statement,
@@ -236,6 +242,7 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         insert_season_statement,
         insert_site_team_statement,
         insert_site_team_member_statement,
+        insert_reason_out_statement,
     };
 }
 
@@ -351,6 +358,8 @@ fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_n
 
     // TODO cust_id could be factored out
 
+    let reason_out_id = driver_result["reason_out_id"].as_i64().unwrap();
+
     ctx.insert_driver_result_statement.execute((
         driver_result["cust_id"].as_i64().unwrap(), 
         driver_result["team_id"].as_i64().unwrap_or(0),
@@ -366,8 +375,11 @@ fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_n
         driver_result["car_id"].as_i64().unwrap(),
         driver_result["finish_position"].as_i64().unwrap(),
         driver_result["finish_position_in_class"].as_i64().unwrap(),
-        driver_result["reason_out_id"].as_i64().unwrap(),
+        reason_out_id,
     )).unwrap();
+
+    // The reason_out textual representation is often missing
+    add_reason_out_to_db(ctx, reason_out_id, driver_result["reason_out"].as_str().unwrap_or(""));
 }
 
 fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value) {
@@ -430,6 +442,13 @@ fn add_sessions_to_db<I>(ctx: &mut DbContext, files: I)
         let data = read_json_zip(session_file.as_path());
         add_subsession_to_db(ctx, &data);
     }
+}
+
+fn add_reason_out_to_db(ctx: &mut DbContext, reason_out_id: i64, reason_out: &str) {
+    ctx.insert_reason_out_statement.execute((
+        reason_out_id,
+        reason_out
+    )).unwrap();
 }
 
 pub fn rebuild_tracks(ctx: &mut DbContext) {
@@ -869,6 +888,7 @@ pub struct DiscordResultReport {
     pub newi_rating: i32,
     pub laps_complete: i32,
     pub event_type: EventType,
+    pub reason_out: String,
 }
 
 pub struct DiscordSiteTeamReport {
@@ -898,11 +918,13 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((DriverResult::Table, DriverResult::NewiRating))
         .column((DriverResult::Table, DriverResult::LapsComplete))
         .column((Subsession::Table, Subsession::EventType))
+        .column((ReasonOut::Table, ReasonOut::ReasonOut))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
         .join_driver_result_to_driver()
         .join_driver_result_to_car()
+        .join_driver_result_to_reason_out()
         .join_subsession_to_session()
         .join_subsession_to_track_config()
         .join_track_config_to_track()
@@ -934,6 +956,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let newi_rating: i32 = row.get(11).unwrap();
         let laps_complete: i32 = row.get(12).unwrap();
         let event_type = EventType::from_i32(row.get(13).unwrap()).unwrap();
+        let reason_out: String = row.get(14).unwrap();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -954,6 +977,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             newi_rating,
             laps_complete,
             event_type,
+            reason_out,
         };
 
         team_entries.results.push(driver_result);
@@ -1043,7 +1067,7 @@ pub fn rebuild_db() {
         rebuild_sessions(&mut ctx);
     }
     build_db_indices(&tx);
-
+    
     tx.commit().unwrap();
 }
 

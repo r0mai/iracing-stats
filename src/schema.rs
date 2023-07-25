@@ -82,6 +82,13 @@ pub enum Simsession {
 }
 
 #[derive(Iden)]
+pub enum ReasonOut {
+    Table,
+    ReasonOutId,
+    ReasonOut,
+}
+
+#[derive(Iden)]
 pub enum TrackConfig {
     Table,
     TrackId,
@@ -130,6 +137,7 @@ pub trait SchemaUtils {
     fn join_driver_result_to_subsession(&mut self) -> &mut Self;
     fn join_driver_result_to_driver(&mut self) -> &mut Self;
     fn join_driver_result_to_car(&mut self) -> &mut Self;
+    fn join_driver_result_to_reason_out(&mut self) -> &mut Self;
     fn join_subsession_to_session(&mut self) -> &mut Self;
     fn join_subsession_to_track_config(&mut self) -> &mut Self;
     fn join_track_config_to_track(&mut self) -> &mut Self;
@@ -175,6 +183,12 @@ impl SchemaUtils for SelectStatement {
     fn join_driver_result_to_car(&mut self) -> &mut Self {
         return self.inner_join(Car::Table,
             Expr::col((DriverResult::Table, DriverResult::CarId)).equals((Car::Table, Car::CarId))
+        );
+    }
+
+    fn join_driver_result_to_reason_out(&mut self) -> &mut Self {
+        return self.inner_join(ReasonOut::Table,
+            Expr::col((DriverResult::Table, DriverResult::ReasonOutId)).equals((ReasonOut::Table, ReasonOut::ReasonOutId))
         );
     }
 
