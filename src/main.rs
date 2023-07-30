@@ -175,7 +175,8 @@ async fn main() {
     fs::create_dir_all(crate::db::get_sessions_dir()).unwrap();
 
     if args.motec_thing {
-        crate::motec_xml::output_motec_track_xmls();
+        crate::motec_xml::output_motec_track_xmls2();
+        crate::motec_xml::output_motec_car_xmls2();
     }
     if args.rebuild_db_schema {
         db::rebuild_db_schema();
