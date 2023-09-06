@@ -1,3 +1,9 @@
+[source.crates-io]
+index = "https://github.com/rust-lang/crates.io-index" # I set the source to the official github index
+
+[http]
+proxy = "" # leaving this as a blank string resets proxy to default
+
 [package]
 name = "iracing-stats"
 version = "0.1.0"
@@ -11,10 +17,10 @@ zip = "0.6.3"
 rusqlite = { version = "0.28.0", features = ["bundled", "chrono"] }
 r2d2 = "0.8.10"
 r2d2_sqlite = "0.21.0"
-chrono = "0.4.23"
+chrono = "0.4.29"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.11.13", features = ["blocking", "cookies", "json", "serde_json"] }
-clap = { version = "4.0.29", features = ["derive"] }
+clap = { version = "4.2.2", features = ["derive"] }
 rocket = { version = "0.5.0-rc.3", features = ["json", "tls"] }
 futures = "0.3.25"
 lazy_static = "1.4.0"
