@@ -14,6 +14,8 @@ mod discord_hook;
 
 use clap::Parser;
 use std::fs;
+use sha2::Digest;
+use sha2::Sha256;
 
 #[derive(Parser)]
 struct Args {
@@ -100,6 +102,18 @@ struct Args {
     /// Test Discord hook test
     #[arg(long)]
     test_send_discord_update: bool,
+
+    /// Generate iracing token
+    #[arg(long)]
+    generate_iracing_token: bool,
+
+    /// User (e-mail) for iracing token
+    #[arg(long)]
+    gen_email: Option<String>,
+
+    /// PW for iracing token
+    #[arg(long)]
+    gen_pw: Option<String>,
 }
 
 fn has_async(args: &Args) -> bool {
@@ -168,6 +182,15 @@ async fn tokio_main(args: &Args) {
     }
 }
 
+fn encode_iracing_pw(password: &str, identifier: &str) -> String {
+    let mut hasher = Sha256::new();
+    let normalized = identifier.trim().to_lowercase();
+
+    hasher.update(format!("{password}{normalized}"));
+    base64::encode(hasher.finalize())
+}
+
+
 #[rocket::main]
 async fn main() {
     let args = Args::parse();
@@ -189,6 +212,9 @@ async fn main() {
     }
     if args.update_db {
         db::update_db();
+    }
+    if args.generate_iracing_token {
+        println!("{}", encode_iracing_pw(args.gen_pw.clone().unwrap().as_str(), args.gen_email.clone().unwrap().as_str()));
     }
     if args.start_server {
         crate::server::start_rocket_server(args.enable_https).await;

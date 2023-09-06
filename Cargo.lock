@@ -1036,6 +1036,7 @@ checksum = "28b29a3cd74f0f4598934efe3aeba42bae0eb4680554128851ebbecb02af14e6"
 name = "iracing-stats"
 version = "0.1.0"
 dependencies = [
+ "base64 0.21.3",
  "chrono",
  "clap",
  "csv",
@@ -1050,6 +1051,7 @@ dependencies = [
  "sea-query-rusqlite",
  "serde_json",
  "serenity",
+ "sha2",
  "simple-xml-builder",
  "tokio",
  "urlencoding",
