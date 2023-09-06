@@ -28,7 +28,7 @@ RUN npm run build
 
 # -----
 
-FROM debian:bullseye-slim
+FROM debian:bookworm
 # no clue what this does, but it doesn't work
 # RUN apt-get update && apt-get install -y extra-runtime-dependencies && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get install -y ca-certificates curl procps
