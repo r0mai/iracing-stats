@@ -996,7 +996,7 @@ pub struct SessionResult {
     pub finish_position_in_class: i64
 }
 
-pub fn query_session_result(con: &Connection, subsession_id: i64) -> Vec<SessionResult> {
+pub fn query_session_result(con: &Connection, subsession_id: i64, site_team_name: String) -> Vec<SessionResult> {
     let (sql, params) = Query::select()
         .column((Session::Table, Session::SeriesName))
         .column((Subsession::Table, Subsession::StartTime))
@@ -1011,9 +1011,12 @@ pub fn query_session_result(con: &Connection, subsession_id: i64) -> Vec<Session
         .join_driver_result_to_simsession()
         .join_driver_result_to_driver()
         .join_subsession_to_session()
+        .join_driver_to_site_team_member()
+        .join_site_team_member_to_site_team()
         .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).eq(subsession_id))
         .and_where(is_main_event())
         .and_where(is_event_type(EventType::Race))
+        .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(site_team_name))
         .build_rusqlite(SqliteQueryBuilder);
 
     let mut stmt = con.prepare(sql.as_str()).unwrap();

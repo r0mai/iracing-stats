@@ -282,14 +282,15 @@ async fn api_v1_team_results(
     });
 }
 
-#[get("/api/v1/session-result?<subsession_id>")]
+#[get("/api/v1/session-result?<subsession_id>&<team>")]
 async fn api_v1_session_result(
     subsession_id: i64,
+    team: String,
     db_pool: &State<DbPool>) -> String
 {
     let con = db_pool.get().unwrap();
 
-    let raw_data = query_session_result(&con, subsession_id);
+    let raw_data = query_session_result(&con, subsession_id, team);
 
     let mut result = String::new();
 
