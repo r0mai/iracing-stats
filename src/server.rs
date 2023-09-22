@@ -18,7 +18,7 @@ use crate::db::{
     query_customer_cust_ids,
     query_driver_sessions,
     query_site_team_members,
-    query_team_results, query_session_result
+    query_team_results, query_session_result, SessionResult
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -199,11 +199,6 @@ async fn api_v1_customer_names(
     return Value::Array(result);
 }
 
-enum TeamResultsFormat {
-    Json,
-    Csv
-}
-
 #[get("/api/v1/team-results-csv?<team_ids>")]
 async fn api_v1_team_results_csv(
     team_ids: String,
@@ -282,6 +277,14 @@ async fn api_v1_team_results(
     });
 }
 
+fn position_str(result: &SessionResult) -> String {
+    if result.reason_out == "Running" {
+        return format!("P{}", result.finish_position_in_class);
+    } else {
+        return format!("DNF");
+    }
+}
+
 #[get("/api/v1/session-result?<subsession_id>&<team>")]
 async fn api_v1_session_result(
     subsession_id: i64,
@@ -295,7 +298,7 @@ async fn api_v1_session_result(
     let mut result = String::new();
 
     for driver_result in raw_data {
-        result.push_str(format!("{},{},{},{},{},{},{},P{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
+        result.push_str(format!("{},{},{},{},{},{},{},{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
             driver_result.series_name,
             driver_result.start_time,
             driver_result.track_id,
@@ -303,7 +306,7 @@ async fn api_v1_session_result(
             driver_result.driver_name,
             driver_result.laps_complete,
             driver_result.incidents,
-            driver_result.finish_position_in_class,
+            position_str(&driver_result),
             subsession_id
         ).as_str());
     }
