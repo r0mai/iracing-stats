@@ -18,7 +18,8 @@ CREATE TABLE season(
 
 CREATE TABLE session(
     session_id INTEGER PRIMARY KEY NOT NULL,
-    series_name TEXT NOT NULL
+    series_name TEXT NOT NULL,
+    session_name TEXT /* may be null; only exists for Hosted races */
 );
 
 CREATE TABLE subsession(

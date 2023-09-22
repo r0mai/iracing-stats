@@ -38,6 +38,7 @@ pub enum Session {
     Table,
     SessionId,
     SeriesName,
+    SessionName,
 }
 
 #[derive(Iden)]

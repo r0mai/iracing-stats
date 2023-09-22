@@ -16,7 +16,8 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
             return {
                 "id": session["subsession_id"],
                 "start_time": session["start_time"],
-                "series_name": session["series_name"],
+                // hosted sessions have session_name, for official ones we use series_name
+                "series_name": session["session_name"] || session["series_name"],
                 "car": carMap[session["car_id"]]["car_name"],
                 "track": trackMap[session["track_id"]]["track_name"],
                 "irating_delta": session["new_irating"] - session["old_irating"],

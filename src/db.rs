@@ -169,7 +169,8 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
     let insert_session_statement = tx.prepare(r#"
         INSERT OR IGNORE INTO session VALUES(
             ?,  /* session_id */
-            ?   /* series_name */
+            ?,  /* series_name */
+            ?   /* session_name */
     );"#).unwrap();
     let insert_simsession_statement = tx.prepare(r#"
         INSERT INTO simsession VALUES(
@@ -418,7 +419,8 @@ fn add_subsession_to_db(ctx: &mut DbContext, subsession: &Value) {
 
     ctx.insert_session_statement.execute((
         session_id,
-        subsession["series_name"].as_str().unwrap()
+        subsession["series_name"].as_str().unwrap(),
+        subsession["session_name"].as_str(), // kept as optional to allow null inserts
     )).unwrap();
 
     for simsession in subsession["session_results"].as_array().unwrap() {
@@ -555,6 +557,7 @@ pub struct DriverSession {
     pub start_time: String,
     pub event_type: EventType,
     pub series_name: String,
+    pub session_name: String,
     pub simsession_number: i32,
     pub simsession_type: i32,
     pub official_session: bool,
@@ -578,6 +581,7 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
         .column((Subsession::Table, Subsession::StartTime))
         .column((Subsession::Table, Subsession::EventType))
         .column((Session::Table, Session::SeriesName))
+        .column((Session::Table, Session::SessionName))
         .column((Simsession::Table, Simsession::SimsessionNumber))
         .column((Simsession::Table, Simsession::SimsessionType))
         .column((Subsession::Table, Subsession::OfficialSession))
@@ -612,9 +616,10 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
             start_time: row.get(13).unwrap(),
             event_type: EventType::from_i32(row.get(14).unwrap()).ok()?,
             series_name: row.get(15).unwrap(),
-            simsession_number: row.get(16).unwrap(),
-            simsession_type: row.get(17).unwrap(),
-            official_session: row.get(18).unwrap(),
+            session_name: row.get(16).unwrap_or(String::new()),
+            simsession_number: row.get(17).unwrap(),
+            simsession_type: row.get(18).unwrap(),
+            official_session: row.get(19).unwrap(),
         });
     }
 

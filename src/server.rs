@@ -50,6 +50,7 @@ async fn api_v1_driver_info(
             "start_time": data.start_time,
             "event_type": data.event_type.to_db_type(),
             "series_name": data.series_name,
+            "session_name": data.session_name,
             "simsession_number": data.simsession_number,
             "simsession_type": data.simsession_type,
             "official_session": data.official_session,

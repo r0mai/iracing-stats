@@ -2,9 +2,9 @@ use std::{
     collections::HashMap,
     collections::HashSet,
     sync::atomic::AtomicI64,
-    sync::atomic::Ordering, thread::current
+    sync::atomic::Ordering,
 };
-use chrono::{Utc, DateTime, Days, Datelike, NaiveDateTime, NaiveDate, FixedOffset, TimeZone, NaiveTime};
+use chrono::{Utc, DateTime, Days, NaiveDateTime, NaiveDate, FixedOffset, TimeZone, NaiveTime};
 use serde_json;
 use reqwest::{self, Client, header::HeaderValue};
 use std::time::Instant;
