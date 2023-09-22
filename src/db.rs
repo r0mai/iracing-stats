@@ -915,6 +915,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((Driver::Table, Driver::DisplayName))
         .column((Subsession::Table, Subsession::SubsessionId))
         .column((Session::Table, Session::SeriesName))
+        .column((Session::Table, Session::SessionName))
         .column((Car::Table, Car::CarName))
         .column((Track::Table, Track::TrackName))
         .column((TrackConfig::Table, TrackConfig::CornersPerLap))
@@ -953,7 +954,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let driver_name: String = row.get(2).unwrap();
         let subsession_id: i64 = row.get(3).unwrap();
         let series_name: String = row.get(4).unwrap();
-        let session_name: String = row.get(5).unwrap();
+        let session_name: String = row.get(5).unwrap_or(String::new());
         let car_name: String = row.get(6).unwrap();
         let track_name: String = row.get(7).unwrap();
         let corners_per_lap: i32 = row.get(8).unwrap();

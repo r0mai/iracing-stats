@@ -153,7 +153,7 @@ async fn tokio_main(args: &Args) {
     }
 
     if args.test_send_discord_update {
-        discord_hook::send_discord_update(vec![61268227i64, 61145537, 13059307], true).await;
+        discord_hook::send_discord_update(vec![63740038, 61145537, 13059307], true).await;
         // discord_hook::send_discord_update(vec![16936417i64], true).await; // This one has a weird reason_out
     }
 
