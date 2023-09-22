@@ -55,11 +55,17 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
         "".to_owned()
     };
 
+    let race_name = if result.session_name.is_empty() {
+        &result.series_name
+    } else {
+        &result.session_name
+    };
+
     return format!(
         "**{}** finished {} in **{}**{} :race_car: {} :motorway: {}\n{}\n<{}>\n<{}>",
         result.driver_name,
         placement_string(result.finish_position_in_class),
-        result.series_name,
+        race_name,
         finish_reason_string(&result.reason_out),
         result.car_name,
         result.track_name,
