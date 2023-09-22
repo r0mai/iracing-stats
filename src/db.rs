@@ -985,6 +985,56 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
     return DiscordReport{teams: teams.into_values().collect()};
 }
 
+pub struct SessionResult {
+    pub series_name: String,
+    pub start_time: String, // maybe date?
+    pub track_id: i64,
+    pub car_id: i64,
+    pub driver_name: String,
+    pub laps_complete: i64,
+    pub incidents: i64,
+    pub finish_position_in_class: i64
+}
+
+pub fn query_session_result(con: &Connection, subsession_id: i64) -> Vec<SessionResult> {
+    let (sql, params) = Query::select()
+        .column((Session::Table, Session::SeriesName))
+        .column((Subsession::Table, Subsession::StartTime))
+        .column((Subsession::Table, Subsession::TrackId))
+        .column((DriverResult::Table, DriverResult::CarId))
+        .column((Driver::Table, Driver::DisplayName))
+        .column((DriverResult::Table, DriverResult::LapsComplete))
+        .column((DriverResult::Table, DriverResult::Incidents))
+        .column((DriverResult::Table, DriverResult::FinishPositionInClass))
+        .from(DriverResult::Table)
+        .join_driver_result_to_subsession()
+        .join_driver_result_to_simsession()
+        .join_driver_result_to_driver()
+        .join_subsession_to_session()
+        .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).eq(subsession_id))
+        .and_where(is_main_event())
+        .and_where(is_event_type(EventType::Race))
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut result = Vec::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        result.push(SessionResult{
+            series_name: row.get(0).unwrap(),
+            start_time: row.get(1).unwrap(),
+            track_id: row.get(2).unwrap(), 
+            car_id: row.get(3).unwrap(), 
+            driver_name: row.get(4).unwrap(), 
+            laps_complete: row.get(5).unwrap(), 
+            incidents: row.get(6).unwrap(), 
+            finish_position_in_class: row.get(7).unwrap(),
+        });
+    }
+    return result;
+}
 
 pub fn rebuild_db_schema() {
     fs::remove_file(get_sqlite_db_file()).ok(); // ignore error

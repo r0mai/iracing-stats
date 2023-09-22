@@ -18,7 +18,7 @@ use crate::db::{
     query_customer_cust_ids,
     query_driver_sessions,
     query_site_team_members,
-    query_team_results
+    query_team_results, query_session_result
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -282,6 +282,34 @@ async fn api_v1_team_results(
     });
 }
 
+#[get("/api/v1/session-result?<subsession_id>")]
+async fn api_v1_session_result(
+    subsession_id: i64,
+    db_pool: &State<DbPool>) -> String
+{
+    let con = db_pool.get().unwrap();
+
+    let raw_data = query_session_result(&con, subsession_id);
+
+    let mut result = String::new();
+
+    for driver_result in raw_data {
+        result.push_str(format!("{},{},{},{},{},{},{},{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
+            driver_result.series_name,
+            driver_result.start_time,
+            driver_result.track_id,
+            driver_result.car_id,
+            driver_result.driver_name,
+            driver_result.laps_complete,
+            driver_result.incidents,
+            driver_result.finish_position_in_class,
+            subsession_id
+        ).as_str());
+    }
+
+    return result;
+}
+
 pub async fn start_rocket_server(enable_https: bool) {
     const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
     const LOG_FILE_ENV_VAR: &str = "IRACING_STATS_LOG_FILE";
@@ -316,6 +344,7 @@ pub async fn start_rocket_server(enable_https: bool) {
             api_v1_track_car_data,
             api_v1_team_results,
             api_v1_team_results_csv,
+            api_v1_session_result
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)
