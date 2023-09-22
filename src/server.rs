@@ -300,7 +300,7 @@ async fn api_v1_session_result(
     for driver_result in raw_data {
         result.push_str(format!("{},{},{},{},{},{},{},{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
             driver_result.series_name,
-            driver_result.start_time,
+            driver_result.start_time.format("%Y.%m.%d"),
             driver_result.track_id,
             driver_result.car_id,
             driver_result.driver_name,

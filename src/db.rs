@@ -987,7 +987,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
 
 pub struct SessionResult {
     pub series_name: String,
-    pub start_time: String, // maybe date?
+    pub start_time: chrono::DateTime<chrono::Utc>,
     pub track_id: i64,
     pub car_id: i64,
     pub driver_name: String,
