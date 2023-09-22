@@ -51,18 +51,18 @@ pub fn output_motec_track_xmls() {
 pub fn add_math_enum<F, G>(root: &mut XMLElement, arr: &Vec<Value>, enum_name: &str, name_func: F, value_func: &G) where
     F: Fn(&Value) -> String, G: Fn(&Value) -> String
 {
-    let mut mathEnum = XMLElement::new("MathEnumeration");
-    mathEnum.add_attribute("Name", enum_name);
+    let mut math_enum = XMLElement::new("MathEnumeration");
+    math_enum.add_attribute("Name", enum_name);
 
     for element in arr {
         let mut pair = XMLElement::new("Enum");
         pair.add_attribute("Name", name_func(&element));
         pair.add_attribute("Value", value_func(&element));
 
-        mathEnum.add_child(pair);
+        math_enum.add_child(pair);
     }
 
-    root.add_child(mathEnum);
+    root.add_child(math_enum);
 }
 
 pub fn add_math_enum_str(root: &mut XMLElement, arr: &Vec<Value>, id_str: &str, enum_name: &str) {
@@ -73,13 +73,13 @@ pub fn add_math_enum_str(root: &mut XMLElement, arr: &Vec<Value>, id_str: &str, 
 pub fn add_choose_expr<F>(root: &mut XMLElement, arr: &Vec<Value>, enum_name: &str, expr_func: F) where
     F: Fn(&Value) -> String
 {
-    let mut mathExpr = XMLElement::new("MathExpression");
+    let mut math_expr = XMLElement::new("MathExpression");
 
-    mathExpr.add_attribute("Id", enum_name);
-    mathExpr.add_attribute("DisplayDPS", "0");
-    mathExpr.add_attribute("DisplayColorIndex", "2");
-    mathExpr.add_attribute("Interpolate", "0");
-    mathExpr.add_attribute("EnumerationName", "");
+    math_expr.add_attribute("Id", enum_name);
+    math_expr.add_attribute("DisplayDPS", "0");
+    math_expr.add_attribute("DisplayColorIndex", "2");
+    math_expr.add_attribute("Interpolate", "0");
+    math_expr.add_attribute("EnumerationName", "");
 
     let mut prefix = String::new();
     let mut suffix = "invalid()".to_string();
@@ -88,9 +88,9 @@ pub fn add_choose_expr<F>(root: &mut XMLElement, arr: &Vec<Value>, enum_name: &s
         suffix += ")";
     }
 
-    mathExpr.add_attribute("Script", prefix + suffix.as_str());
+    math_expr.add_attribute("Script", prefix + suffix.as_str());
 
-    root.add_child(mathExpr);
+    root.add_child(math_expr);
 }
 
 pub fn output_motec_car_xmls2() {
