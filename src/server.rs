@@ -295,7 +295,7 @@ async fn api_v1_session_result(
     let mut result = String::new();
 
     for driver_result in raw_data {
-        result.push_str(format!("{},{},{},{},{},{},{},{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
+        result.push_str(format!("{},{},{},{},{},{},{},P{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
             driver_result.series_name,
             driver_result.start_time,
             driver_result.track_id,
