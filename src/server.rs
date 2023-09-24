@@ -299,8 +299,14 @@ async fn api_v1_session_result(
     let mut result = String::new();
 
     for driver_result in raw_data {
+        let name = if driver_result.session_name.is_empty() {
+            driver_result.series_name.clone()
+        } else {
+            driver_result.session_name.clone()
+        };
+
         result.push_str(format!("{},{},{},{},{},{},{},{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
-            driver_result.series_name,
+            name,
             driver_result.start_time.format("%Y.%m.%d"),
             driver_result.track_id,
             driver_result.car_id,

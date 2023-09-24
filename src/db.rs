@@ -996,6 +996,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
 
 pub struct SessionResult {
     pub series_name: String,
+    pub session_name: String,
     pub start_time: chrono::DateTime<chrono::Utc>,
     pub track_id: i64,
     pub car_id: i64,
@@ -1009,6 +1010,7 @@ pub struct SessionResult {
 pub fn query_session_result(con: &Connection, subsession_id: i64, site_team_name: String) -> Vec<SessionResult> {
     let (sql, params) = Query::select()
         .column((Session::Table, Session::SeriesName))
+        .column((Session::Table, Session::SessionName))
         .column((Subsession::Table, Subsession::StartTime))
         .column((Subsession::Table, Subsession::TrackId))
         .column((DriverResult::Table, DriverResult::CarId))
@@ -1039,14 +1041,15 @@ pub fn query_session_result(con: &Connection, subsession_id: i64, site_team_name
     while let Some(row) = rows.next().unwrap() {
         result.push(SessionResult{
             series_name: row.get(0).unwrap(),
-            start_time: row.get(1).unwrap(),
-            track_id: row.get(2).unwrap(), 
-            car_id: row.get(3).unwrap(), 
-            driver_name: row.get(4).unwrap(), 
-            laps_complete: row.get(5).unwrap(), 
-            incidents: row.get(6).unwrap(), 
-            finish_position_in_class: row.get(7).unwrap(),
-            reason_out: row.get(8).unwrap()
+            session_name: row.get(1).unwrap_or(String::new()),
+            start_time: row.get(2).unwrap(),
+            track_id: row.get(3).unwrap(), 
+            car_id: row.get(4).unwrap(), 
+            driver_name: row.get(5).unwrap(), 
+            laps_complete: row.get(6).unwrap(), 
+            incidents: row.get(7).unwrap(), 
+            finish_position_in_class: row.get(8).unwrap(),
+            reason_out: row.get(9).unwrap()
         });
     }
     return result;
