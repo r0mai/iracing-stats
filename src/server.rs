@@ -280,7 +280,7 @@ async fn api_v1_team_results(
 
 fn position_str(result: &SessionResult) -> String {
     if result.reason_out == "Running" {
-        return format!("P{}", result.finish_position_in_class);
+        return format!("P{}", result.finish_position_in_class + 1);
     } else {
         return format!("DNF");
     }
