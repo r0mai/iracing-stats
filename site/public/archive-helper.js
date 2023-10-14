@@ -11,7 +11,9 @@ window.onload = function() {
             return;
         }
 
-        let url = "/api/v1/session-result?team=rsmr&subsession_ids=" + subsession_ids.join(";");
+        let unique_subsession_ids = [...new Set(subsession_ids)];
+
+        let url = "/api/v1/session-result?team=rsmr&subsession_ids=" + unique_subsession_ids.join(";");
         let response = await fetch(url);
         let responseText = await response.text();
         responseDiv.innerHTML = responseText;
