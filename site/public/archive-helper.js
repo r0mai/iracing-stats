@@ -1,3 +1,8 @@
+function replaceAll(str, search, replacement) {
+    var result = str;
+    return result.split(search).join(replacement);
+}
+
 window.onload = function() {
     let textarea = document.querySelector("#input-area");
     let responseDiv = document.querySelector("#response");
@@ -16,6 +21,6 @@ window.onload = function() {
         let url = "/api/v1/session-result?team=rsmr&subsession_ids=" + unique_subsession_ids.join(";");
         let response = await fetch(url);
         let responseText = await response.text();
-        responseDiv.innerHTML = responseText;
+        responseDiv.innerHTML = replaceAll(responseText, "\n", "<br/>");
     }, false);
 }
