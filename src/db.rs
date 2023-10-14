@@ -1004,10 +1004,11 @@ pub struct SessionResult {
     pub laps_complete: i64,
     pub incidents: i64,
     pub finish_position_in_class: i64,
-    pub reason_out: String
+    pub reason_out: String,
+    pub subsession_id: i64
 }
 
-pub fn query_session_result(con: &Connection, subsession_id: i64, site_team_name: String) -> Vec<SessionResult> {
+pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_team_name: String) -> Vec<SessionResult> {
     let (sql, params) = Query::select()
         .column((Session::Table, Session::SeriesName))
         .column((Session::Table, Session::SessionName))
@@ -1019,6 +1020,7 @@ pub fn query_session_result(con: &Connection, subsession_id: i64, site_team_name
         .column((DriverResult::Table, DriverResult::Incidents))
         .column((DriverResult::Table, DriverResult::FinishPositionInClass))
         .column((ReasonOut::Table, ReasonOut::ReasonOut))
+        .column((Subsession::Table, Subsession::SubsessionId))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -1027,10 +1029,13 @@ pub fn query_session_result(con: &Connection, subsession_id: i64, site_team_name
         .join_driver_to_site_team_member()
         .join_site_team_member_to_site_team()
         .join_driver_result_to_reason_out()
-        .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).eq(subsession_id))
+        .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
         .and_where(is_main_event())
         .and_where(is_event_type(EventType::Race))
         .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(site_team_name))
+        .order_by((Subsession::Table, Subsession::SubsessionId), Order::Asc)
+        .order_by((DriverResult::Table, DriverResult::TeamId), Order::Asc)
+        .order_by((DriverResult::Table, DriverResult::CustId), Order::Asc)
         .build_rusqlite(SqliteQueryBuilder);
 
     let mut stmt = con.prepare(sql.as_str()).unwrap();
@@ -1049,7 +1054,8 @@ pub fn query_session_result(con: &Connection, subsession_id: i64, site_team_name
             laps_complete: row.get(6).unwrap(), 
             incidents: row.get(7).unwrap(), 
             finish_position_in_class: row.get(8).unwrap(),
-            reason_out: row.get(9).unwrap()
+            reason_out: row.get(9).unwrap(),
+            subsession_id: row.get(10).unwrap()
         });
     }
     return result;

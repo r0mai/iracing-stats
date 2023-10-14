@@ -6,6 +6,7 @@ use rocket::fs::{FileServer, Options};
 use rocket::State;
 
 use rusqlite::Connection;
+use sea_query::SubQueryStatement;
 
 use crate::driverid::DriverId;
 use crate::db::{
@@ -286,15 +287,25 @@ fn position_str(result: &SessionResult) -> String {
     }
 }
 
-#[get("/api/v1/session-result?<subsession_id>&<team>")]
+#[get("/api/v1/session-result?<subsession_id>&<subsession_ids>&<team>")]
 async fn api_v1_session_result(
-    subsession_id: i64,
+    subsession_id: Option<i64>,
+    subsession_ids: Option<String>,
     team: String,
     db_pool: &State<DbPool>) -> String
 {
+    let mut subsession_ids_vec = Vec::new();
+    if let Some(subsession_id) = subsession_id {
+        subsession_ids_vec.push(subsession_id);
+    }
+
+    if let Some(subsession_ids_str) = subsession_ids {
+        subsession_ids_vec.append(&mut semi_colon_string_to_i64s(&subsession_ids_str));
+    }
+
     let con = db_pool.get().unwrap();
 
-    let raw_data = query_session_result(&con, subsession_id, team);
+    let raw_data = query_session_result(&con, subsession_ids_vec, team);
 
     let mut result = String::new();
 
@@ -314,7 +325,7 @@ async fn api_v1_session_result(
             driver_result.laps_complete,
             driver_result.incidents,
             position_str(&driver_result),
-            subsession_id
+            driver_result.subsession_id
         ).as_str());
     }
 
