@@ -4,8 +4,15 @@ function replaceAll(str, search, replacement) {
 }
 
 window.onload = function() {
+    let textToCopy = "";
+
     let textarea = document.querySelector("#input-area");
     let responseDiv = document.querySelector("#response");
+    let clipboardButton = document.querySelector("#clipboard-button");
+
+    clipboardButton.addEventListener("click", function() {
+        navigator.clipboard.writeText(textToCopy);
+    });
 
     textarea.value = "";
     textarea.addEventListener("input", async function() {
@@ -21,6 +28,8 @@ window.onload = function() {
         let url = "/api/v1/session-result?team=rsmr&subsession_ids=" + unique_subsession_ids.join(";");
         let response = await fetch(url);
         let responseText = await response.text();
+        textToCopy = responseText;
+        clipboardButton.style.visibility = "visible";
         responseDiv.innerHTML = replaceAll(responseText, "\n", "<br/>");
     }, false);
 }
