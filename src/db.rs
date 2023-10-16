@@ -1065,7 +1065,6 @@ pub fn rebuild_tracks_in_db() {
     let mut con = create_db_connection();
     let mut tx = con.transaction().unwrap();
     {
-        tx.execute("DELETE FROM track", ()).unwrap();
         tx.execute("DELETE FROM track_config", ()).unwrap();
 
         let mut ctx = create_db_context(&mut tx);
