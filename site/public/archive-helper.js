@@ -16,7 +16,7 @@ window.onload = function() {
 
     textarea.value = "";
     textarea.addEventListener("input", async function() {
-        const regexp = /https:\/\/members.iracing.com\/membersite\/member\/EventResult\.do\?&subsessionid=([0-9]+)/g;
+        const regexp = /https:\/\/members.iracing.com\/membersite\/member\/EventResult\.do\?&?subsessionid=([0-9]+)/g;
         let matches = [...textarea.value.matchAll(regexp)];
         let subsession_ids = matches.map(e => e[1]);
         if (subsession_ids.length === 0) {
