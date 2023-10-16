@@ -94,17 +94,11 @@ pub enum TrackConfig {
     Table,
     TrackId,
     PackageId,
+    TrackName,
     ConfigName,
     TrackConfigLength,
     CornersPerLap,
     CategoryId, // road/oval/dirt road/dirt oval
-}
-
-#[derive(Iden)]
-pub enum Track {
-    Table,
-    PackageId,
-    TrackName,
 }
 
 #[derive(Iden)]
@@ -141,7 +135,6 @@ pub trait SchemaUtils {
     fn join_driver_result_to_reason_out(&mut self) -> &mut Self;
     fn join_subsession_to_session(&mut self) -> &mut Self;
     fn join_subsession_to_track_config(&mut self) -> &mut Self;
-    fn join_track_config_to_track(&mut self) -> &mut Self;
     fn join_site_team_to_site_team_member(&mut self) -> &mut Self;
     fn join_site_team_member_to_site_team(&mut self) -> &mut Self;
     fn join_site_team_member_to_driver(&mut self) -> &mut Self;
@@ -202,12 +195,6 @@ impl SchemaUtils for SelectStatement {
     fn join_subsession_to_track_config(&mut self) -> &mut Self {
         return self.inner_join(TrackConfig::Table,
             Expr::col((TrackConfig::Table, TrackConfig::TrackId)).equals((Subsession::Table, Subsession::TrackId))
-        );
-    }
-
-    fn join_track_config_to_track(&mut self) -> &mut Self {
-        return self.inner_join(Track::Table,
-            Expr::col((Track::Table, Track::PackageId)).equals((TrackConfig::Table, TrackConfig::PackageId))
         );
     }
 

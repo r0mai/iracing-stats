@@ -66,15 +66,11 @@ CREATE TABLE reason_out(
 CREATE TABLE track_config(
     track_id INTEGER PRIMARY KEY NOT NULL,
     package_id INTEGER NOT NULL, /* a.k.a track_id */
+    track_name TEXT NOT NULL,
     config_name TEXT NOT NULL,
     track_config_length REAL NOT NULL, /* converted to km during db build */
     corners_per_lap INTEGER NOT NULL,
     category_id INTEGER NOT NULL
-);
-
-CREATE TABLE track(
-    package_id INTEGER PRIMARY KEY NOT NULL,
-    track_name TEXT NOT NULL
 );
 
 CREATE TABLE car(

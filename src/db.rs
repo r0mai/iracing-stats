@@ -21,7 +21,6 @@ use crate::schema::{
     DriverResult,
     Simsession,
     TrackConfig,
-    Track,
     Car,
     SiteTeam,
     SchemaUtils,
@@ -121,7 +120,6 @@ pub fn create_r2d2_db_connection_pool() -> DbPool {
 }
 
 pub struct DbContext<'a> {
-    insert_track_statement: rusqlite::Statement<'a>,
     insert_track_config_statement: rusqlite::Statement<'a>,
     insert_car_statement: rusqlite::Statement<'a>,
     insert_subsession_statement: rusqlite::Statement<'a>,
@@ -136,15 +134,11 @@ pub struct DbContext<'a> {
 }
 
 pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a> {
-    let insert_track_statement = tx.prepare(r#"
-        INSERT OR IGNORE INTO track VALUES(
-            ?, /* package_id */
-            ?  /* track_name */
-        );"#).unwrap();
     let insert_track_config_statement = tx.prepare(r#"
         INSERT INTO track_config VALUES(
             ?, /* track_id */
             ?, /* package_id */
+            ?, /* track_name */
             ?, /* config_name */
             ?, /* track_config_length */
             ?, /* corners_per_lap */
@@ -232,7 +226,6 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
     );"#).unwrap();
 
     return DbContext {
-        insert_track_statement,
         insert_track_config_statement,
         insert_car_statement,
         insert_subsession_statement,
@@ -295,13 +288,10 @@ fn miles_to_km(miles: f64) -> f64 {
 }
 
 fn add_track_to_db(ctx: &mut DbContext, track: &Value) {
-    ctx.insert_track_statement.execute((
-        track["package_id"].as_i64().unwrap(),
-        track["track_name"].as_str().unwrap()
-    )).unwrap();
     ctx.insert_track_config_statement.execute((
         track["track_id"].as_i64().unwrap(),
         track["package_id"].as_i64().unwrap(),
+        track["track_name"].as_str().unwrap_or(""),
         track["config_name"].as_str().unwrap_or(""),
         miles_to_km(track["track_config_length"].as_f64().unwrap()),
         track["corners_per_lap"].as_i64().unwrap(),
@@ -824,15 +814,14 @@ pub struct TrackData {
 
 pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
     let (sql, params) = Query::select()
-        .column((Track::Table, Track::PackageId))
+        .column((TrackConfig::Table, TrackConfig::PackageId))
         .column((TrackConfig::Table, TrackConfig::TrackId))
-        .column((Track::Table, Track::TrackName))
+        .column((TrackConfig::Table, TrackConfig::TrackName))
         .column((TrackConfig::Table, TrackConfig::ConfigName))
         .column((TrackConfig::Table, TrackConfig::TrackConfigLength))
         .column((TrackConfig::Table, TrackConfig::CornersPerLap))
         .column((TrackConfig::Table, TrackConfig::CategoryId))
         .from(TrackConfig::Table)
-        .join_track_config_to_track()
         .build_rusqlite(SqliteQueryBuilder);
 
     let mut stmt = con.prepare(sql.as_str()).unwrap();
@@ -917,7 +906,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((Session::Table, Session::SeriesName))
         .column((Session::Table, Session::SessionName))
         .column((Car::Table, Car::CarName))
-        .column((Track::Table, Track::TrackName))
+        .column((TrackConfig::Table, TrackConfig::TrackName))
         .column((TrackConfig::Table, TrackConfig::CornersPerLap))
         .column((DriverResult::Table, DriverResult::FinishPositionInClass))
         .column((DriverResult::Table, DriverResult::Incidents))
@@ -934,7 +923,6 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .join_driver_result_to_reason_out()
         .join_subsession_to_session()
         .join_subsession_to_track_config()
-        .join_track_config_to_track()
         .join_driver_to_site_team_member()
         .join_site_team_member_to_site_team()
         .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
