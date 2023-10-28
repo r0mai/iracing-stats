@@ -14,6 +14,7 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
         .map(session => {
             return {
                 "id": session["subsession_id"],
+                "simsession_number": session["simsession_number"],
                 "start_time": session["start_time"],
                 // hosted sessions have session_name, for official ones we use series_name
                 "series_name": session["session_name"] || session["series_name"],
@@ -129,9 +130,10 @@ function SessionList({driverSessions, trackMap, carMap}) {
                         rows={rows}
                         columns={columns}
                         pageSize={10}
-                        rowsPerPageOptions={[10]}
+                        rowsPerPageOptions={[20]}
                         disableSelectionOnClick
                         autoHeight={true}
+                        getRowId={(row) => row["id"] + "_" + row["simsession_number"]}
                     />
                 </div>
             </div>
