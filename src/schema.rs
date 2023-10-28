@@ -8,6 +8,7 @@ use sea_query::{
 };
 
 use crate::event_type::EventType;
+use crate::simsession_type::SimsessionType;
 use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
 
@@ -246,6 +247,10 @@ pub fn is_main_event() -> SimpleExpr {
 
 pub fn is_event_type(event_type: EventType) -> SimpleExpr {
     return Expr::col((Subsession::Table, Subsession::EventType)).eq(event_type.to_db_type());
+}
+
+pub fn is_simsession_type(simsession_type: SimsessionType) -> SimpleExpr {
+    return Expr::col((Simsession::Table, Simsession::SimsessionType)).eq(simsession_type.to_db_type());
 }
 
 pub fn is_category_type(category_type: CategoryType) -> SimpleExpr {

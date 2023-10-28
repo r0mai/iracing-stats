@@ -25,12 +25,14 @@ use crate::schema::{
     SiteTeam,
     SchemaUtils,
     SiteTeamMember,
+    ReasonOut,
     is_event_type,
-    is_main_event, is_official, ReasonOut
+    is_main_event, is_simsession_type,
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
+use crate::simsession_type::SimsessionType;
 
 const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
@@ -926,8 +928,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .join_driver_to_site_team_member()
         .join_site_team_member_to_site_team()
         .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
-        .and_where(is_main_event())
-        .and_where(is_event_type(EventType::Race))
+        .and_where(is_simsession_type(SimsessionType::Race))
         .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
         // .and_where(is_official())
         .build_rusqlite(SqliteQueryBuilder);

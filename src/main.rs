@@ -7,6 +7,7 @@ mod db;
 mod iracing_client;
 mod category_type;
 mod event_type;
+mod simsession_type;
 mod driverid;
 mod motec_xml;
 mod discord_bot;
@@ -153,7 +154,7 @@ async fn tokio_main(args: &Args) {
     }
 
     if args.test_send_discord_update {
-        discord_hook::send_discord_update(vec![63740038, 61145537, 13059307], true).await;
+        discord_hook::send_discord_update(vec![63740038, 61145537, 13059307, 64483246], true).await;
         // discord_hook::send_discord_update(vec![16936417i64], true).await; // This one has a weird reason_out
     }
 
