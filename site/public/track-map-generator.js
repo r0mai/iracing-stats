@@ -93,7 +93,8 @@ async function generateSVG(container, assetData, trackID) {
 }
 
 window.onload = async function() {
+    let trackID = new URLSearchParams(location.search).get("track_id") || "1";
     let container = document.querySelector("#svg-container");
     let assetData = await downloadTrackAssetData();
-    await generateSVG(container, assetData, "1");
+    await generateSVG(container, assetData, trackID);
 }
