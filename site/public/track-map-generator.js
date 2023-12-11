@@ -3,14 +3,36 @@ function createSVGElement(name) {
 }
 
 async function downloadTrackAssetData() {
-    let assetData = await fetch("track-asset-data.json");
-    return await assetData.json();
+    let response = await fetch("track-asset-data.json");
+    return await response.json();
 }
 
-async function generateSVG(container, assetData, trackID) {
-    let trackData = assetData[trackID];
-    let prefix = trackData["track_map"];
-    let layerSuffixes = trackData["track_map_layers"];
+async function downloadTrackData(trackID) {
+    let response = await fetch("/api/v1/track-data");
+    try  {
+        let result = await response.json();
+        if (!result) {
+            return null;
+        }
+        for (let track of result["tracks"]) {
+            if (track["track_id"] == trackID) {
+                return track;
+            }
+        }
+    } catch (x) {}
+    return null;
+}
+
+function round(value, precision) {
+    var multiplier = Math.pow(10, precision || 0);
+    return Math.round(value * multiplier) / multiplier;
+}
+
+async function generateSVG(container, trackID) {
+    let trackAssetData = (await downloadTrackAssetData())[trackID];
+    let trackData = await downloadTrackData(trackID);
+    let layerPrefix = trackAssetData["track_map"];
+    let layerSuffixes = trackAssetData["track_map_layers"];
 
     let layers = [
         // { name: "background" },
@@ -49,7 +71,7 @@ async function generateSVG(container, assetData, trackID) {
         trackMapG.setAttribute("transform", `translate(${trackTranslateX}, ${trackTranslateY}) scale(${trackScale})`)
 
         for (let layer of layers) {
-            let layerURL = prefix + layerSuffixes[layer.name];
+            let layerURL = layerPrefix + layerSuffixes[layer.name];
             let svgResponse = await fetch(layerURL);
             let svgText = await svgResponse.text();
             let layerGroup = createSVGElement("g");
@@ -90,11 +112,37 @@ async function generateSVG(container, assetData, trackID) {
         }
         rootSVG.appendChild(linesG);
     }
+
+    // track data
+    {
+        function createDataText() {
+            let text = createSVGElement("text");
+            text.setAttribute("font-size", "6");
+            return text;
+        }
+
+        let trackDataG = createSVGElement("g");
+        {
+            let cornersPerLap = trackData?.corners_per_lap || 99;
+            let cornersPerLapText = createDataText();
+            cornersPerLapText.setAttribute("transform", "translate(227 20)")
+            cornersPerLapText.innerHTML = `- Corners per lap: ${cornersPerLap}`;
+            trackDataG.appendChild(cornersPerLapText);
+        }
+
+        {
+            let trackLength = trackData?.track_config_length || 3.14;
+            let trackLengthText = createDataText();
+            trackLengthText.setAttribute("transform", "translate(227 26)")
+            trackLengthText.innerHTML = `- Track length: ${round(trackLength, 2)}km`;
+            trackDataG.appendChild(trackLengthText);
+        }
+        rootSVG.appendChild(trackDataG);
+    }
 }
 
 window.onload = async function() {
     let trackID = new URLSearchParams(location.search).get("track_id") || "1";
     let container = document.querySelector("#svg-container");
-    let assetData = await downloadTrackAssetData();
-    await generateSVG(container, assetData, trackID);
+    await generateSVG(container, trackID);
 }
