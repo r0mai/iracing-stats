@@ -19,7 +19,7 @@ use crate::db::{
     query_customer_cust_ids,
     query_driver_sessions,
     query_site_team_members,
-    query_team_results, query_session_result, SessionResult
+    query_team_results, query_session_result, SessionResult, TrackData
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -65,6 +65,18 @@ async fn api_v1_driver_info(
     }
 }
 
+fn track_data_to_json(track: TrackData) -> Value {
+    return json!({
+        "package_id": track.package_id,
+        "track_id": track.track_id,
+        "track_name": track.track_name,
+        "config_name": track.config_name,
+        "track_config_length": track.track_config_length,
+        "corners_per_lap": track.corners_per_lap,
+        "category": track.category.to_db_type()
+    });
+}
+
 #[get("/api/v1/track-car-data")]
 async fn api_v1_track_car_data(db_pool: &State<DbPool>) -> Value {
     // TODO caching
@@ -75,15 +87,7 @@ async fn api_v1_track_car_data(db_pool: &State<DbPool>) -> Value {
 
     let mut tracks = Vec::new();
     for track in track_data {
-        tracks.push(json!({
-            "package_id": track.package_id,
-            "track_id": track.track_id,
-            "track_name": track.track_name,
-            "config_name": track.config_name,
-            "track_config_length": track.track_config_length,
-            "corners_per_lap": track.corners_per_lap,
-            "category": track.category.to_db_type()
-        }));
+        tracks.push(track_data_to_json(track));
     }
 
     let mut cars = Vec::new();
@@ -98,6 +102,23 @@ async fn api_v1_track_car_data(db_pool: &State<DbPool>) -> Value {
     return json!({
         "tracks": tracks,
         "cars": cars
+    });
+}
+
+#[get("/api/v1/track-data")]
+async fn api_v1_track_data(db_pool: &State<DbPool>) -> Value {
+    // TODO caching
+    let con = db_pool.get().unwrap();
+
+    let track_data = query_track_data(&con);
+
+    let mut tracks = Vec::new();
+    for track in track_data {
+        tracks.push(track_data_to_json(track));
+    }
+
+    return json!({
+        "tracks": tracks,
     });
 }
 
@@ -363,6 +384,7 @@ pub async fn start_rocket_server(enable_https: bool) {
             api_v1_customers,
             api_v1_customer_names,
             api_v1_driver_info,
+            api_v1_track_data,
             api_v1_track_car_data,
             api_v1_team_results,
             api_v1_team_results_csv,
