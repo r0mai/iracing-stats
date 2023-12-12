@@ -28,6 +28,30 @@ function round(value, precision) {
     return Math.round(value * multiplier) / multiplier;
 }
 
+function addStyle(rootSVG) {
+    let styleElement = createSVGElement("style");
+
+    styleElement.innerHTML = `
+         @font-face {
+            font-family: "Neuropolitical";
+            src: url("neuropolitical.otf");
+        }
+    `;
+
+    rootSVG.appendChild(styleElement);
+}
+
+function createLineElement(x1, y1, x2, y2) {
+    let line = createSVGElement("line");
+    line.setAttribute("x1", x1);
+    line.setAttribute("y1", y1);
+    line.setAttribute("x2", x2);
+    line.setAttribute("y2", y2);
+    line.setAttribute("stroke", "black");
+    line.setAttribute("stroke-width", 0.5);
+    return line;
+}
+
 async function generateSVG(container, trackID) {
     let trackAssetData = (await downloadTrackAssetData())[trackID];
     let trackData = await downloadTrackData(trackID);
@@ -45,6 +69,8 @@ async function generateSVG(container, trackID) {
 
     let rootSVG = createSVGElement("svg");
     container.appendChild(rootSVG);
+
+    addStyle(rootSVG);
 
     rootSVG.setAttribute("width", "297mm");
     rootSVG.setAttribute("height", "210mm");
@@ -81,6 +107,16 @@ async function generateSVG(container, trackID) {
             subSVG.setAttribute("width", 1920);
             subSVG.setAttribute("height", 1080);
 
+            if (layer.name == "turns") {
+                let styleTag = subSVG.querySelector("style");
+                let css = styleTag.innerHTML;
+                const fontFamilyRegex = /font-family:'.*'/;
+                const fontSizeRegex = /font-size:[^;]*;/;
+                css = css.replace(fontFamilyRegex, "font-family:'Neuropolitical'");
+                css = css.replace(fontSizeRegex, "font-size:26px");
+                styleTag.innerHTML = css;
+            }
+
             trackMapG.appendChild(layerGroup);
         }
 
@@ -91,22 +127,9 @@ async function generateSVG(container, trackID) {
     {
         let linesG = createSVGElement("g");
         for (let i = 0; i < 12; ++i) {
-            let lineLeft = createSVGElement("line");
-            let lineRight = createSVGElement("line");
             let y = 50 + i * 10;
-            lineLeft.setAttribute("x1", 10);
-            lineLeft.setAttribute("y1", y);
-            lineLeft.setAttribute("x2", 70);
-            lineLeft.setAttribute("y2", y);
-            lineLeft.setAttribute("stroke", "black");
-            lineLeft.setAttribute("stroke-width", 0.5);
-
-            lineRight.setAttribute("x1", 227);
-            lineRight.setAttribute("y1", y);
-            lineRight.setAttribute("x2", 287);
-            lineRight.setAttribute("y2", y);
-            lineRight.setAttribute("stroke", "black");
-            lineRight.setAttribute("stroke-width", 0.5);
+            let lineLeft = createLineElement(10, y, 70, y);
+            let lineRight = createLineElement(227, y, 287, y);
             linesG.appendChild(lineLeft);
             linesG.appendChild(lineRight);
         }
@@ -117,25 +140,41 @@ async function generateSVG(container, trackID) {
     {
         function createDataText() {
             let text = createSVGElement("text");
-            text.setAttribute("font-size", "6");
+            text.setAttribute("font-size", "4");
+            text.setAttribute("font-family", "Neuropolitical");
             return text;
         }
 
         let trackDataG = createSVGElement("g");
+        let cursorY = 20;
+        let cursorAdvanceY = 6;
+        {
+            let text = createDataText();
+            text.setAttribute("transform", `translate(227 ${cursorY})`)
+            text.innerHTML = `- My car:`;
+            trackDataG.appendChild(text);
+            let line = createLineElement(250, cursorY + 0.75, 287, cursorY + 0.75);
+            trackDataG.appendChild(line);
+            
+            cursorY += cursorAdvanceY;
+        }
+
         {
             let cornersPerLap = trackData?.corners_per_lap || 99;
-            let cornersPerLapText = createDataText();
-            cornersPerLapText.setAttribute("transform", "translate(227 20)")
-            cornersPerLapText.innerHTML = `- Corners per lap: ${cornersPerLap}`;
-            trackDataG.appendChild(cornersPerLapText);
+            let text = createDataText();
+            text .setAttribute("transform", `translate(227 ${cursorY})`)
+            text.innerHTML = `- Corners per lap: ${cornersPerLap}`;
+            trackDataG.appendChild(text);
+            cursorY += cursorAdvanceY;
         }
 
         {
             let trackLength = trackData?.track_config_length || 3.14;
-            let trackLengthText = createDataText();
-            trackLengthText.setAttribute("transform", "translate(227 26)")
-            trackLengthText.innerHTML = `- Track length: ${round(trackLength, 2)}km`;
-            trackDataG.appendChild(trackLengthText);
+            let text = createDataText();
+            text.setAttribute("transform", `translate(227 ${cursorY})`)
+            text.innerHTML = `- Track length: ${round(trackLength, 2)}km`;
+            trackDataG.appendChild(text);
+            cursorY += cursorAdvanceY;
         }
         rootSVG.appendChild(trackDataG);
     }
