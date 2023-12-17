@@ -211,6 +211,38 @@ async function generateSVG(container, trackID) {
         text.innerHTML = `TRACKNOTES`;
         rootSVG.appendChild(text);
     }
+
+    // url
+    {
+        let text = createDataText(2);
+        text.setAttribute("transform", `translate(4 208)`);
+        text.innerHTML = `WWW.RSMRACING.HU`;
+        rootSVG.appendChild(text);
+    }
+
+    // track name
+    {
+        let track_name = trackData?.track_name || "Sebring International Raceway";
+        let config_name = trackData?.config_name || "International";
+
+        {
+            let text = createDataText(8);
+            text.setAttribute("x", "50%");
+            text.setAttribute("y", "10");
+            text.setAttribute("text-anchor", "middle");
+            text.innerHTML = track_name;
+            rootSVG.appendChild(text);
+        }
+
+        {
+            let text = createDataText(6);
+            text.setAttribute("x", "50%");
+            text.setAttribute("y", "18");
+            text.setAttribute("text-anchor", "middle");
+            text.innerHTML = `${config_name} <${trackID}>`;
+            rootSVG.appendChild(text);
+        }
+    }
 }
 
 window.onload = async function() {
