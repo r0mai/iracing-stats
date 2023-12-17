@@ -113,7 +113,7 @@ async function generateSVG(container, trackID) {
                 const fontFamilyRegex = /font-family:'.*'/;
                 const fontSizeRegex = /font-size:[^;]*;/;
                 css = css.replace(fontFamilyRegex, "font-family:'Neuropolitical'");
-                css = css.replace(fontSizeRegex, "font-size:26px");
+                css = css.replace(fontSizeRegex, "font-size:24px");
                 styleTag.innerHTML = css;
             }
 
@@ -162,7 +162,7 @@ async function generateSVG(container, trackID) {
         {
             let cornersPerLap = trackData?.corners_per_lap || 99;
             let text = createDataText();
-            text .setAttribute("transform", `translate(227 ${cursorY})`)
+            text.setAttribute("transform", `translate(227 ${cursorY})`)
             text.innerHTML = `- Corners per lap: ${cornersPerLap}`;
             trackDataG.appendChild(text);
             cursorY += cursorAdvanceY;
@@ -177,6 +177,14 @@ async function generateSVG(container, trackID) {
             cursorY += cursorAdvanceY;
         }
         rootSVG.appendChild(trackDataG);
+    }
+
+    // my notes text
+    {
+        let text = createDataText();
+        text.setAttribute("transform", `translate(27 32)`);
+        text.innerHTML = `My notes`;
+        rootSVG.appendChild(text);
     }
 }
 
