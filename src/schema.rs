@@ -102,6 +102,7 @@ pub enum TrackConfig {
     CategoryId, // road/oval/dirt road/dirt oval
     GridStalls,
     PitRoadSpeedLimit,
+    NumberPitstalls,
 }
 
 #[derive(Iden)]

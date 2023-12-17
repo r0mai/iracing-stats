@@ -72,7 +72,8 @@ CREATE TABLE track_config(
     corners_per_lap INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
     grid_stalls INTEGER NOT NULL,
-    pit_road_speed_limit INTEGER NOT NULL /* converted to km/h during db build */
+    pit_road_speed_limit INTEGER NOT NULL, /* converted to km/h during db build */
+    number_pitstalls INTEGER NOT NULL
 );
 
 CREATE TABLE car(

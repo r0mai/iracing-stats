@@ -146,7 +146,8 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* corners_per_lap */
             ?, /* category_id */
             ?, /* grid_stalls */
-            ?  /* pit_road_speed_limit */
+            ?, /* pit_road_speed_limit */
+            ?  /* number_pitstalls */
         );"#).unwrap();
     let insert_car_statement = tx.prepare(r#"
         INSERT INTO car VALUES(
@@ -301,7 +302,8 @@ fn add_track_to_db(ctx: &mut DbContext, track: &Value) {
         track["corners_per_lap"].as_i64().unwrap(),
         track["category_id"].as_i64().unwrap(),
         track["grid_stalls"].as_i64().unwrap(),
-        miles_to_km(track["pit_road_speed_limit"].as_f64().unwrap_or(0.0)) as i64 // need to check rounding here to match iRacing
+        miles_to_km(track["pit_road_speed_limit"].as_f64().unwrap_or(0.0)) as i64, // need to check rounding here to match iRacing
+        track["number_pitstalls"].as_i64().unwrap(),
     )).unwrap();
 }
 
@@ -818,6 +820,7 @@ pub struct TrackData {
     pub category: CategoryType,
     pub grid_stalls: i32,
     pub pit_road_speed_limit: i32,
+    pub number_pitstalls: i32,
 }
 
 pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
@@ -831,6 +834,7 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
         .column((TrackConfig::Table, TrackConfig::CategoryId))
         .column((TrackConfig::Table, TrackConfig::GridStalls))
         .column((TrackConfig::Table, TrackConfig::PitRoadSpeedLimit))
+        .column((TrackConfig::Table, TrackConfig::NumberPitstalls))
         .from(TrackConfig::Table)
         .build_rusqlite(SqliteQueryBuilder);
 
@@ -849,6 +853,7 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
         let category = CategoryType::from_i32(row.get(6).unwrap()).unwrap();
         let grid_stalls: i32 = row.get(7).unwrap();
         let pit_road_speed_limit: i32 = row.get(8).unwrap();
+        let number_pitstalls : i32 = row.get(9).unwrap();
 
         values.push(TrackData{
             package_id,
@@ -859,7 +864,8 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
             corners_per_lap,
             category,
             grid_stalls,
-            pit_road_speed_limit
+            pit_road_speed_limit,
+            number_pitstalls,
         });
     }
 

@@ -76,6 +76,7 @@ fn track_data_to_json(track: TrackData) -> Value {
         "category": track.category.to_db_type(),
         "grid_stalls": track.grid_stalls,
         "pit_road_speed_limit": track.pit_road_speed_limit,
+        "number_pitstalls": track.number_pitstalls,
     });
 }
 
