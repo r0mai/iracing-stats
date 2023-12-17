@@ -138,9 +138,10 @@ async function generateSVG(container, trackID) {
 
     // track data
     {
-        function createDataText() {
+        function createDataText(fontSize) {
+            fontSize = fontSize || 4;
             let text = createSVGElement("text");
-            text.setAttribute("font-size", "4");
+            text.setAttribute("font-size", fontSize);
             text.setAttribute("font-family", "Neuropolitical");
             return text;
         }
@@ -184,6 +185,25 @@ async function generateSVG(container, trackID) {
         let text = createDataText();
         text.setAttribute("transform", `translate(27 32)`);
         text.innerHTML = `My notes`;
+        rootSVG.appendChild(text);
+    }
+
+    // rsm logo
+    {
+        let image = createSVGElement("image");
+        image.setAttribute("x", 3);
+        image.setAttribute("y", 3);
+        image.setAttribute("width", 30.4);
+        image.setAttribute("height", 10);
+        image.setAttribute("href", "rsm.png");
+        rootSVG.appendChild(image);
+    }
+
+    // tracknotes text
+    {
+        let text = createDataText(3);
+        text.setAttribute("transform", `translate(6 18)`);
+        text.innerHTML = `TRACKNOTES`;
         rootSVG.appendChild(text);
     }
 }
