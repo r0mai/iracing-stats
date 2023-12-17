@@ -152,8 +152,8 @@ async function generateSVG(container, trackID) {
         }
 
         let trackDataG = createSVGElement("g");
-        let cursorY = 30;
-        let cursorAdvanceY = 6;
+        let cursorY = 28;
+        let cursorAdvanceY = 5;
         {
             let text = createDataText();
             text.setAttribute("transform", `translate(227 ${cursorY})`)
@@ -178,10 +178,29 @@ async function generateSVG(container, trackID) {
             let trackLength = trackData?.track_config_length || 3.14;
             let text = createDataText();
             text.setAttribute("transform", `translate(227 ${cursorY})`)
-            text.innerHTML = `- Track length: ${round(trackLength, 2)}km`;
+            text.innerHTML = `- Track length: ${round(trackLength * 1000, 0)} M`;
             trackDataG.appendChild(text);
             cursorY += cursorAdvanceY;
         }
+
+        {
+            let gridStalls = trackData?.grid_stalls || 69;
+            let text = createDataText();
+            text.setAttribute("transform", `translate(227 ${cursorY})`)
+            text.innerHTML = `- Number of pits: ${gridStalls}`;
+            trackDataG.appendChild(text);
+            cursorY += cursorAdvanceY;
+        }
+
+        {
+            let pitRoadSpeedLimit = trackData?.pit_road_speed_limit || 69;
+            let text = createDataText();
+            text.setAttribute("transform", `translate(227 ${cursorY})`)
+            text.innerHTML = `- Pit Speed Limit: ${pitRoadSpeedLimit} KM/H`;
+            trackDataG.appendChild(text);
+            cursorY += cursorAdvanceY;
+        }
+
         rootSVG.appendChild(trackDataG);
     }
 
