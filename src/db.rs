@@ -144,7 +144,9 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* config_name */
             ?, /* track_config_length */
             ?, /* corners_per_lap */
-            ?  /* category_id */
+            ?, /* category_id */
+            ?, /* grid_stalls */
+            ?  /* pit_road_speed_limit */
         );"#).unwrap();
     let insert_car_statement = tx.prepare(r#"
         INSERT INTO car VALUES(
@@ -297,7 +299,9 @@ fn add_track_to_db(ctx: &mut DbContext, track: &Value) {
         track["config_name"].as_str().unwrap_or(""),
         miles_to_km(track["track_config_length"].as_f64().unwrap()),
         track["corners_per_lap"].as_i64().unwrap(),
-        track["category_id"].as_i64().unwrap()
+        track["category_id"].as_i64().unwrap(),
+        track["grid_stalls"].as_i64().unwrap(),
+        miles_to_km(track["pit_road_speed_limit"].as_f64().unwrap_or(0.0)) as i64 // need to check rounding here to match iRacing
     )).unwrap();
 }
 

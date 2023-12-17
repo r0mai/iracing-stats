@@ -100,6 +100,8 @@ pub enum TrackConfig {
     TrackConfigLength,
     CornersPerLap,
     CategoryId, // road/oval/dirt road/dirt oval
+    GridStalls,
+    PitRoadSpeedLimit,
 }
 
 #[derive(Iden)]
