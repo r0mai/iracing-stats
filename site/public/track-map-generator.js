@@ -93,7 +93,7 @@ async function generateSVG(container, trackID) {
         // track SVG is 1920 * 1080
         let trackScale = (297/1920) * (5/9);
         let trackTranslateX = 297 * (2/9);
-        let trackTranslateY = 210 * (1/4);
+        let trackTranslateY = 60;
         trackMapG.setAttribute("transform", `translate(${trackTranslateX}, ${trackTranslateY}) scale(${trackScale})`)
 
         for (let layer of layers) {
@@ -132,7 +132,7 @@ async function generateSVG(container, trackID) {
     {
         let linesG = createSVGElement("g");
         for (let i = 0; i < 12; ++i) {
-            let y = 50 + i * 10;
+            let y = 60 + i * 10;
             let lineLeft = createLineElement(10, y, 70, y);
             let lineRight = createLineElement(227, y, 287, y);
             linesG.appendChild(lineLeft);
@@ -152,7 +152,7 @@ async function generateSVG(container, trackID) {
         }
 
         let trackDataG = createSVGElement("g");
-        let cursorY = 20;
+        let cursorY = 30;
         let cursorAdvanceY = 6;
         {
             let text = createDataText();
@@ -188,7 +188,7 @@ async function generateSVG(container, trackID) {
     // my notes text
     {
         let text = createDataText();
-        text.setAttribute("transform", `translate(27 32)`);
+        text.setAttribute("transform", `translate(27 42)`);
         text.innerHTML = `My notes`;
         rootSVG.appendChild(text);
     }
