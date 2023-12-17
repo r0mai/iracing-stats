@@ -184,10 +184,10 @@ async function generateSVG(container, trackID) {
         }
 
         {
-            let gridStalls = trackData?.grid_stalls || 69;
+            let numberPitstalls = trackData?.number_pitstalls || 69;
             let text = createDataText();
             text.setAttribute("transform", `translate(227 ${cursorY})`)
-            text.innerHTML = `- Number of pits: ${gridStalls}`;
+            text.innerHTML = `- Number of pits: ${numberPitstalls}`;
             trackDataG.appendChild(text);
             cursorY += cursorAdvanceY;
         }
