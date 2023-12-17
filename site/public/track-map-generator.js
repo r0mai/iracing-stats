@@ -107,11 +107,16 @@ async function generateSVG(container, trackID) {
             subSVG.setAttribute("width", 1920);
             subSVG.setAttribute("height", 1080);
 
+            const fontFamilyRegex = /font-family:'.*'/;
+            const fontSizeRegex = /font-size:[^;]*;/;
+            const fillRegex = /fill:[^;]*;/;
+
+            let styleTag = subSVG.querySelector("style");
+            let css = styleTag.innerHTML;
+
+            css = css.replace(fillRegex, "fill:#000");
+
             if (layer.name == "turns") {
-                let styleTag = subSVG.querySelector("style");
-                let css = styleTag.innerHTML;
-                const fontFamilyRegex = /font-family:'.*'/;
-                const fontSizeRegex = /font-size:[^;]*;/;
                 css = css.replace(fontFamilyRegex, "font-family:'Neuropolitical'");
                 css = css.replace(fontSizeRegex, "font-size:24px");
                 styleTag.innerHTML = css;
