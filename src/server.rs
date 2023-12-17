@@ -73,7 +73,9 @@ fn track_data_to_json(track: TrackData) -> Value {
         "config_name": track.config_name,
         "track_config_length": track.track_config_length,
         "corners_per_lap": track.corners_per_lap,
-        "category": track.category.to_db_type()
+        "category": track.category.to_db_type(),
+        "grid_stalls": track.grid_stalls,
+        "pit_road_speed_limit": track.pit_road_speed_limit,
     });
 }
 

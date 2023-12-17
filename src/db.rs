@@ -816,6 +816,8 @@ pub struct TrackData {
     pub track_config_length: f32,
     pub corners_per_lap: i32,
     pub category: CategoryType,
+    pub grid_stalls: i32,
+    pub pit_road_speed_limit: i32,
 }
 
 pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
@@ -827,6 +829,8 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
         .column((TrackConfig::Table, TrackConfig::TrackConfigLength))
         .column((TrackConfig::Table, TrackConfig::CornersPerLap))
         .column((TrackConfig::Table, TrackConfig::CategoryId))
+        .column((TrackConfig::Table, TrackConfig::GridStalls))
+        .column((TrackConfig::Table, TrackConfig::PitRoadSpeedLimit))
         .from(TrackConfig::Table)
         .build_rusqlite(SqliteQueryBuilder);
 
@@ -843,6 +847,8 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
         let track_config_length: f32 = row.get(4).unwrap();
         let corners_per_lap: i32 = row.get(5).unwrap();
         let category = CategoryType::from_i32(row.get(6).unwrap()).unwrap();
+        let grid_stalls: i32 = row.get(7).unwrap();
+        let pit_road_speed_limit: i32 = row.get(8).unwrap();
 
         values.push(TrackData{
             package_id,
@@ -851,7 +857,9 @@ pub fn query_track_data(con: &Connection) -> Vec<TrackData> {
             config_name,
             track_config_length,
             corners_per_lap,
-            category
+            category,
+            grid_stalls,
+            pit_road_speed_limit
         });
     }
 
