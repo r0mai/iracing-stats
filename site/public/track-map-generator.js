@@ -81,7 +81,7 @@ async function generateSVG(container, trackID) {
         let background = createSVGElement("rect");
         background.setAttribute("width", "100%");
         background.setAttribute("height", "100%");
-        background.setAttribute("fill", "#444");
+        background.setAttribute("fill", "#FFF");
 
         rootSVG.appendChild(background);
     }
