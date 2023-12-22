@@ -8,6 +8,7 @@ use rocket::State;
 use rusqlite::Connection;
 use sea_query::SubQueryStatement;
 
+use crate::dirs::get_static_dir;
 use crate::driverid::DriverId;
 use crate::db::{
     DbPool,
@@ -365,8 +366,8 @@ pub async fn start_rocket_server(enable_https: bool) {
     let mut figment = rocket::Config::figment();
     if enable_https {
         figment = figment
-            .merge(("tls.certs", "path/to/certs.pem"))
-            .merge(("tls.key", vec![0; 32]));
+            .merge(("tls.certs", get_static_dir().join("static-data/ssl/r0mai_io.crt")))
+            .merge(("tls.key", get_static_dir().join("static-data/ssl/r0mai_io_private_key.rsa")))
     }
 
     let site_dir = match env::var(SITE_DIR_ENV_VAR) {
@@ -381,7 +382,6 @@ pub async fn start_rocket_server(enable_https: bool) {
     let server_logger = crate::server_logger::ServerLogger::new(PathBuf::from(log_file));
 
     let _result = rocket::custom(figment)
-        // .mount("/static", FileServer::from("static"))
         .mount("/iracing-stats", FileServer::new(site_dir, Options::Index))
         .mount("/", routes![
             api_v1_customers,

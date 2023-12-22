@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::{fs, path::PathBuf, path::Path, io::Write, env};
+use std::{fs, path::PathBuf, path::Path, io::Write};
 use r2d2_sqlite::SqliteConnectionManager;
 use serde_json::{self, Value};
 use rusqlite;
@@ -34,38 +34,17 @@ use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
 use crate::simsession_type::SimsessionType;
 
+use crate::dirs::{
+    get_base_dir,
+    get_static_dir
+};
+
 const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
 const SEASON_DATA_FILE: &str = "data/seasons.json";
 const SITE_TEAMS_DATA_FILE: &str = "static-data/site-teams.json";
 const SQLITE_DB_FILE: &str = "stats.db";
-const BASE_DIR_ENV_VAR: &str = "IRACING_STATS_BASE_DIR";
-const STATIC_DIR_ENV_VAR: &str = "IRACING_STATS_STATIC_DIR";
-
-fn get_base_dir() -> &'static Path {
-    lazy_static! {
-        static ref BASE_DIR: PathBuf = PathBuf::from(
-            match env::var(BASE_DIR_ENV_VAR) {
-                Ok(value) => value,
-                Err(_error) => ".".to_owned()
-            }
-        );
-    }
-    return BASE_DIR.as_path();
-}
-
-fn get_static_dir() -> &'static Path {
-    lazy_static! {
-        static ref STATIC_DIR: PathBuf = PathBuf::from(
-            match env::var(STATIC_DIR_ENV_VAR) {
-                Ok(value) => value,
-                Err(_error) => ".".to_owned()
-            }
-        );
-    }
-    return STATIC_DIR.as_path();
-}
 
 pub fn get_sqlite_db_file() -> &'static Path {
     lazy_static! {

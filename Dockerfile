@@ -53,4 +53,4 @@ ENV IRACING_STATS_LOG_FILE=/iracing-stats-dir/server.log
 
 EXPOSE 8000
 
-CMD echo "Starting server" && ROCKET_LOG_LEVEL=normal ROCKET_ADDRESS=0.0.0.0 iracing-stats --server
+CMD echo "Starting server" && ROCKET_LOG_LEVEL=debug ROCKET_ADDRESS=0.0.0.0 iracing-stats --server --enable-https

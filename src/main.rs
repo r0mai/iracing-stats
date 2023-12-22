@@ -12,6 +12,7 @@ mod driverid;
 mod motec_xml;
 mod discord_bot;
 mod discord_hook;
+mod dirs;
 
 use clap::Parser;
 use std::fs;
