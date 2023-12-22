@@ -27,7 +27,7 @@ fn finish_reason_string(reason_out: &String) -> String {
 
 fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
     let r0mai_io_url = format!(
-        "http://r0mai.io/iracing-stats?team={}&type=session-list&selected={}",
+        "https://r0mai.io/iracing-stats?team={}&type=session-list&selected={}",
         urlencoding::encode(team_name.as_str()),
         urlencoding::encode(result.driver_name.as_str())
     );
