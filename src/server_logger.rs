@@ -1,5 +1,5 @@
 use rocket::{fairing::Fairing, Request};
-use std::fs::{OpenOptions, File};
+use std::fs::OpenOptions;
 use std::path::PathBuf;
 use std::io::prelude::*;
 

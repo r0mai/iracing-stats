@@ -1,12 +1,10 @@
 use std::env;
 use std::path::PathBuf;
 
-use std::io::BufWriter;
 use rocket::fs::{FileServer, Options};
 use rocket::State;
 
 use rusqlite::Connection;
-use sea_query::SubQueryStatement;
 
 use crate::dirs::get_static_dir;
 use crate::driverid::DriverId;
