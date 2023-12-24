@@ -1053,6 +1053,7 @@ pub struct SiteTeamDriverReport {
     pub incidents: i64,
     pub time_on_track: i64,
     pub distance_driven: f32,
+    pub corners: i64,
 
     // road irating
     pub first_irating: i64,
@@ -1074,6 +1075,7 @@ pub fn query_site_team_report(
             .expr(Func::sum(Expr::col((DriverResult::Table, DriverResult::Incidents))))
             .expr_total_time()
             .expr_total_distance()
+            .expr(Func::sum(Expr::expr(Expr::col(DriverResult::LapsComplete)).mul(Expr::col(TrackConfig::CornersPerLap))))
             .from(DriverResult::Table)
             .join_driver_result_to_subsession()
             .join_driver_result_to_simsession()
@@ -1099,6 +1101,7 @@ pub fn query_site_team_report(
                 incidents: row.get(2).unwrap(),
                 time_on_track: row.get(3).unwrap(),
                 distance_driven: row.get(4).unwrap(),
+                corners: row.get(5).unwrap(),
                 first_irating: -2,
                 last_irating: -2,
             });
