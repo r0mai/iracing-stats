@@ -18,7 +18,7 @@ use crate::db::{
     query_customer_cust_ids,
     query_driver_sessions,
     query_site_team_members,
-    query_team_results, query_session_result, SessionResult, TrackData
+    query_team_results, query_session_result, SessionResult, TrackData, query_site_team_report
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -355,6 +355,37 @@ async fn api_v1_session_result(
     return result;
 }
 
+#[get("/api/v1/site-team-report?<site_team>&<start_date>&<end_date>")]
+async fn api_v1_site_team_report(
+    site_team: String,
+    start_date: String,
+    end_date: String,
+    db_pool: &State<DbPool>) -> Value
+{
+    let con = db_pool.get().unwrap();
+
+    let raw_data = query_site_team_report(
+        &con,
+        site_team,
+        start_date,
+        end_date
+    );
+
+    let values: Vec<Value> = raw_data.iter().map(|data| json!({
+        "display_name": data.display_name,
+        "laps_complete": data.laps_complete,
+        "incidents": data.incidents,
+        "time_on_track": data.time_on_track,
+        "distance_driven": data.distance_driven,
+        "min_irating": data.min_irating,
+        "max_irating": data.max_irating,
+    })).collect();
+
+    return json!({
+        "results": values
+    });
+}
+
 pub async fn start_rocket_server(enable_https: bool) {
     const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
     const LOG_FILE_ENV_VAR: &str = "IRACING_STATS_LOG_FILE";
@@ -389,7 +420,8 @@ pub async fn start_rocket_server(enable_https: bool) {
             api_v1_track_car_data,
             api_v1_team_results,
             api_v1_team_results_csv,
-            api_v1_session_result
+            api_v1_session_result,
+            api_v1_site_team_report,
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)

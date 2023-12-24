@@ -12,7 +12,7 @@ use sea_query::{
     Query,
     Expr,
     Order,
-    SqliteQueryBuilder,
+    SqliteQueryBuilder, Func,
 };
 use crate::schema::{
     Driver,
@@ -1043,6 +1043,108 @@ pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_tea
             reason_out: row.get(9).unwrap(),
             subsession_id: row.get(10).unwrap()
         });
+    }
+    return result;
+}
+
+pub struct SiteTeamDriverReport {
+    pub display_name: String,
+    pub laps_complete: i64,
+    pub incidents: i64,
+    pub time_on_track: i64,
+    pub distance_driven: f32,
+
+    // road irating
+    pub min_irating: i64,
+    pub max_irating: i64,
+}
+
+pub fn query_site_team_report(
+    con: &Connection,
+    site_team_name: String,
+    start_date: String,
+    end_date: String) -> Vec<SiteTeamDriverReport>
+{
+    let mut result = Vec::new();
+
+    {
+        let (sql, params) = Query::select()
+            .column((Driver::Table, Driver::DisplayName))
+            .expr_laps_complete()
+            .expr(Func::sum(Expr::col((DriverResult::Table, DriverResult::Incidents))))
+            .expr_total_time()
+            .expr_total_distance()
+            .from(DriverResult::Table)
+            .join_driver_result_to_subsession()
+            .join_driver_result_to_simsession()
+            .join_driver_result_to_driver()
+            .join_subsession_to_session()
+            .join_subsession_to_track_config()
+            .join_driver_to_site_team_member()
+            .join_site_team_member_to_site_team()
+            .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(&site_team_name))
+            .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).gte(&start_date))
+            .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).lt(&end_date))
+            .group_by_col((Driver::Table, Driver::DisplayName))
+            .build_rusqlite(SqliteQueryBuilder);
+
+
+        let mut stmt = con.prepare(sql.as_str()).unwrap();
+        let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+        while let Some(row) = rows.next().unwrap() {
+            result.push(SiteTeamDriverReport{
+                display_name: row.get(0).unwrap(),
+                laps_complete: row.get(1).unwrap(),
+                incidents: row.get(2).unwrap(),
+                time_on_track: row.get(3).unwrap(),
+                distance_driven: row.get(4).unwrap(),
+                min_irating: -2,
+                max_irating: -2,
+            });
+        }
+    }
+    {
+        let (sql, params) = Query::select()
+            .column((Driver::Table, Driver::DisplayName))
+            .expr(Expr::min(Expr::col((DriverResult::Table, DriverResult::OldiRating))))
+            .expr(Expr::max(Expr::col((DriverResult::Table, DriverResult::NewiRating))))
+            .from(DriverResult::Table)
+            .join_driver_result_to_subsession()
+            .join_driver_result_to_simsession()
+            .join_driver_result_to_driver()
+            .join_subsession_to_session()
+            .join_subsession_to_track_config()
+            .join_driver_to_site_team_member()
+            .join_site_team_member_to_site_team()
+            .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(&site_team_name))
+            .and_where(Expr::col((DriverResult::Table, DriverResult::NewiRating)).ne(-1))
+            .and_where(Expr::col((DriverResult::Table, DriverResult::OldiRating)).ne(-1))
+            .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).gte(&start_date))
+            .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).lt(&end_date))
+            // TODO should be corrected_license_category, this is good enough for 2023
+            .and_where(Expr::col((TrackConfig::Table, TrackConfig::CategoryId)).eq(CategoryType::Road.to_db_type()))
+            .add_group_by([
+                Expr::col((Driver::Table, Driver::DisplayName)).into(),
+            ])
+            .build_rusqlite(SqliteQueryBuilder);
+
+        let mut stmt = con.prepare(sql.as_str()).unwrap();
+        let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+        while let Some(row) = rows.next().unwrap() {
+            let display_name: String = row.get(0).unwrap();
+            let min_irating: i64 = row.get(1).unwrap();
+            let max_irating: i64 = row.get(2).unwrap();
+
+            for entry in &mut result {
+                if entry.display_name == display_name {
+                    entry.min_irating = min_irating;
+                    entry.max_irating = max_irating;
+                    break;
+                }
+            }
+        }
     }
     return result;
 }

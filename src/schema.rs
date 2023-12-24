@@ -129,9 +129,12 @@ pub enum SiteTeamMember {
 }
 
 pub trait SchemaUtils {
-    fn select_total_time(&mut self) -> &mut Self;
-    fn select_laps_complete(&mut self) -> &mut Self;
-    fn select_total_distance(&mut self) -> &mut Self;
+    fn expr_total_time(&mut self) -> &mut Self;
+    fn expr_laps_complete(&mut self) -> &mut Self;
+    fn expr_total_distance(&mut self) -> &mut Self;
+    fn expr_corrected_license_category(&mut self) -> &mut Self;
+    fn expr_normalized_oldi_rating(&mut self) -> &mut Self;
+    fn expr_normalized_newi_rating(&mut self) -> &mut Self;
     fn join_driver_result_to_simsession(&mut self) -> &mut Self;
     fn join_driver_result_to_subsession(&mut self) -> &mut Self;
     fn join_driver_result_to_driver(&mut self) -> &mut Self;
@@ -147,16 +150,46 @@ pub trait SchemaUtils {
 }
 
 impl SchemaUtils for SelectStatement {
-    fn select_total_time(&mut self) -> &mut Self {
+    fn expr_total_time(&mut self) -> &mut Self {
         return self.expr(Func::sum(Expr::expr(Expr::col(DriverResult::LapsComplete)).mul(Expr::col(DriverResult::AverageLap))));
     }
 
-    fn select_laps_complete(&mut self) -> &mut Self {
+    fn expr_laps_complete(&mut self) -> &mut Self {
         return self.expr(Func::sum(Expr::col(DriverResult::LapsComplete)));
     }
 
-    fn select_total_distance(&mut self) -> &mut Self {
+    fn expr_total_distance(&mut self) -> &mut Self {
         return self.expr(Func::sum(Expr::expr(Expr::col(DriverResult::LapsComplete)).mul(Expr::col(TrackConfig::TrackConfigLength))))
+    }
+
+    fn expr_corrected_license_category(&mut self) -> &mut Self {
+        // https://forums.iracing.com/discussion/15068/general-availability-of-data-api/p26
+        return self.expr(
+            Expr::case(Expr::col((Subsession::Table, Subsession::StartTime)).gt("2020-11-08 00:00:00+00:00"),
+                Expr::col((TrackConfig::Table, TrackConfig::CategoryId)))
+            .finally(
+                Expr::col((Subsession::Table, Subsession::LicenseCategoryId)))
+        );
+    }
+
+    // returns 1350 on -1 irating
+    fn expr_normalized_oldi_rating(&mut self) -> &mut Self {
+        return self.expr(
+            Expr::case(Expr::col((DriverResult::Table, DriverResult::OldiRating)).ne(-1),
+                Expr::col((DriverResult::Table, DriverResult::OldiRating)))
+            .finally(
+                1350)
+        );
+    }
+
+    // returns 1350 on -1 irating
+    fn expr_normalized_newi_rating(&mut self) -> &mut Self {
+        return self.expr(
+            Expr::case(Expr::col((DriverResult::Table, DriverResult::NewiRating)).ne(-1),
+                Expr::col((DriverResult::Table, DriverResult::NewiRating)))
+            .finally(
+                1350)
+        );
     }
 
     fn join_driver_result_to_simsession(&mut self) -> &mut Self {
