@@ -1129,7 +1129,9 @@ pub fn query_site_team_report(
                     "driver_result"."oldi_rating" <> -1 AND
                     "subsession"."start_time" >= :start_date AND
                     "subsession"."start_time" < :end_date AND
-                    "track_config"."category_id" = 2
+                    "track_config"."category_id" = 2 AND
+                    "subsession"."event_type" = 5 AND
+                    "subsession"."official_session"
             ) WHERE
                 row_num = 1
             ;
@@ -1156,7 +1158,9 @@ pub fn query_site_team_report(
                     "driver_result"."oldi_rating" <> -1 AND
                     "subsession"."start_time" >= :start_date AND
                     "subsession"."start_time" < :end_date AND
-                    "track_config"."category_id" = 2
+                    "track_config"."category_id" = 2 AND
+                    "subsession"."event_type" = 5 AND
+                    "subsession"."official_session"
             ) WHERE
                 row_num = 1
             ;

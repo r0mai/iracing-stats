@@ -1,9 +1,10 @@
-SELECT display_name, irating
+SELECT display_name, irating, subsession_id
 FROM (
     SELECT
         "driver"."display_name",
-        "driver_result"."newi_rating" as irating,
-        ROW_NUMBER() OVER (PARTITION BY driver.display_name ORDER BY subsession.start_time DESC) AS row_num
+        "driver_result"."oldi_rating" as irating,
+        subsession.subsession_id as subsession_id,
+        ROW_NUMBER() OVER (PARTITION BY driver.display_name ORDER BY subsession.start_time ASC) AS row_num
     FROM "driver_result"
     INNER JOIN "subsession" ON "driver_result"."subsession_id" = "subsession"."subsession_id"
     INNER JOIN "simsession" ON "driver_result"."subsession_id" = "simsession"."subsession_id" AND "driver_result"."simsession_number" = "simsession"."simsession_number"
@@ -18,7 +19,9 @@ FROM (
         "driver_result"."oldi_rating" <> -1 AND
         "subsession"."start_time" >= "2023-01-01 00:00:00+00:00" AND
         "subsession"."start_time" < "2024-01-01 00:00:00+00:00" AND
-        "track_config"."category_id" = 2
+        "track_config"."category_id" = 2 AND
+        "subsession"."event_type" = 5 AND
+        "subsession"."official_session"
 ) WHERE
     row_num = 1
 ;
