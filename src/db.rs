@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::{fs, path::PathBuf, path::Path, io::Write};
 use r2d2_sqlite::SqliteConnectionManager;
 use serde_json::{self, Value};
-use rusqlite;
+use rusqlite::{self, named_params};
 use rusqlite::Connection;
 use chrono::{self, TimeZone};
 use zip::write::FileOptions;
@@ -12,7 +12,7 @@ use sea_query::{
     Query,
     Expr,
     Order,
-    SqliteQueryBuilder, Func,
+    SqliteQueryBuilder, Func, WindowStatement,
 };
 use crate::schema::{
     Driver,
@@ -1055,8 +1055,8 @@ pub struct SiteTeamDriverReport {
     pub distance_driven: f32,
 
     // road irating
-    pub min_irating: i64,
-    pub max_irating: i64,
+    pub first_irating: i64,
+    pub last_irating: i64,
 }
 
 pub fn query_site_team_report(
@@ -1099,49 +1099,104 @@ pub fn query_site_team_report(
                 incidents: row.get(2).unwrap(),
                 time_on_track: row.get(3).unwrap(),
                 distance_driven: row.get(4).unwrap(),
-                min_irating: -2,
-                max_irating: -2,
+                first_irating: -2,
+                last_irating: -2,
             });
         }
     }
     {
-        let (sql, params) = Query::select()
-            .column((Driver::Table, Driver::DisplayName))
-            .expr(Expr::min(Expr::col((DriverResult::Table, DriverResult::OldiRating))))
-            .expr(Expr::max(Expr::col((DriverResult::Table, DriverResult::NewiRating))))
-            .from(DriverResult::Table)
-            .join_driver_result_to_subsession()
-            .join_driver_result_to_simsession()
-            .join_driver_result_to_driver()
-            .join_subsession_to_session()
-            .join_subsession_to_track_config()
-            .join_driver_to_site_team_member()
-            .join_site_team_member_to_site_team()
-            .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(&site_team_name))
-            .and_where(Expr::col((DriverResult::Table, DriverResult::NewiRating)).ne(-1))
-            .and_where(Expr::col((DriverResult::Table, DriverResult::OldiRating)).ne(-1))
-            .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).gte(&start_date))
-            .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).lt(&end_date))
-            // TODO should be corrected_license_category, this is good enough for 2023
-            .and_where(Expr::col((TrackConfig::Table, TrackConfig::CategoryId)).eq(CategoryType::Road.to_db_type()))
-            .add_group_by([
-                Expr::col((Driver::Table, Driver::DisplayName)).into(),
-            ])
-            .build_rusqlite(SqliteQueryBuilder);
+        let query_str_first = r#"
+            SELECT display_name, irating
+            FROM (
+                SELECT
+                    "driver"."display_name",
+                    "driver_result"."oldi_rating" as irating,
+                    ROW_NUMBER() OVER (PARTITION BY driver.display_name ORDER BY subsession.start_time ASC) AS row_num
+                FROM "driver_result"
+                INNER JOIN "subsession" ON "driver_result"."subsession_id" = "subsession"."subsession_id"
+                INNER JOIN "simsession" ON "driver_result"."subsession_id" = "simsession"."subsession_id" AND "driver_result"."simsession_number" = "simsession"."simsession_number"
+                INNER JOIN "driver" ON "driver_result"."cust_id" = "driver"."cust_id"
+                INNER JOIN "session" ON "session"."session_id" = "subsession"."session_id"
+                INNER JOIN "track_config" ON "track_config"."track_id" = "subsession"."track_id"
+                INNER JOIN "site_team_member" ON "driver"."cust_id" = "site_team_member"."cust_id"
+                INNER JOIN "site_team" ON "site_team"."site_team_id" = "site_team_member"."site_team_id"
+                WHERE
+                    "site_team"."site_team_name" = :site_team_name AND
+                    "driver_result"."newi_rating" <> -1 AND
+                    "driver_result"."oldi_rating" <> -1 AND
+                    "subsession"."start_time" >= :start_date AND
+                    "subsession"."start_time" < :end_date AND
+                    "track_config"."category_id" = 2
+            ) WHERE
+                row_num = 1
+            ;
+        "#;
 
-        let mut stmt = con.prepare(sql.as_str()).unwrap();
-        let mut rows = stmt.query(&*params.as_params()).unwrap();
+        let query_str_last = r#"
+            SELECT display_name, irating
+            FROM (
+                SELECT
+                    "driver"."display_name",
+                    "driver_result"."newi_rating" as irating,
+                    ROW_NUMBER() OVER (PARTITION BY driver.display_name ORDER BY subsession.start_time DESC) AS row_num
+                FROM "driver_result"
+                INNER JOIN "subsession" ON "driver_result"."subsession_id" = "subsession"."subsession_id"
+                INNER JOIN "simsession" ON "driver_result"."subsession_id" = "simsession"."subsession_id" AND "driver_result"."simsession_number" = "simsession"."simsession_number"
+                INNER JOIN "driver" ON "driver_result"."cust_id" = "driver"."cust_id"
+                INNER JOIN "session" ON "session"."session_id" = "subsession"."session_id"
+                INNER JOIN "track_config" ON "track_config"."track_id" = "subsession"."track_id"
+                INNER JOIN "site_team_member" ON "driver"."cust_id" = "site_team_member"."cust_id"
+                INNER JOIN "site_team" ON "site_team"."site_team_id" = "site_team_member"."site_team_id"
+                WHERE
+                    "site_team"."site_team_name" = :site_team_name AND
+                    "driver_result"."newi_rating" <> -1 AND
+                    "driver_result"."oldi_rating" <> -1 AND
+                    "subsession"."start_time" >= :start_date AND
+                    "subsession"."start_time" < :end_date AND
+                    "track_config"."category_id" = 2
+            ) WHERE
+                row_num = 1
+            ;
+        "#;
 
-        while let Some(row) = rows.next().unwrap() {
-            let display_name: String = row.get(0).unwrap();
-            let min_irating: i64 = row.get(1).unwrap();
-            let max_irating: i64 = row.get(2).unwrap();
+        {
+            let mut stmt = con.prepare(query_str_first).unwrap();
+            let mut rows = stmt.query(named_params! {
+                ":site_team_name": site_team_name,
+                ":start_date": start_date,
+                ":end_date": end_date
+            }).unwrap();
 
-            for entry in &mut result {
-                if entry.display_name == display_name {
-                    entry.min_irating = min_irating;
-                    entry.max_irating = max_irating;
-                    break;
+            while let Some(row) = rows.next().unwrap() {
+                let display_name: String = row.get(0).unwrap();
+                let irating: i64 = row.get(1).unwrap();
+
+                for entry in &mut result {
+                    if entry.display_name == display_name {
+                        entry.first_irating = irating;
+                        break;
+                    }
+                }
+            }
+        }
+
+        {
+            let mut stmt = con.prepare(query_str_last).unwrap();
+            let mut rows = stmt.query(named_params! {
+                ":site_team_name": site_team_name,
+                ":start_date": start_date,
+                ":end_date": end_date
+            }).unwrap();
+
+            while let Some(row) = rows.next().unwrap() {
+                let display_name: String = row.get(0).unwrap();
+                let irating: i64 = row.get(1).unwrap();
+
+                for entry in &mut result {
+                    if entry.display_name == display_name {
+                        entry.last_irating = irating;
+                        break;
+                    }
                 }
             }
         }

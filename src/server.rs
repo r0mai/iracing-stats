@@ -377,8 +377,8 @@ async fn api_v1_site_team_report(
         "incidents": data.incidents,
         "time_on_track": data.time_on_track,
         "distance_driven": data.distance_driven,
-        "min_irating": data.min_irating,
-        "max_irating": data.max_irating,
+        "first_irating": data.first_irating,
+        "last_irating": data.last_irating,
     })).collect();
 
     return json!({
