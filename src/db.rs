@@ -1072,10 +1072,8 @@ pub fn query_site_team_report(
         let (sql, params) = Query::select()
             .column((Driver::Table, Driver::DisplayName))
             .expr_laps_complete()
-            .expr(Func::sum(Expr::col((DriverResult::Table, DriverResult::Incidents))))
             .expr_total_time()
             .expr_total_distance()
-            .expr(Func::sum(Expr::expr(Expr::col(DriverResult::LapsComplete)).mul(Expr::col(TrackConfig::CornersPerLap))))
             .from(DriverResult::Table)
             .join_driver_result_to_subsession()
             .join_driver_result_to_simsession()
@@ -1098,13 +1096,51 @@ pub fn query_site_team_report(
             result.push(SiteTeamDriverReport{
                 display_name: row.get(0).unwrap(),
                 laps_complete: row.get(1).unwrap(),
-                incidents: row.get(2).unwrap(),
-                time_on_track: row.get(3).unwrap(),
-                distance_driven: row.get(4).unwrap(),
-                corners: row.get(5).unwrap(),
+                incidents: -2,
+                time_on_track: row.get(2).unwrap(),
+                distance_driven: row.get(3).unwrap(),
+                corners: -2,
                 first_irating: -2,
                 last_irating: -2,
             });
+        }
+    }
+    {
+        let (sql, params) = Query::select()
+            .column((Driver::Table, Driver::DisplayName))
+            .expr(Func::sum(Expr::col((DriverResult::Table, DriverResult::Incidents))))
+            .expr(Func::sum(Expr::expr(Expr::col(DriverResult::LapsComplete)).mul(Expr::col(TrackConfig::CornersPerLap))))
+            .from(DriverResult::Table)
+            .join_driver_result_to_subsession()
+            .join_driver_result_to_simsession()
+            .join_driver_result_to_driver()
+            .join_subsession_to_session()
+            .join_subsession_to_track_config()
+            .join_driver_to_site_team_member()
+            .join_site_team_member_to_site_team()
+            .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(&site_team_name))
+            .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).gte(&start_date))
+            .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).lt(&end_date))
+            .and_where(is_event_type(EventType::Race))
+            .group_by_col((Driver::Table, Driver::DisplayName))
+            .build_rusqlite(SqliteQueryBuilder);
+
+
+        let mut stmt = con.prepare(sql.as_str()).unwrap();
+        let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+        while let Some(row) = rows.next().unwrap() {
+            let display_name: String = row.get(0).unwrap();
+            let incidents: i64 = row.get(1).unwrap();
+            let corners: i64 = row.get(2).unwrap();
+
+            for entry in &mut result {
+                if entry.display_name == display_name {
+                    entry.incidents = incidents;
+                    entry.corners = corners;
+                    break;
+                }
+            }
         }
     }
     {
@@ -1208,6 +1244,97 @@ pub fn query_site_team_report(
             }
         }
     }
+    return result;
+}
+
+pub struct SiteTeamDriverPairing {
+    pub driver1: String,
+    pub driver2: String,
+    pub total_time: i64,
+}
+
+pub fn query_site_team_driver_pairings(
+    con: &Connection,
+    site_team_name: String) -> Vec<SiteTeamDriverPairing>
+{
+    let query_str = r#"
+        SELECT
+            group_concat(driver.display_name, ",") as drivers,
+            driver_result.team_id,
+            subsession.subsession_id,
+            SUM(driver_result.average_lap * driver_result.laps_complete) as total_time
+        FROM
+            driver_result
+        JOIN simsession ON
+            driver_result.subsession_id = simsession.subsession_id AND
+            driver_result.simsession_number = simsession.simsession_number
+        JOIN subsession ON
+            simsession.subsession_id = subsession.subsession_id
+        JOIN session ON
+            subsession.session_id = session.session_id
+        JOIN track_config ON
+            subsession.track_id = track_config.track_id
+        JOIN car ON
+            driver_result.car_id = car.car_id
+        JOIN driver ON
+            driver.cust_id = driver_result.cust_id
+        JOIN site_team_member ON
+            site_team_member.cust_id = driver.cust_id
+        JOIN site_team ON
+            site_team.site_team_id = site_team_member.site_team_id
+        WHERE
+            site_team_name = :site_team_name AND
+            simsession.simsession_type = 6 AND
+            driver_result.team_id != 0
+        GROUP BY
+            driver_result.team_id, subsession.subsession_id
+        HAVING
+            COUNT(*) > 1 /* more than one participant */
+        ;
+    "#;
+
+    let mut stmt = con.prepare(query_str).unwrap();
+    let mut rows = stmt.query(named_params! {
+        ":site_team_name": site_team_name,
+    }).unwrap();
+
+    #[derive(PartialEq, Eq, Hash)]
+    struct DriverPair {
+        pub driver1: String,
+        pub driver2: String,
+    }
+
+    let mut map = HashMap::new();
+
+    while let Some(row) = rows.next().unwrap() {
+        let drivers_str: String = row.get(0).unwrap();
+        let total_time: i64 = row.get(3).unwrap();
+
+        let mut drivers_vec: Vec<&str> = drivers_str.split(",").collect();
+        drivers_vec.sort_unstable();
+
+        for i in 0..drivers_vec.len() {
+            for j in i+1..drivers_vec.len() {
+                let key = DriverPair {
+                    driver1: drivers_vec[i].to_string(),
+                    driver2: drivers_vec[j].to_string()
+                };
+
+                *map.entry(key).or_insert(0) += total_time;
+            }
+        }
+    }
+
+    let mut result = Vec::new();
+
+    for (key, value) in map {
+        result.push(SiteTeamDriverPairing{
+            driver1: key.driver1,
+            driver2: key.driver2,
+            total_time: value
+        });
+    }
+
     return result;
 }
 

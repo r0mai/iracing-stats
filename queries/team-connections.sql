@@ -1,5 +1,8 @@
 SELECT
-    driver.display_name, driver_result.team_id, subsession.subsession_id
+    group_concat(driver.display_name, ",") as drivers,
+    driver_result.team_id,
+    subsession.subsession_id,
+    SUM(driver_result.average_lap * driver_result.laps_complete) as total_time
 FROM
     driver_result
 JOIN simsession ON
@@ -23,3 +26,8 @@ WHERE
     site_team_name = "rsmr" AND
     simsession.simsession_type = 6 AND
     driver_result.team_id != 0
+GROUP BY
+    driver_result.team_id, subsession.subsession_id
+HAVING
+    COUNT(*) > 1
+;
