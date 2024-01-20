@@ -33,6 +33,7 @@ use crate::event_type::EventType;
 use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
 use crate::simsession_type::SimsessionType;
+use crate::sof_calculator::{SofCalculator, SofCalculators, self};
 
 use crate::dirs::{
     get_base_dir,
@@ -107,6 +108,8 @@ pub struct DbContext<'a> {
     insert_session_statement: rusqlite::Statement<'a>,
     insert_simsession_statement: rusqlite::Statement<'a>,
     insert_driver_statement: rusqlite::Statement<'a>,
+    insert_car_class_statement: rusqlite::Statement<'a>,
+    insert_car_class_result_statement: rusqlite::Statement<'a>,
     insert_driver_result_statement: rusqlite::Statement<'a>,
     insert_season_statement: rusqlite::Statement<'a>,
     insert_site_team_statement: rusqlite::Statement<'a>,
@@ -161,6 +164,20 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* cust_id */
             ?  /* display_name */
     );"#).unwrap();
+    let insert_car_class_statement = tx.prepare(r#"
+        INSERT OR IGNORE INTO car_class VALUES(
+            ?, /* car_class_id */
+            ?, /* car_class_name */
+            ?  /* car_class_short_name */
+    );"#).unwrap();
+    let insert_car_class_result_statement = tx.prepare(r#"
+        INSERT INTO car_class_result VALUES(
+            ?, /* car_class_id */
+            ?, /* subsession_id */
+            ?, /* simsession_number */
+            ?, /* entries_in_class */
+            ?  /* class_sof */
+    );"#).unwrap();
     let insert_driver_result_statement = tx.prepare(r#"
         INSERT INTO driver_result VALUES(
             ?, /* cust_id */
@@ -175,6 +192,7 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* laps_complete */
             ?, /* average_lap */
             ?, /* car_id */
+            ?, /* car_class_id */
             ?, /* finish_position */
             ?, /* finish_position_in_class */
             ?  /* reason_out_id */
@@ -216,6 +234,8 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         insert_session_statement,
         insert_simsession_statement,
         insert_driver_statement,
+        insert_car_class_statement,
+        insert_car_class_result_statement,
         insert_driver_result_statement,
         insert_season_statement,
         insert_site_team_statement,
@@ -331,8 +351,17 @@ fn add_driver_to_db(ctx: &mut DbContext, driver_result: &Value) {
     )).unwrap();
 }
 
+fn add_car_class_to_db(ctx: &mut DbContext, driver_result: &Value) {
+    ctx.insert_car_class_statement.execute((
+        driver_result["car_class_id"].as_i64().unwrap(),
+        driver_result["car_class_name"].as_str().unwrap(),
+        driver_result["car_class_short_name"].as_str().unwrap(),
+    )).unwrap();
+}
+
 fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_number: i64, driver_result: &Value) {
     add_driver_to_db(ctx, driver_result);
+    add_car_class_to_db(ctx, driver_result);
 
     // TODO cust_id could be factored out
 
@@ -351,6 +380,7 @@ fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_n
         driver_result["laps_complete"].as_i64().unwrap(),
         driver_result["average_lap"].as_i64().unwrap(),
         driver_result["car_id"].as_i64().unwrap(),
+        driver_result["car_class_id"].as_i64().unwrap(),
         driver_result["finish_position"].as_i64().unwrap(),
         driver_result["finish_position_in_class"].as_i64().unwrap(),
         reason_out_id,
@@ -369,14 +399,34 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value
         simsession["simsession_type"].as_i64().unwrap()
     )).unwrap();
 
+    let mut sof_calculator = SofCalculators::new();
+
     for participant in simsession["results"].as_array().unwrap() {
         if participant["cust_id"].as_i64().is_some() {
             add_driver_result_to_db(ctx, subsession_id, simsession_number, participant);
+
+            sof_calculator.add_solo_driver(
+                participant["car_class_id"].as_i64().unwrap(),
+                participant["oldi_rating"].as_i64().unwrap()
+            );
         } else { // team
+            sof_calculator.begin_team(participant["car_class_id"].as_i64().unwrap());
             for driver in participant["driver_results"].as_array().unwrap() {
                 add_driver_result_to_db(ctx, subsession_id, simsession_number, driver);
+                sof_calculator.add_team_driver(participant["oldi_rating"].as_i64().unwrap());
             }
+            sof_calculator.end_team();
         }
+    }
+
+    for (class_id, class_sof_calculator) in &sof_calculator.class_sof_calculators {
+        ctx.insert_car_class_result_statement.execute((
+            class_id,
+            subsession_id,
+            simsession_number,
+            class_sof_calculator.get_team_count(),
+            class_sof_calculator.calc_sof()
+        )).unwrap();
     }
 }
 

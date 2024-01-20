@@ -45,10 +45,26 @@ CREATE TABLE driver_result(
     laps_complete INTEGER NOT NULL,
     average_lap INTEGER NOT NULL,
     car_id INTEGER NOT NULL,
+    car_class_id INTEGER NOT NULL,
     finish_position INTEGER NOT NULL, /* 0 based! */
     finish_position_in_class INTEGER NOT NULL, /* 0 based! */
     reason_out_id INTEGER NOT NULL,
     PRIMARY KEY(cust_id, team_id, subsession_id, simsession_number)
+);
+
+CREATE TABLE car_class(
+    car_class_id INTEGER PRIMARY KEY NOT NULL,
+    car_class_name TEXT NOT NULL,
+    car_class_short_name TEXT NOT NULL
+);
+
+CREATE TABLE car_class_result(
+    car_class_id INTEGER NOT NULL,
+    subsession_id INTEGER NOT NULL,
+    simsession_number INTEGER NOT NULL,
+    entries_in_class INTEGER NOT NULL,
+    class_sof INTEGER NOT NULL,
+    PRIMARY KEY(subsession_id, simsession_number, car_class_id)
 );
 
 CREATE TABLE simsession(

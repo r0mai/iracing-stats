@@ -69,9 +69,28 @@ pub enum DriverResult {
     LapsComplete,
     AverageLap,
     CarId,
+    CarClass,
     FinishPosition,
     FinishPositionInClass,
     ReasonOutId,
+}
+
+#[derive(Iden)]
+pub enum CarClass {
+    Table,
+    CarClassId,
+    CarClassName,
+    CarClassShortName
+}
+
+#[derive(Iden)]
+pub enum CarClassResult {
+    Table,
+    CarClassId,
+    SubsessionId,
+    SimsessionNumber,
+    EntriesInClass,
+    ClassSof,
 }
 
 #[derive(Iden)]
