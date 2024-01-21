@@ -409,7 +409,7 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value
             sof_calculator.begin_team(participant["car_class_id"].as_i64().unwrap());
             for driver in participant["driver_results"].as_array().unwrap() {
                 add_driver_result_to_db(ctx, subsession_id, simsession_number, driver);
-                sof_calculator.add_team_driver(participant["oldi_rating"].as_i64().unwrap());
+                sof_calculator.add_team_driver(driver["oldi_rating"].as_i64().unwrap());
             }
             sof_calculator.end_team();
         }
