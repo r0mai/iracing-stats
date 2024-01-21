@@ -41,8 +41,7 @@ impl SofCalculator {
     }
 
     fn add_team(&mut self, irating: f64) {
-        let corrected_irating = if irating == -1.0 { 1350.0 } else { irating };
-        self.sof_sum += f64::powf(2.0, -corrected_irating  / 1600.0);
+        self.sof_sum += f64::powf(2.0, -irating / 1600.0);
         self.team_count += 1;
     }
 

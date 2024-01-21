@@ -71,6 +71,8 @@ CREATE TABLE simsession(
     subsession_id INTEGER NOT NULL,
     simsession_number INTEGER NOT NULL, /* 0 = main event ? */
     simsession_type INTEGER NOT NULL, /* 3 -> Open Practice, 4 -> Lone Qualifying, 6 -> Race */
+    entries INTEGER NOT NULL,
+    sof INTEGER NOT NULL,
     PRIMARY KEY(subsession_id, simsession_number)
 );
 

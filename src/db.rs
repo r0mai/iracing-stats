@@ -157,7 +157,9 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         INSERT INTO simsession VALUES(
             ?, /* subsession_id */
             ?, /* simsession_number */
-            ?  /* simsession_type */
+            ?, /* simsession_type */
+            ?, /* entries */
+            ?  /* sof */
     );"#).unwrap();
     let insert_driver_statement = tx.prepare(r#"
         INSERT OR IGNORE INTO driver VALUES(
@@ -393,12 +395,6 @@ fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_n
 fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value) {
     let simsession_number = simsession["simsession_number"].as_i64().unwrap();
 
-    ctx.insert_simsession_statement.execute((
-        subsession_id,
-        simsession_number,
-        simsession["simsession_type"].as_i64().unwrap()
-    )).unwrap();
-
     let mut sof_calculator = SofCalculators::new();
 
     for participant in simsession["results"].as_array().unwrap() {
@@ -428,6 +424,14 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value
             class_sof_calculator.calc_sof()
         )).unwrap();
     }
+
+    ctx.insert_simsession_statement.execute((
+        subsession_id,
+        simsession_number,
+        simsession["simsession_type"].as_i64().unwrap(),
+        sof_calculator.total_sof_calculator.get_team_count(),
+        sof_calculator.total_sof_calculator.calc_sof()
+    )).unwrap();
 }
 
 fn add_subsession_to_db(ctx: &mut DbContext, subsession: &Value) {

@@ -100,6 +100,8 @@ pub enum Simsession {
     SimsesionId,
     SimsessionNumber,
     SimsessionType,
+    Entries,
+    Sof,
 }
 
 #[derive(Iden)]
