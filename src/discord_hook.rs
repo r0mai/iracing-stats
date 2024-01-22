@@ -57,6 +57,14 @@ fn create_incident_str(result: &DiscordResultReport) -> Option<String> {
     return Some(format!("{} ({}x)", cpi_str, result.incidents));
 }
 
+fn create_track_str(result: &DiscordResultReport) -> String {
+    if result.config_name.is_empty() {
+        return result.track_name.clone();
+    } else {
+        return format!("{} - {}", result.track_name, result.config_name);
+    }
+}
+
 fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
     let r0mai_io_url = format!(
         "https://r0mai.io/iracing-stats?team={}&type=session-list&selected={}",
@@ -72,6 +80,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     let incident_str = create_incident_str(result);
     let irating_str = create_irating_str(result);
     let placement_str = create_placement_str(result);
+    let track_str = create_track_str(result);
 
     let race_name_str = if result.session_name.is_empty() {
         &result.series_name
@@ -84,7 +93,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     lines.push(format!("**Position:**  {}", placement_str));
     lines.push(format!("**Series:**      {}", race_name_str));
     lines.push(format!("**Car:**           {}", result.car_name));
-    lines.push(format!("**Track:**       {}", result.track_name));
+    lines.push(format!("**Track:**       {}", track_str));
     if let Some(irating_str) = irating_str {
         lines.push(format!("**IRating:**    {}", irating_str));
     }
@@ -92,7 +101,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
         lines.push(format!("**CPI:**           {}", incident_str));
     }
 
-    return format!("<<>>\n{}\n\n{}\n{}",
+    return format!(":checkered_flag:\n{}\n\n{}\n{}",
         lines.join("\n"),
         r0mai_io_url,
         iracing_url

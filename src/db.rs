@@ -929,6 +929,7 @@ pub struct DiscordResultReport {
     pub session_name: String,
     pub car_name: String,
     pub track_name: String,
+    pub config_name: String,
     pub corners_per_lap: i32,
     pub finish_position_in_class: i32,
     pub incidents: i32,
@@ -960,6 +961,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((Session::Table, Session::SessionName))
         .column((Car::Table, Car::CarName))
         .column((TrackConfig::Table, TrackConfig::TrackName))
+        .column((TrackConfig::Table, TrackConfig::ConfigName))
         .column((TrackConfig::Table, TrackConfig::CornersPerLap))
         .column((DriverResult::Table, DriverResult::FinishPositionInClass))
         .column((DriverResult::Table, DriverResult::Incidents))
@@ -997,14 +999,15 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let session_name: String = row.get(5).unwrap_or(String::new());
         let car_name: String = row.get(6).unwrap();
         let track_name: String = row.get(7).unwrap();
-        let corners_per_lap: i32 = row.get(8).unwrap();
-        let finish_position_in_class: i32 = row.get(9).unwrap();
-        let incidents: i32 = row.get(10).unwrap();
-        let oldi_rating: i32 = row.get(11).unwrap();
-        let newi_rating: i32 = row.get(12).unwrap();
-        let laps_complete: i32 = row.get(13).unwrap();
-        let event_type = EventType::from_i32(row.get(14).unwrap()).unwrap();
-        let reason_out: String = row.get(15).unwrap();
+        let config_name: String = row.get(8).unwrap();
+        let corners_per_lap: i32 = row.get(9).unwrap();
+        let finish_position_in_class: i32 = row.get(10).unwrap();
+        let incidents: i32 = row.get(11).unwrap();
+        let oldi_rating: i32 = row.get(12).unwrap();
+        let newi_rating: i32 = row.get(13).unwrap();
+        let laps_complete: i32 = row.get(14).unwrap();
+        let event_type = EventType::from_i32(row.get(15).unwrap()).unwrap();
+        let reason_out: String = row.get(16).unwrap();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -1019,6 +1022,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             session_name,
             car_name,
             track_name,
+            config_name,
             corners_per_lap,
             finish_position_in_class,
             incidents,
