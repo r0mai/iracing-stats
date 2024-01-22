@@ -2,17 +2,6 @@ use std::collections::HashMap;
 
 use crate::{db::{query_discord_report, create_db_connection, DiscordResultReport}, event_type::EventType};
 
-fn placement_string(mut position: i32) -> String {
-    position += 1;
-    let emoji = match position {
-        1 => " :first_place:",
-        2 => " :second_place:",
-        3 => " :third_place:",
-        _ => ""
-    };
-    return format!("**P{}**{}", position, emoji);
-}
-
 fn finish_reason_string(reason_out: &String) -> String {
     if reason_out == "Running" {
         return "".to_string();
@@ -23,6 +12,49 @@ fn finish_reason_string(reason_out: &String) -> String {
     }
 
     return format!(" [{}]", reason_out);
+}
+
+fn create_placement_str(result: &DiscordResultReport) -> String {
+    let mut position = result.finish_position_in_class;
+    position += 1;
+    let emoji = match position {
+        1 => " :first_place:",
+        2 => " :second_place:",
+        3 => " :third_place:",
+        _ => ""
+    };
+    return format!("P{}{}{}", position, emoji, finish_reason_string(&result.reason_out));
+}
+
+fn forced_sign(n: i32) -> String {
+    if n >= 0 {
+        return format!("+{}", n);
+    } else {
+        return format!("{}", n);
+    };
+}
+
+fn create_irating_str(result: &DiscordResultReport) -> Option<String> {
+    if result.event_type != EventType::Race {
+        return None;
+    }
+
+    let irating_gain = result.newi_rating - result.oldi_rating;
+    return Some(format!("{} ({})", result.newi_rating, forced_sign(irating_gain)));
+}
+
+fn create_incident_str(result: &DiscordResultReport) -> Option<String> {
+    if result.event_type != EventType::Race {
+        return None;
+    }
+
+    let cpi_str = if result.incidents == 0 {
+        "∞".to_owned()
+    } else {
+        let corners_complete = result.corners_per_lap * result.laps_complete;
+        format!("{:.1}", (corners_complete as f32) / (result.incidents as f32))
+    };
+    return Some(format!("{} ({}x)", cpi_str, result.incidents));
 }
 
 fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
@@ -37,39 +69,31 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
         result.subsession_id
     );
 
-    let race_details_str = if result.event_type == EventType::Race {
-        let cpi_str = if result.incidents == 0 {
-            "∞".to_owned()
-        } else {
-            let corners_complete = result.corners_per_lap * result.laps_complete;
-            format!("{:.1}", (corners_complete as f32) / (result.incidents as f32))
-        };
-        let irating_gain = result.newi_rating - result.oldi_rating;
-        let irating_gain_str = if irating_gain > 0 {
-            format!("+{}", irating_gain)
-        } else {
-            format!("{}", irating_gain)
-        };
-        format!("IRating: {} ({}), CPI: {} ({}x)\n", result.newi_rating, irating_gain_str, cpi_str, result.incidents)
-    } else {
-        "".to_owned()
-    };
+    let incident_str = create_incident_str(result);
+    let irating_str = create_irating_str(result);
+    let placement_str = create_placement_str(result);
 
-    let race_name = if result.session_name.is_empty() {
+    let race_name_str = if result.session_name.is_empty() {
         &result.series_name
     } else {
         &result.session_name
     };
 
-    return format!(
-        "**{}** finished {} in **{}**{} :race_car: {} :motorway: {}\n{}\n<{}>\n<{}>",
-        result.driver_name,
-        placement_string(result.finish_position_in_class),
-        race_name,
-        finish_reason_string(&result.reason_out),
-        result.car_name,
-        result.track_name,
-        race_details_str,
+    let mut lines = Vec::new();
+    lines.push(format!("**Driver:**      {}", result.driver_name));
+    lines.push(format!("**Position:**  {}", placement_str));
+    lines.push(format!("**Series:**      {}", race_name_str));
+    lines.push(format!("**Car:**           {}", result.car_name));
+    lines.push(format!("**Track:**       {}", result.track_name));
+    if let Some(irating_str) = irating_str {
+        lines.push(format!("**IRating:**    {}", irating_str));
+    }
+    if let Some(incident_str) = incident_str {
+        lines.push(format!("**CPI:**           {}", incident_str));
+    }
+
+    return format!("<<>>\n{}\n\n{}\n{}",
+        lines.join("\n"),
         r0mai_io_url,
         iracing_url
     );
