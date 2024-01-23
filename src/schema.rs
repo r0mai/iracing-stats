@@ -69,7 +69,7 @@ pub enum DriverResult {
     LapsComplete,
     AverageLap,
     CarId,
-    CarClass,
+    CarClassId,
     FinishPosition,
     FinishPositionInClass,
     ReasonOutId,
@@ -167,6 +167,7 @@ pub trait SchemaUtils {
     fn join_site_team_member_to_site_team(&mut self) -> &mut Self;
     fn join_site_team_member_to_driver(&mut self) -> &mut Self;
     fn join_driver_to_site_team_member(&mut self) -> &mut Self;
+    fn join_driver_result_to_car_class_result(&mut self) -> &mut Self;
     fn match_driver_id(&mut self, driver_id: &DriverId, force_join: bool) -> &mut Self;
 }
 
@@ -279,6 +280,14 @@ impl SchemaUtils for SelectStatement {
         return self.inner_join(Driver::Table,
             Expr::col((SiteTeamMember::Table, SiteTeamMember::CustId)).equals((Driver::Table, Driver::CustId))
         );
+    }
+
+    fn join_driver_result_to_car_class_result(&mut self) -> &mut Self {
+        return self.inner_join(CarClassResult::Table, all![
+            Expr::col((DriverResult::Table, DriverResult::SubsessionId)).equals((CarClassResult::Table, CarClassResult::SubsessionId)),
+            Expr::col((DriverResult::Table, DriverResult::SimsessionNumber)).equals((CarClassResult::Table, CarClassResult::SimsessionNumber)),
+            Expr::col((DriverResult::Table, DriverResult::CarClassId)).equals((CarClassResult::Table, CarClassResult::CarClassId)),
+        ]);
     }
 
     fn match_driver_id(&mut self, driver_id: &DriverId, force_join: bool) -> &mut Self {

@@ -27,7 +27,7 @@ use crate::schema::{
     SiteTeamMember,
     ReasonOut,
     is_event_type,
-    is_main_event, is_simsession_type,
+    is_main_event, is_simsession_type, CarClassResult,
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
@@ -938,6 +938,7 @@ pub struct DiscordResultReport {
     pub laps_complete: i32,
     pub event_type: EventType,
     pub reason_out: String,
+    pub entries_in_class: i32,
 }
 
 pub struct DiscordSiteTeamReport {
@@ -970,6 +971,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((DriverResult::Table, DriverResult::LapsComplete))
         .column((Subsession::Table, Subsession::EventType))
         .column((ReasonOut::Table, ReasonOut::ReasonOut))
+        .column((CarClassResult::Table, CarClassResult::EntriesInClass))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -980,6 +982,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .join_subsession_to_track_config()
         .join_driver_to_site_team_member()
         .join_site_team_member_to_site_team()
+        .join_driver_result_to_car_class_result()
         .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
         .and_where(is_simsession_type(SimsessionType::Race))
         .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
@@ -1008,6 +1011,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let laps_complete: i32 = row.get(14).unwrap();
         let event_type = EventType::from_i32(row.get(15).unwrap()).unwrap();
         let reason_out: String = row.get(16).unwrap();
+        let entries_in_class: i32 = row.get(17).unwrap();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -1031,6 +1035,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             laps_complete,
             event_type,
             reason_out,
+            entries_in_class,
         };
 
         team_entries.results.push(driver_result);

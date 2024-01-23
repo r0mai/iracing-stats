@@ -23,7 +23,7 @@ fn create_placement_str(result: &DiscordResultReport) -> String {
         3 => " :third_place:",
         _ => ""
     };
-    return format!("P{}{}{}", position, emoji, finish_reason_string(&result.reason_out));
+    return format!("P{}/{}{}{}", position, result.entries_in_class, emoji, finish_reason_string(&result.reason_out));
 }
 
 fn forced_sign(n: i32) -> String {
