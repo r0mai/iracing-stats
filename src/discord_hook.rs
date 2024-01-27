@@ -8,10 +8,10 @@ fn finish_reason_string(reason_out: &String) -> String {
     }
 
     if reason_out == "" {
-        return " [Unknown out reason]".to_string();
+        return " (Unknown out reason)".to_string();
     }
 
-    return format!(" [{}]", reason_out);
+    return format!(" ({})", reason_out);
 }
 
 fn create_placement_str(result: &DiscordResultReport) -> String {
