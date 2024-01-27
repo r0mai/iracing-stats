@@ -12,7 +12,8 @@ use sea_query::{
     Query,
     Expr,
     Order,
-    SqliteQueryBuilder, Func, WindowStatement,
+    SqliteQueryBuilder,
+    Func
 };
 use crate::schema::{
     Driver,
@@ -26,6 +27,7 @@ use crate::schema::{
     SchemaUtils,
     SiteTeamMember,
     ReasonOut,
+    Team,
     is_event_type,
     is_main_event, is_simsession_type, CarClassResult,
 };
@@ -33,7 +35,7 @@ use crate::event_type::EventType;
 use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
 use crate::simsession_type::SimsessionType;
-use crate::sof_calculator::{SofCalculator, SofCalculators, self};
+use crate::sof_calculator::SofCalculators;
 
 use crate::dirs::{
     get_base_dir,
@@ -108,6 +110,7 @@ pub struct DbContext<'a> {
     insert_session_statement: rusqlite::Statement<'a>,
     insert_simsession_statement: rusqlite::Statement<'a>,
     insert_driver_statement: rusqlite::Statement<'a>,
+    insert_team_statement: rusqlite::Statement<'a>,
     insert_car_class_statement: rusqlite::Statement<'a>,
     insert_car_class_result_statement: rusqlite::Statement<'a>,
     insert_driver_result_statement: rusqlite::Statement<'a>,
@@ -165,6 +168,11 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         INSERT OR IGNORE INTO driver VALUES(
             ?, /* cust_id */
             ?  /* display_name */
+    );"#).unwrap();
+    let insert_team_statement = tx.prepare(r#"
+        INSERT OR IGNORE INTO team VALUES(
+            ?, /* team_id */
+            ?  /* team_name */
     );"#).unwrap();
     let insert_car_class_statement = tx.prepare(r#"
         INSERT OR IGNORE INTO car_class VALUES(
@@ -236,6 +244,7 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         insert_session_statement,
         insert_simsession_statement,
         insert_driver_statement,
+        insert_team_statement,
         insert_car_class_statement,
         insert_car_class_result_statement,
         insert_driver_result_statement,
@@ -361,7 +370,13 @@ fn add_car_class_to_db(ctx: &mut DbContext, driver_result: &Value) {
     )).unwrap();
 }
 
-fn add_driver_result_to_db(ctx: &mut DbContext, subsession_id: i64, simsession_number: i64, driver_result: &Value) {
+fn add_driver_result_to_db(
+    ctx: &mut DbContext,
+    subsession_id: i64,
+    simsession_number: i64,
+    team_id: i64,
+    driver_result: &Value)
+{
     add_driver_to_db(ctx, driver_result);
     add_car_class_to_db(ctx, driver_result);
 
@@ -399,7 +414,7 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value
 
     for participant in simsession["results"].as_array().unwrap() {
         if participant["cust_id"].as_i64().is_some() {
-            add_driver_result_to_db(ctx, subsession_id, simsession_number, participant);
+            add_driver_result_to_db(ctx, subsession_id, simsession_number, -1, participant);
 
             sof_calculator.add_solo_driver(
                 participant["car_class_id"].as_i64().unwrap(),
@@ -407,8 +422,15 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value
             );
         } else { // team
             sof_calculator.begin_team(participant["car_class_id"].as_i64().unwrap());
+
+            // example where neither team_id nor cust_id is present: 22275743
+            let mut team_id = -1;
+            if let Some(team_id_2) = participant["team_id"].as_i64() {
+                team_id = team_id_2;
+                ctx.insert_team_statement.execute((team_id, participant["display_name"].as_str().unwrap())).unwrap();
+            }
             for driver in participant["driver_results"].as_array().unwrap() {
-                add_driver_result_to_db(ctx, subsession_id, simsession_number, driver);
+                add_driver_result_to_db(ctx, subsession_id, simsession_number, team_id, driver);
                 sof_calculator.add_team_driver(driver["oldi_rating"].as_i64().unwrap());
             }
             sof_calculator.end_team();
@@ -925,6 +947,7 @@ pub fn query_all_site_team_members(con: &Connection) -> Vec<i64> {
 pub struct DiscordResultReport {
     pub subsession_id: i64,
     pub driver_name: String,
+    pub team_name: String,
     pub series_name: String,
     pub session_name: String,
     pub car_name: String,
@@ -972,12 +995,14 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((Subsession::Table, Subsession::EventType))
         .column((ReasonOut::Table, ReasonOut::ReasonOut))
         .column((CarClassResult::Table, CarClassResult::EntriesInClass))
+        .column((Team::Table, Team::TeamName))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
         .join_driver_result_to_driver()
         .join_driver_result_to_car()
         .join_driver_result_to_reason_out()
+        .join_driver_result_to_team()
         .join_subsession_to_session()
         .join_subsession_to_track_config()
         .join_driver_to_site_team_member()
@@ -1012,6 +1037,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let event_type = EventType::from_i32(row.get(15).unwrap()).unwrap();
         let reason_out: String = row.get(16).unwrap();
         let entries_in_class: i32 = row.get(17).unwrap();
+        let team_name: String = row.get(18).unwrap_or_default();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -1036,6 +1062,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             event_type,
             reason_out,
             entries_in_class,
+            team_name
         };
 
         team_entries.results.push(driver_result);

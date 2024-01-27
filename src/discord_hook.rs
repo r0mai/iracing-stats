@@ -34,6 +34,14 @@ fn forced_sign(n: i32) -> String {
     };
 }
 
+fn create_driver_str(result: &DiscordResultReport) -> String {
+    if result.team_name.is_empty() {
+        return result.driver_name.clone();
+    } else {
+        return format!("{} ({})", result.driver_name, result.team_name);
+    }
+}
+
 fn create_irating_str(result: &DiscordResultReport) -> Option<String> {
     if result.event_type != EventType::Race {
         return None;
@@ -77,6 +85,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
         result.subsession_id
     );
 
+    let driver_str = create_driver_str(result);
     let incident_str = create_incident_str(result);
     let irating_str = create_irating_str(result);
     let placement_str = create_placement_str(result);
@@ -89,7 +98,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     };
 
     let mut lines = Vec::new();
-    lines.push(format!("**Driver:**      {}", result.driver_name));
+    lines.push(format!("**Driver:**      {}", driver_str));
     lines.push(format!("**Position:**  {}", placement_str));
     lines.push(format!("**Series:**      {}", race_name_str));
     lines.push(format!("**Car:**           {}", result.car_name));

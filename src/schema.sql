@@ -3,6 +3,11 @@ CREATE TABLE driver(
     display_name TEXT NOT NULL
 );
 
+CREATE TABLE team(
+    team_id INTEGER PRIMARY KEY NOT NULL,
+    team_name TEXT NOT NULL
+);
+
 CREATE TABLE season(
     season_id INTEGER PRIMARY KEY NOT NULL,
     series_id INTEGER NOT NULL,
