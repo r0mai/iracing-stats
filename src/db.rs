@@ -1026,7 +1026,11 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((CarClassResult::Table, CarClassResult::EntriesInClass))
         .column((Team::Table, Team::TeamName))
         // .column((CarClass::Table, CarClass::CarClassName))
-        .expr(Expr::case(Expr::col((CarClass::Table, CarClass::CarClassId)).eq(-1), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
+        .expr(Expr::case(
+            Expr::col((CarClass::Table, CarClass::CarClassId)).eq(0).or( // 0 is Hosted All Cars
+            Expr::col((CarClass::Table, CarClass::CarClassId)).eq(-1)).or( // -1 is not car class
+            Expr::col((CarClass::Table, CarClass::CarClassSize)).lte(1)
+        ), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()

@@ -74,14 +74,11 @@ fn create_track_str(result: &DiscordResultReport) -> String {
 }
 
 fn create_car_str(result: &DiscordResultReport) -> String {
-    return result.car_name.clone();
-/*
     if result.car_class_name.is_empty() {
         return result.car_name.clone();
     } else {
         return format!("{} ({})", result.car_name, result.car_class_name);
     }
-*/
 }
 
 fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
