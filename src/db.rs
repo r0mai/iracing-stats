@@ -16,20 +16,7 @@ use sea_query::{
     Func
 };
 use crate::schema::{
-    Driver,
-    Session,
-    Subsession,
-    DriverResult,
-    Simsession,
-    TrackConfig,
-    Car,
-    SiteTeam,
-    SchemaUtils,
-    SiteTeamMember,
-    ReasonOut,
-    Team,
-    is_event_type,
-    is_main_event, is_simsession_type, CarClassResult,
+    is_event_type, is_main_event, is_simsession_type, Car, CarClass, CarClassResult, Driver, DriverResult, ReasonOut, SchemaUtils, Session, Simsession, SiteTeam, SiteTeamMember, Subsession, Team, TrackConfig
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
@@ -962,6 +949,7 @@ pub struct DiscordResultReport {
     pub event_type: EventType,
     pub reason_out: String,
     pub entries_in_class: i32,
+    pub car_class_name: String,
 }
 
 pub struct DiscordSiteTeamReport {
@@ -996,6 +984,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((ReasonOut::Table, ReasonOut::ReasonOut))
         .column((CarClassResult::Table, CarClassResult::EntriesInClass))
         .column((Team::Table, Team::TeamName))
+        // .column((CarClass::Table, CarClass::CarClassName))
+        .expr(Expr::case(Expr::col((CarClass::Table, CarClass::CarClassId)).eq(-1), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -1008,6 +998,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .join_driver_to_site_team_member()
         .join_site_team_member_to_site_team()
         .join_driver_result_to_car_class_result()
+        .join_driver_result_to_car_class()
         .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
         .and_where(is_simsession_type(SimsessionType::Race))
         .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
@@ -1038,6 +1029,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let reason_out: String = row.get(16).unwrap();
         let entries_in_class: i32 = row.get(17).unwrap();
         let team_name: String = row.get(18).unwrap_or_default();
+        let car_class_name: String = row.get(19).unwrap();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -1062,7 +1054,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             event_type,
             reason_out,
             entries_in_class,
-            team_name
+            team_name,
+            car_class_name
         };
 
         team_entries.results.push(driver_result);

@@ -169,6 +169,7 @@ pub trait SchemaUtils {
     fn join_driver_result_to_car(&mut self) -> &mut Self;
     fn join_driver_result_to_reason_out(&mut self) -> &mut Self;
     fn join_driver_result_to_team(&mut self) -> &mut Self;
+    fn join_driver_result_to_car_class(&mut self) -> &mut Self;
     fn join_subsession_to_session(&mut self) -> &mut Self;
     fn join_subsession_to_track_config(&mut self) -> &mut Self;
     fn join_site_team_to_site_team_member(&mut self) -> &mut Self;
@@ -256,6 +257,12 @@ impl SchemaUtils for SelectStatement {
     fn join_driver_result_to_team(&mut self) -> &mut Self {
         return self.left_join(Team::Table,
             Expr::col((DriverResult::Table, DriverResult::TeamId)).equals((Team::Table, Team::TeamId))
+        );
+    }
+
+    fn join_driver_result_to_car_class(&mut self) -> &mut Self {
+        return self.inner_join(CarClass::Table,
+            Expr::col((DriverResult::Table, DriverResult::CarClassId)).equals((CarClass::Table, CarClass::CarClassId))
         );
     }
 
