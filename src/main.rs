@@ -63,7 +63,7 @@ struct Args {
     #[arg(long)]
     sync_site_teams_to_db_partial: bool,
 
-    /// Sync car infos (v as in vehicle)
+    /// Sync car & car class infos (v as in vehicle)
     #[arg(short = 'v', long)]
     sync_car_infos_to_db: bool,
 
@@ -175,6 +175,7 @@ async fn tokio_main(args: &Args) {
 
     if args.sync_car_infos_to_db {
         iracing_client::sync_car_infos_to_db(&mut client).await;
+        iracing_client::sync_car_class_infos_to_db(&mut client).await;
     }
 
     if args.sync_track_infos_to_db {

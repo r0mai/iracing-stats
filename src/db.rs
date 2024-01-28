@@ -32,6 +32,7 @@ use crate::dirs::{
 const SESSIONS_DIR: &str = "data/sessions";
 const TRACK_DATA_FILE: &str = "data/tracks.json";
 const CAR_DATA_FILE: &str = "data/cars.json";
+const CAR_CLASS_DATA_FILE: &str = "data/car-classes.json";
 const SEASON_DATA_FILE: &str = "data/seasons.json";
 const SITE_TEAMS_DATA_FILE: &str = "static-data/site-teams.json";
 const SQLITE_DB_FILE: &str = "stats.db";
@@ -53,6 +54,13 @@ pub fn get_track_data_file() -> &'static Path {
 pub fn get_car_data_file() -> &'static Path {
     lazy_static! {
         static ref FILE: PathBuf = get_base_dir().join(CAR_DATA_FILE);
+    }
+    return FILE.as_path();
+}
+
+pub fn get_car_class_data_file() -> &'static Path {
+    lazy_static! {
+        static ref FILE: PathBuf = get_base_dir().join(CAR_CLASS_DATA_FILE);
     }
     return FILE.as_path();
 }
@@ -99,6 +107,7 @@ pub struct DbContext<'a> {
     insert_driver_statement: rusqlite::Statement<'a>,
     insert_team_statement: rusqlite::Statement<'a>,
     insert_car_class_statement: rusqlite::Statement<'a>,
+    insert_car_class_member_statement: rusqlite::Statement<'a>,
     insert_car_class_result_statement: rusqlite::Statement<'a>,
     insert_driver_result_statement: rusqlite::Statement<'a>,
     insert_season_statement: rusqlite::Statement<'a>,
@@ -162,10 +171,16 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?  /* team_name */
     );"#).unwrap();
     let insert_car_class_statement = tx.prepare(r#"
-        INSERT OR IGNORE INTO car_class VALUES(
+        INSERT INTO car_class VALUES(
             ?, /* car_class_id */
             ?, /* car_class_name */
-            ?  /* car_class_short_name */
+            ?, /* car_class_short_name */
+            ?  /* car_class_size */
+    );"#).unwrap();
+    let insert_car_class_member_statement = tx.prepare(r#"
+        INSERT INTO car_class_member VALUES(
+            ?, /* car_class_id */
+            ?  /* car_id */
     );"#).unwrap();
     let insert_car_class_result_statement = tx.prepare(r#"
         INSERT INTO car_class_result VALUES(
@@ -233,6 +248,7 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         insert_driver_statement,
         insert_team_statement,
         insert_car_class_statement,
+        insert_car_class_member_statement,
         insert_car_class_result_statement,
         insert_driver_result_statement,
         insert_season_statement,
@@ -312,6 +328,24 @@ fn add_car_to_db(ctx: &mut DbContext, car: &Value) {
     )).unwrap();
 }
 
+fn add_car_class_to_db(ctx: &mut DbContext, car_class: &Value) {
+    let car_class_id = car_class["car_class_id"].as_i64().unwrap();
+    let cars_in_class = car_class["cars_in_class"].as_array().unwrap();
+    ctx.insert_car_class_statement.execute((
+        car_class_id,
+        car_class["name"].as_str().unwrap(),
+        car_class["short_name"].as_str().unwrap(),
+        cars_in_class.len()
+    )).unwrap();
+
+    for car_in_class in cars_in_class {
+        ctx.insert_car_class_member_statement.execute((
+            car_class_id,
+            car_in_class["car_id"].as_i64().unwrap()
+        )).unwrap();
+    }
+}
+
 fn add_season_to_db(ctx: &mut DbContext, season: &Value) {
     ctx.insert_season_statement.execute((
         season["season_id"].as_i64().unwrap(),
@@ -349,14 +383,6 @@ fn add_driver_to_db(ctx: &mut DbContext, driver_result: &Value) {
     )).unwrap();
 }
 
-fn add_car_class_to_db(ctx: &mut DbContext, driver_result: &Value) {
-    ctx.insert_car_class_statement.execute((
-        driver_result["car_class_id"].as_i64().unwrap(),
-        driver_result["car_class_name"].as_str().unwrap(),
-        driver_result["car_class_short_name"].as_str().unwrap(),
-    )).unwrap();
-}
-
 fn add_driver_result_to_db(
     ctx: &mut DbContext,
     subsession_id: i64,
@@ -365,7 +391,6 @@ fn add_driver_result_to_db(
     driver_result: &Value)
 {
     add_driver_to_db(ctx, driver_result);
-    add_car_class_to_db(ctx, driver_result);
 
     // TODO cust_id could be factored out
 
@@ -373,7 +398,7 @@ fn add_driver_result_to_db(
 
     ctx.insert_driver_result_statement.execute((
         driver_result["cust_id"].as_i64().unwrap(), 
-        driver_result["team_id"].as_i64().unwrap_or(0),
+        team_id,
         subsession_id,
         simsession_number,
         driver_result["oldi_rating"].as_i64().unwrap(),
@@ -524,6 +549,15 @@ pub fn rebuild_seasons(ctx: &mut DbContext) {
     }
 }
 
+pub fn rebuild_car_classes(ctx: &mut DbContext) {
+    let contents = fs::read_to_string(get_car_class_data_file()).unwrap();
+    let car_classes: Value = serde_json::from_str(&contents).unwrap();
+
+    for car_class in car_classes.as_array().unwrap() {
+        add_car_class_to_db(ctx, &car_class);
+    }
+}
+
 fn rebuild_sessions(ctx: &mut DbContext) {
     let paths = fs::read_dir(get_sessions_dir()).unwrap();
     add_sessions_to_db(ctx, paths.map(|e| e.unwrap().path()));
@@ -554,6 +588,13 @@ pub fn write_cached_session_json(subsession_id: i64, json: &Value) {
 pub fn write_cached_car_infos_json(json: &Value) {
     fs::write(
         get_car_data_file(),
+        serde_json::to_string(&json).unwrap()
+    ).unwrap();
+}
+
+pub fn write_cached_car_class_infos_json(json: &Value) {
+    fs::write(
+        get_car_class_data_file(),
         serde_json::to_string(&json).unwrap()
     ).unwrap();
 }
@@ -1457,6 +1498,19 @@ pub fn rebuild_cars_in_db() {
     tx.commit().unwrap();
 }
 
+pub fn rebuild_car_classes_in_db() {
+    let mut con = create_db_connection();
+    let mut tx = con.transaction().unwrap();
+    {
+        tx.execute("DELETE FROM car_class", ()).unwrap(); // deletes all rows
+        tx.execute("DELETE FROM car_class_member", ()).unwrap(); // deletes all rows
+
+        let mut ctx = create_db_context(&mut tx);
+        rebuild_car_classes(&mut ctx);
+    }
+    tx.commit().unwrap();
+}
+
 pub fn rebuild_seasons_in_db() {
     let mut con = create_db_connection();
     let mut tx = con.transaction().unwrap();
@@ -1496,6 +1550,7 @@ pub fn rebuild_db() {
         let mut ctx = create_db_context(&mut tx);
         rebuild_tracks(&mut ctx);
         rebuild_cars(&mut ctx);
+        rebuild_car_classes(&mut ctx);
         rebuild_seasons(&mut ctx);
         rebuild_site_teams(&mut ctx);
         rebuild_sessions(&mut ctx);

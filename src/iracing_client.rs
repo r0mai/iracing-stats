@@ -385,6 +385,12 @@ pub async fn sync_car_infos_to_db(client: &mut IRacingClient) {
     crate::db::rebuild_cars_in_db();
 }
 
+pub async fn sync_car_class_infos_to_db(client: &mut IRacingClient) {
+    let data = client.get_and_read("/data/carclass/get", &HashMap::new()).await.unwrap();
+    crate::db::write_cached_car_class_infos_json(&data);
+    crate::db::rebuild_car_classes_in_db();
+}
+
 pub async fn sync_season_infos_to_db(client: &mut IRacingClient) {
     let data = client.get_all_season_list().await;
     crate::db::write_cached_seasons_json(&data);

@@ -60,7 +60,13 @@ CREATE TABLE driver_result(
 CREATE TABLE car_class(
     car_class_id INTEGER PRIMARY KEY NOT NULL,
     car_class_name TEXT NOT NULL,
-    car_class_short_name TEXT NOT NULL
+    car_class_short_name TEXT NOT NULL,
+    car_class_size INTEGER NOT NULL /* number of vehicles in class */
+);
+
+CREATE TABLE car_class_member(
+    car_class_id INTEGER NOT NULL,
+    car_id INTEGER NOT NULL
 );
 
 CREATE TABLE car_class_result(

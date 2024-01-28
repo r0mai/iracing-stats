@@ -87,7 +87,15 @@ pub enum CarClass {
     Table,
     CarClassId,
     CarClassName,
-    CarClassShortName
+    CarClassShortName,
+    CarClassSize
+}
+
+#[derive(Iden)]
+pub enum CarClassMember {
+    Table,
+    CarClassId,
+    CarId
 }
 
 #[derive(Iden)]
