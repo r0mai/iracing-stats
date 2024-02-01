@@ -14,20 +14,22 @@ impl RawSofCalculator {
     }
 
     fn add_driver(&mut self, irating: i64) {
-        self.sof_sum += f64::powf(2.0, -Self::correct_irating(irating) as f64 / 1600.0);
+        if irating == -1 {
+            return;
+        }
+        self.sof_sum += f64::powf(2.0, -irating as f64 / 1600.0);
         self.count += 1;
     }
 
     fn calc_sof(&self) -> i64 {
+        if self.count == 0 {
+            return -1;
+        }
         return ((1600.0 / f64::ln(2.0)) * f64::ln(self.count as f64 / self.sof_sum)) as i64;
     }
 
     fn get_count(&self) -> i64 {
         return self.count;
-    }
-
-    fn correct_irating(irating: i64) -> i64 {
-        return if irating == -1 { 1350 } else { irating };
     }
 }
 
