@@ -991,6 +991,7 @@ pub struct DiscordResultReport {
     pub reason_out: String,
     pub entries_in_class: i32,
     pub car_class_name: String,
+    pub car_class_sof: i64,
 }
 
 pub struct DiscordSiteTeamReport {
@@ -1025,12 +1026,12 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         .column((ReasonOut::Table, ReasonOut::ReasonOut))
         .column((CarClassResult::Table, CarClassResult::EntriesInClass))
         .column((Team::Table, Team::TeamName))
-        // .column((CarClass::Table, CarClass::CarClassName))
         .expr(Expr::case(
             Expr::col((CarClass::Table, CarClass::CarClassId)).eq(0).or( // 0 is Hosted All Cars
             Expr::col((CarClass::Table, CarClass::CarClassId)).eq(-1)).or( // -1 is not car class
             Expr::col((CarClass::Table, CarClass::CarClassSize)).lte(1)
         ), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
+        .column((CarClassResult::Table, CarClassResult::ClassSof))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -1075,6 +1076,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let entries_in_class: i32 = row.get(17).unwrap();
         let team_name: String = row.get(18).unwrap_or_default();
         let car_class_name: String = row.get(19).unwrap();
+        let car_class_sof: i64 = row.get(20).unwrap();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -1100,7 +1102,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             reason_out,
             entries_in_class,
             team_name,
-            car_class_name
+            car_class_name,
+            car_class_sof
         };
 
         team_entries.results.push(driver_result);

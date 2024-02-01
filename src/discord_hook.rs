@@ -112,6 +112,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     lines.push(format!("**Series:**      {}", race_name_str));
     lines.push(format!("**Car:**           {}", car_str));
     lines.push(format!("**Track:**       {}", track_str));
+    lines.push(format!("**SoF:**           {}", result.car_class_sof));
     if let Some(irating_str) = irating_str {
         lines.push(format!("**IRating:**    {}", irating_str));
     }
