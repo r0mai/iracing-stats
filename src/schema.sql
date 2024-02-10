@@ -3,11 +3,6 @@ CREATE TABLE driver(
     display_name TEXT NOT NULL
 );
 
-CREATE TABLE team(
-    team_id INTEGER PRIMARY KEY NOT NULL,
-    team_name TEXT NOT NULL
-);
-
 CREATE TABLE season(
     season_id INTEGER PRIMARY KEY NOT NULL,
     series_id INTEGER NOT NULL,
@@ -40,6 +35,7 @@ CREATE TABLE subsession(
 CREATE TABLE driver_result(
     cust_id INTEGER NOT NULL,
     team_id INTEGER NOT NULL,
+    team_name TEXT NOT NULL, /* TODO could deduplicate with https://stackoverflow.com/questions/65343126/add-data-to-many-to-many-relation-with-one-sql-command/65357904 */
     subsession_id INTEGER NOT NULL,
     simsession_number INTEGER NOT NULL, /* 0 -> Main event, negative values are pre-events */
     oldi_rating INTEGER NOT NULL,
