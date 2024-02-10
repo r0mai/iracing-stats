@@ -14,6 +14,7 @@ mod discord_bot;
 mod discord_hook;
 mod dirs;
 mod sof_calculator;
+mod website_builder;
 
 use clap::Parser;
 use sof_calculator::SofCalculator;

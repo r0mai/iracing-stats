@@ -1118,7 +1118,9 @@ pub struct SessionResult {
     pub incidents: i64,
     pub finish_position_in_class: i64,
     pub reason_out: String,
-    pub subsession_id: i64
+    pub subsession_id: i64,
+    pub team_id: i64,
+    pub track_name: String,
 }
 
 pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_team_name: String) -> Vec<SessionResult> {
@@ -1134,6 +1136,8 @@ pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_tea
         .column((DriverResult::Table, DriverResult::FinishPositionInClass))
         .column((ReasonOut::Table, ReasonOut::ReasonOut))
         .column((Subsession::Table, Subsession::SubsessionId))
+        .column((DriverResult::Table, DriverResult::TeamId))
+        .column((TrackConfig::Table, TrackConfig::TrackName))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -1142,6 +1146,7 @@ pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_tea
         .join_driver_to_site_team_member()
         .join_site_team_member_to_site_team()
         .join_driver_result_to_reason_out()
+        .join_subsession_to_track_config()
         .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
         .and_where(is_main_event())
         .and_where(is_event_type(EventType::Race))
@@ -1168,7 +1173,9 @@ pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_tea
             incidents: row.get(7).unwrap(), 
             finish_position_in_class: row.get(8).unwrap(),
             reason_out: row.get(9).unwrap(),
-            subsession_id: row.get(10).unwrap()
+            subsession_id: row.get(10).unwrap(),
+            team_id: row.get(11).unwrap(),
+            track_name: row.get(12).unwrap(),
         });
     }
     return result;
