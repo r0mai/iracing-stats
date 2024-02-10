@@ -29,8 +29,7 @@ window.onload = function() {
         let response = await fetch(url);
         let responseText = await response.text();
         textToCopy = responseText;
-        // clipboard needs https :sad:
-        // clipboardButton.style.visibility = "visible";
+        clipboardButton.style.visibility = "visible";
         responseDiv.innerHTML = replaceAll(responseText, "\n", "<br/>");
     }, false);
 }
