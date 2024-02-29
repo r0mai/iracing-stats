@@ -94,12 +94,18 @@ impl IRacingClient {
                 return None;
             }
 
+            if status.as_u16() == 404 {
+                println!("Request to {url} was not found (404)");
+                return None;
+            }
+
             // rate limit
             if status.as_u16() == 429 {
                 println!("Request to {url} got rate limited");
                 tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
                 continue;
             }
+            println!("Request url {}", url);
             println!("Reponse status {}", status);
             println!("Response body {}", text);
             panic!("Failed a request :(");
