@@ -31,8 +31,6 @@ async function refreshText() {
 }
 
 window.onload = function() {
-    let textToCopy = "";
-
     textarea = document.querySelector("#input-area");
     responseTextarea = document.querySelector("#response");
     clipboardButton = document.querySelector("#clipboard-button");
