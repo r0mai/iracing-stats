@@ -27,15 +27,12 @@ impl RawSofCalculator {
         }
         return ((1600.0 / f64::ln(2.0)) * f64::ln(self.count as f64 / self.sof_sum)) as i64;
     }
-
-    fn get_count(&self) -> i64 {
-        return self.count;
-    }
 }
 
 pub struct SofCalculator {
     overall_sof_calcualtor: RawSofCalculator,
-    team_sof_calculator: RawSofCalculator
+    team_sof_calculator: RawSofCalculator,
+    team_count: i64, // this includes rookies (irating = -1)
 }
 
 // https://members.iracing.com/jforum/posts/list/3586268.page
@@ -44,6 +41,7 @@ impl SofCalculator {
         return SofCalculator{
             overall_sof_calcualtor: RawSofCalculator::new(),
             team_sof_calculator: RawSofCalculator::new(),
+            team_count: 0
         };
     }
     pub fn begin_team(&mut self) {
@@ -53,16 +51,18 @@ impl SofCalculator {
         self.team_sof_calculator.add_driver(irating);
     }
     pub fn end_team(&mut self) {
+        self.team_count += 1;
         self.overall_sof_calcualtor.add_driver(self.team_sof_calculator.calc_sof());
     }
     pub fn add_solo_driver(&mut self, irating: i64) {
+        self.team_count += 1;
         self.overall_sof_calcualtor.add_driver(irating);
     }
     pub fn calc_sof(&self) -> i64 {
         return self.overall_sof_calcualtor.calc_sof();
     }
     pub fn get_team_count(&self) -> i64 {
-        return self.overall_sof_calcualtor.get_count();
+        return self.team_count;
     }
 }
 
