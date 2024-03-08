@@ -3,7 +3,9 @@ pub enum CategoryType {
     Oval = 1,
     Road = 2,
     DirtOval = 3,
-    DirtRoad = 4
+    DirtRoad = 4,
+    SportsCar = 5,
+    FormulaCar = 6,
 }
 
 impl CategoryType {
@@ -13,16 +15,9 @@ impl CategoryType {
             2 => Ok(CategoryType::Road),
             3 => Ok(CategoryType::DirtOval),
             4 => Ok(CategoryType::DirtRoad),
+            5 => Ok(CategoryType::SportsCar),
+            6 => Ok(CategoryType::FormulaCar),
             _ => Err("invalid category int")
-        }
-    }
-    pub fn from_string(str: &str) -> Result<Self, &'static str> {
-        return match str.to_lowercase().as_str() {
-            "oval" => Ok(CategoryType::Oval),
-            "road" => Ok(CategoryType::Road),
-            "dirtoval" => Ok(CategoryType::DirtOval),
-            "dirtroad" => Ok(CategoryType::DirtRoad),
-            _ => Err("invalid category string")
         }
     }
     pub fn to_db_type(&self) -> i32 {
