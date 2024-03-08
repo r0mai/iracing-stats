@@ -2,12 +2,16 @@ export const kOval = 1;
 export const kRoad = 2;
 export const kDirtOval = 3;
 export const kDirtRoad = 4;
+export const kSportsCar = 5;
+export const kFormulaCar = 6;
 
 const kNames = [
     "oval",
     "road",
     "dirt-oval",
     "dirt-road",
+    "sports-car",
+    "formula-car",
 ];
 
 const kNiceNames = [
@@ -15,6 +19,8 @@ const kNiceNames = [
     "Road",
     "Dirt Oval",
     "Dirt Road",
+    "Sports Car",
+    "Formula Car",
 ];
 
 export function findIndex(licenseName) {
@@ -29,7 +35,7 @@ export function findIndex(licenseName) {
 
 export function findName(licenseIdx) {
     // 1 based index
-    if (licenseIdx < 0 || licenseIdx > 4) {
+    if (licenseIdx <= 0 || licenseIdx > kNames.length) {
         return kNames[kRoad - 1];
     } else {
         return kNames[licenseIdx - 1];

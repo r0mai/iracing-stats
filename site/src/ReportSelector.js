@@ -40,6 +40,8 @@ function ReportSelector({state, setState}) {
             <MenuItem value={Category.kOval}>Oval</MenuItem>
             <MenuItem value={Category.kDirtRoad}>Dirt Road</MenuItem>
             <MenuItem value={Category.kDirtOval}>Dirt Oval</MenuItem>
+            <MenuItem value={Category.kSportsCar}>Sports Car</MenuItem>
+            <MenuItem value={Category.kFormulaCar}>Formula Car</MenuItem>
         </Select>
     );
 
