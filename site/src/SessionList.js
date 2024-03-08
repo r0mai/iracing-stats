@@ -62,6 +62,11 @@ function SessionList({driverSessions, trackMap, carMap}) {
             width: 200,
         },
         {
+            field: "license_category",
+            headerName: "Cat",
+            width: 100
+        },
+        {
             field: "car",
             headerName: "Car",
             width: 200,
@@ -111,11 +116,6 @@ function SessionList({driverSessions, trackMap, carMap}) {
             headerName: "New IR",
             width: 60,
         },
-        // {
-        //     field: "license_category",
-        //     headerName: "Cat",
-        //     width: 100
-        // },
         // {
         //     field: "track_category",
         //     headerName: "Track Cat",
