@@ -20,6 +20,17 @@ impl CategoryType {
             _ => Err("invalid category int")
         }
     }
+    pub fn to_nice_string(&self) -> &'static str {
+        return match self {
+            CategoryType::Oval => "Oval",
+            CategoryType::Road => "Road",
+            CategoryType::DirtOval => "Dirt Oval",
+            CategoryType::DirtRoad => "Dirt Road",
+            CategoryType::SportsCar => "Sports Car",
+            CategoryType::FormulaCar => "Formula Car",
+        }
+    }
+
     pub fn to_db_type(&self) -> i32 {
         return *self as i32;
     }

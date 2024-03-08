@@ -989,6 +989,7 @@ pub struct DiscordResultReport {
     pub entries_in_class: i32,
     pub car_class_name: String,
     pub car_class_sof: i64,
+    pub license_category_id: CategoryType
 }
 
 pub struct DiscordSiteTeamReport {
@@ -1029,6 +1030,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             Expr::col((CarClass::Table, CarClass::CarClassSize)).lte(1)
         ), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
         .column((CarClassResult::Table, CarClassResult::ClassSof))
+        .column((Subsession::Table, Subsession::LicenseCategoryId))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -1073,6 +1075,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let team_name: String = row.get(18).unwrap_or_default();
         let car_class_name: String = row.get(19).unwrap();
         let car_class_sof: i64 = row.get(20).unwrap();
+        let license_category_id = CategoryType::from_i32(row.get(21).unwrap()).unwrap();
 
         let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
             site_team_name,
@@ -1099,7 +1102,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             entries_in_class,
             team_name,
             car_class_name,
-            car_class_sof
+            car_class_sof,
+            license_category_id
         };
 
         team_entries.results.push(driver_result);

@@ -81,6 +81,17 @@ fn create_car_str(result: &DiscordResultReport) -> String {
     }
 }
 
+fn create_series_str(result: &DiscordResultReport) -> String {
+    let session_name = if result.session_name.is_empty() {
+        &result.series_name
+    } else {
+        &result.session_name
+    };
+
+    return format!("{} [{}]", session_name, result.license_category_id.to_nice_string());
+}
+
+
 fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
     let r0mai_io_url = format!(
         "https://r0mai.io/iracing-stats?team={}&type=session-list&selected={}",
@@ -99,17 +110,12 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     let placement_str = create_placement_str(result);
     let track_str = create_track_str(result);
     let car_str = create_car_str(result);
-
-    let race_name_str = if result.session_name.is_empty() {
-        &result.series_name
-    } else {
-        &result.session_name
-    };
+    let series_str = create_series_str(result);
 
     let mut lines = Vec::new();
     lines.push(format!("**Driver:**      {}", driver_str));
     lines.push(format!("**Position:**  {}", placement_str));
-    lines.push(format!("**Series:**      {}", race_name_str));
+    lines.push(format!("**Series:**      {}", series_str));
     lines.push(format!("**Car:**           {}", car_str));
     lines.push(format!("**Track:**       {}", track_str));
     lines.push(format!("**SoF:**           {}", result.car_class_sof));
