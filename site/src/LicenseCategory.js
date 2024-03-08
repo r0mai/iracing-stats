@@ -44,7 +44,7 @@ export function findName(licenseIdx) {
 
 export function toNiceName(licenseIdx) {
     // 1 based index
-    if (licenseIdx < 0 || licenseIdx > 4) {
+    if (licenseIdx < 0 || licenseIdx > kNames.length) {
         return kNiceNames[kRoad - 1];
     } else {
         return kNiceNames[licenseIdx - 1];
