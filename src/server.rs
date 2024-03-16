@@ -20,7 +20,6 @@ use crate::db::{
     query_site_team_members,
     query_team_results, query_session_result, SessionResult, TrackData, query_site_team_report, query_site_team_driver_pairings
 };
-use crate::website_builder;
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
 
@@ -311,13 +310,12 @@ fn position_str(result: &SessionResult) -> String {
     }
 }
 
-#[get("/api/v1/session-result?<subsession_id>&<subsession_ids>&<team>&<output_type>")]
+#[get("/api/v1/session-result?<subsession_id>&<subsession_ids>&<team>")]
 async fn api_v1_session_result(
     subsession_id: Option<i64>,
     subsession_ids: Option<String>,
     team: String,
-    db_pool: &State<DbPool>,
-    output_type: String) -> String
+    db_pool: &State<DbPool>) -> String
 {
     let mut subsession_ids_vec = Vec::new();
     if let Some(subsession_id) = subsession_id {
@@ -332,35 +330,29 @@ async fn api_v1_session_result(
 
     let raw_data = query_session_result(&con, subsession_ids_vec, team);
 
-    if output_type == "archive" {
-        let mut result = String::new();
+    let mut result = String::new();
 
-        for driver_result in raw_data {
-            let name = if driver_result.session_name.is_empty() {
-                driver_result.series_name.clone()
-            } else {
-                driver_result.session_name.clone()
-            };
+    for driver_result in raw_data {
+        let name = if driver_result.session_name.is_empty() {
+            driver_result.series_name.clone()
+        } else {
+            driver_result.session_name.clone()
+        };
 
-            result.push_str(format!("{},{},{},{},{},{},{},{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
-                name,
-                driver_result.start_time.format("%Y.%m.%d"),
-                driver_result.track_id,
-                driver_result.car_id,
-                driver_result.driver_name,
-                driver_result.laps_complete,
-                driver_result.incidents,
-                position_str(&driver_result),
-                driver_result.subsession_id
-            ).as_str());
-        }
-
-        return result;
-    } else if output_type == "website" {
-        return website_builder::build_website(&raw_data);
-    } else {
-        return "Unknown type".to_string();
+        result.push_str(format!("{},{},{},{},{},{},{},{},https://members.iracing.com/membersite/member/EventResult.do?subsessionid={}\n",
+            name,
+            driver_result.start_time.format("%Y.%m.%d"),
+            driver_result.track_id,
+            driver_result.car_id,
+            driver_result.driver_name,
+            driver_result.laps_complete,
+            driver_result.incidents,
+            position_str(&driver_result),
+            driver_result.subsession_id
+        ).as_str());
     }
+
+    return result;
 }
 
 #[get("/api/v1/site-team-report?<site_team>&<start_date>&<end_date>")]
