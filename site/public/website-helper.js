@@ -94,6 +94,8 @@ async function refreshText() {
         '</div>\n'
         ;
 
+    output += prefix;
+
     let currentResult = null;
     let currentDrivers = [];
 
@@ -116,6 +118,8 @@ async function refreshText() {
         }
         currentDrivers.push(result.driver);
     }
+
+    output += suffix;
 
     textToCopy = output;
     clipboardButton.style.visibility = "visible";
