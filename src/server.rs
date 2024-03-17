@@ -405,6 +405,46 @@ async fn api_v1_site_team_pairings(
     return Value::Array(values);
 }
 
+#[get("/api/v1/season-team-standings?<season_id>&<car_class_id>&<team_id>")]
+async fn api_v1_season_team_standings(
+    season_id: i64,
+    car_class_id: i64,
+    mut team_id: i64,
+    iracing_client: &State<IRacingClient>) -> Value
+{
+    team_id = team_id.abs();
+
+    let mut weekly_standings = Vec::new();
+    let mut week_num = 0;
+    loop {
+        let standings = iracing_client.get_season_team_standings(season_id, car_class_id, Some(week_num)).await;
+        if let serde_json::Value::Array(standings_arr) = standings {
+            if standings_arr.len() == 0 {
+                break;
+            } else {
+                weekly_standings.push(standings_arr);
+            }
+        } else {
+            break;
+        }
+        week_num += 1;
+    }
+
+    let mut points_per_week = Vec::new();
+    for standings in weekly_standings {
+        let mut points = 0;
+        for result in standings {
+            if result["team_id"].as_i64().unwrap().abs() == team_id {
+                // TODO what are raw_points?
+                points = result["points"].as_i64().unwrap();
+                break;
+            }
+        }
+        points_per_week.push(points); 
+    }
+    return serde_json::to_value(points_per_week).unwrap();
+}
+
 pub async fn start_rocket_server(enable_https: bool) {
     const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
     const LOG_FILE_ENV_VAR: &str = "IRACING_STATS_LOG_FILE";
@@ -442,6 +482,7 @@ pub async fn start_rocket_server(enable_https: bool) {
             api_v1_session_result,
             api_v1_site_team_report,
             api_v1_site_team_pairings,
+            api_v1_season_team_standings,
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)

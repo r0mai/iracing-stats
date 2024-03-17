@@ -118,10 +118,8 @@ impl IRacingClient {
         return self.get_with_retry(String::from(pointer_json["link"].as_str().unwrap()), params).await;
     }
 
-    async fn get_and_read_chunked(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
-        let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await?;
-        let chunk_info = &pointer_json["data"]["chunk_info"];
-        let base_url_res= &chunk_info["base_download_url"].as_str();
+    async fn get_and_read_chunked_helper(&self, chunk_info: &serde_json::Value) -> Option<serde_json::Value> {
+        let base_url_res = &chunk_info["base_download_url"].as_str();
 
         let mut result_array = serde_json::Value::Array([].to_vec());
         if base_url_res.is_none() {
@@ -129,14 +127,29 @@ impl IRacingClient {
         }
 
         let base_url = base_url_res.unwrap();
+        let suffixes = chunk_info["chunk_file_names"].as_array().unwrap();
 
-        for file in chunk_info["chunk_file_names"].as_array().unwrap() {
+        for file in suffixes {
             let suffix = file.as_str().unwrap();
             let mut partial_result = self.get_with_retry(format!("{base_url}{suffix}"), &HashMap::new()).await?;
             result_array.as_array_mut().unwrap().append(partial_result.as_array_mut().unwrap());
         }
 
         return Some(result_array);
+    }
+
+    // For those requests that have .data.chunk_info directly
+    async fn get_and_read_chunked(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
+        let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await?;
+        let chunk_info = &pointer_json["data"]["chunk_info"];
+        return self.get_and_read_chunked_helper(chunk_info).await;
+    }
+
+    // For those requests that have .chunk_info after reading the first s3 url (one extra redirect)
+    async fn get_and_read_chunked2(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
+        let pointer_json = self.get_and_read(suffix, params).await?;
+        let chunk_info = &pointer_json["chunk_info"];
+        return self.get_and_read_chunked_helper(chunk_info).await;
     }
 
     async fn get_member_since_date(&self, cust_id: i64) -> DateTime<Utc> {
@@ -287,6 +300,17 @@ impl IRacingClient {
         return self.get_and_read("/data/results/get", &HashMap::from([
             ("subsession_id", subsession_id.to_string())
         ])).await;
+    }
+
+    pub async fn get_season_team_standings(&self, season_id: i64, car_class_id: i64, race_week_num: Option<i64>) -> serde_json::Value {
+        let mut params = HashMap::from([
+            ("season_id", season_id.to_string()),
+            ("car_class_id", car_class_id.to_string()),
+        ]);
+        if let Some(race_week_num) = race_week_num {
+            params.insert("race_week_num", race_week_num.to_string());
+        }
+        return self.get_and_read_chunked2("/data/stats/season_team_standings", &params).await.unwrap_or(serde_json::Value::Null);
     }
 
     pub async fn auth(&self) {
