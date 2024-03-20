@@ -85,10 +85,14 @@ export function isTrackCategory(session, trackMap, categoryIdx) {
     return trackMap[session["track_id"]]["category"] === categoryIdx;
 }
 
-let categoryCutoffDate = Date.UTC(2020, 11, 8);
+let legacyCategoryCutoffDate = Date.UTC(2020, 11, 8);
+let sportsFormulaSeparationDate = Date.UTC(2024, 2, 5);
 export function isDateCorrectedCategory(session, trackMap, categoryIdx) {
+    // This link is invalid
     // https://forums.iracing.com/discussion/15068/general-availability-of-data-api/p26
-    if (session["start_time"] > categoryCutoffDate) {
+    if (session["start_time"] > sportsFormulaSeparationDate) {
+        return isCategory(session, categoryIdx);
+    } else if (session["start_time"] > legacyCategoryCutoffDate) {
         return isTrackCategory(session, trackMap, categoryIdx);
     } else {
         return isCategory(session, categoryIdx);
