@@ -67,9 +67,20 @@ function parseString(input) {
     return parsedResults;
 }
 
+function createFinishedStr(result) {
+    if (result.finished === 1) {
+        return '<img class="alignnone size-full wp-image-1434" src="https://rsmracing.hu/wp-content/uploads/2023/10/1st.png" alt="" width="30" height="43" />';
+    } else if (result.finished === 2) {
+        return '<img class="alignnone size-full wp-image-1434" src="https://rsmracing.hu/wp-content/uploads/2023/10/2nd.png" alt="" width="30" height="43" />'
+    } else if (result.finished === 3) {
+        return '<img class="alignnone size-full wp-image-1434" src="https://rsmracing.hu/wp-content/uploads/2023/10/3rd.png" alt="" width="30" height="43" />'
+    } else {
+        return result.finished;
+    }
+}
+
 async function refreshText() {
     let results = parseString(textarea.value);
-    console.log(results);
 
     let output = "";
 
@@ -102,12 +113,13 @@ async function refreshText() {
     for (let result of results) {
         if (currentResult === null || currentResult.id != result.id) {
             if (currentResult !== null) {
+                let finishedStr = createFinishedStr(currentResult);
                 let dateStr = `${currentResult.date.getUTCFullYear()}.${currentResult.date.getUTCMonth() + 1}.${currentResult.date.getUTCDate()}`;
                 output += '<tr>\n';
                 output += `<td align="left"><a href="https://members.iracing.com/membersite/member/EventResult.do?subsessionid=${currentResult.sessionID}">${currentResult.eventName}</a></td>\n`;
                 output += `<td align="left">${dateStr}</td>\n`;
                 output += `<td align="left">${currentDrivers.join(', ')}</td>\n`;
-                output += `<td align="left">${currentResult.finished}</td>\n`;
+                output += `<td align="left">${finishedStr}</td>\n`;
                 output += `<td align="left">${currentResult.track}</td>\n`;
                 output += '</tr>\n';
                 output += '\n';
