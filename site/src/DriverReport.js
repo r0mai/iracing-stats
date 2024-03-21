@@ -54,12 +54,7 @@ function DriverReport({driver, driverName, trackMap, carMap, state}) {
             report = <TrackUsage driverSessions={driverSessions} trackMap={trackMap}/>;
             break;
         case ReportType.kIRacingHistory:
-            let categoryIdx = Category.findIndex(state.category);
-            let categoryIndices = [categoryIdx];
-            if (categoryIdx === Category.kRoad) {
-                categoryIndices = [Category.kRoad, Category.kSportsCar, Category.kFormulaCar];
-            }
-            report = <IRatingHistory driverSessions={driverSessions} trackMap={trackMap} categoryIndices={categoryIndices}/>;
+            report = <IRatingHistory driverSessions={driverSessions} trackMap={trackMap} category={state.categor}/>;
             break;
         case ReportType.kCPIHistory:
             report = <IncidentHistory driverSessions={driverSessions} trackMap={trackMap} category={state.category}/>;
