@@ -11,6 +11,7 @@ import * as ReportType from './ReportType.js'
 import Grid from '@mui/material/Grid';
 import * as React from 'react';
 import CarTrackMatrix from "./CarTrackMatrix.js";
+import * as Category from './LicenseCategory.js';
 
 function preprocessDriverSessions(sessions) {
     sessions = sessions.filter(
@@ -53,7 +54,12 @@ function DriverReport({driver, driverName, trackMap, carMap, state}) {
             report = <TrackUsage driverSessions={driverSessions} trackMap={trackMap}/>;
             break;
         case ReportType.kIRacingHistory:
-            report = <IRatingHistory driverSessions={driverSessions} trackMap={trackMap} category={state.category}/>;
+            let categoryIdx = Category.findIndex(state.category);
+            let categoryIndices = [categoryIdx];
+            if (categoryIdx === Category.kRoad) {
+                categoryIndices = [Category.kRoad, Category.kSportsCar, Category.kFormulaCar];
+            }
+            report = <IRatingHistory driverSessions={driverSessions} trackMap={trackMap} categoryIndices={categoryIndices}/>;
             break;
         case ReportType.kCPIHistory:
             report = <IncidentHistory driverSessions={driverSessions} trackMap={trackMap} category={state.category}/>;

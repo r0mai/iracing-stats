@@ -26,9 +26,9 @@ function plotIncidentHistory(div, sessions, trackMap, category) {
     if (filtered.length === 0) {
         div.innerHTML = "No data";
     } else {
-        linePlot(div, filtered, e => e["start_time"], e => e["new_cpi"], {
+        linePlot(div, [filtered], e => e["start_time"], e => e["new_cpi"], {
             horizontalLanes: safetyRatingLanes,
-            lineColor: "#DDD"
+            lineColors: ["#DDD"]
         });
     }
 }

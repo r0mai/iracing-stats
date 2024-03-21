@@ -4,21 +4,33 @@ import { theme } from './Theme.js';
 import { svgRotate } from './Utility.js';
 import { attachTooltipToElement, createTooltip } from './Tooltip.js';
 
+function multiDimensionalExtent(marray, func) {
+    let min = Infinity;
+    let max = -Infinity;
+    marray.forEach((arr) => {
+        if (arr.length > 0) {
+            let extent = d3.extent(arr, func);
+            min = Math.min(min, extent[0]);
+            max = Math.max(max, extent[1]);
+        }
+    });
+    return [min, max];
+}
+
 export function linePlot(
     div,
-    data,
+    data,  // array of values
     xFunc, // e => e["start_time"]
     yFunc, // e => e["new_irating"]
     // {
     //    horizontalLanes: [{min: X, max: Y, color: C}, ...]
-    //    lineColor: color,
+    //    lineColors: [color1, color2, ...]
     //    showHorizontalGridLines: bool,
     //    showVerticalGridLines: bool
     // }
     style, 
 ) {
 
-    let lineColor = style.lineColor || "red";
     let horizontalLanes = style.horizontalLanes || [];
     let showHorizontalGridLines = style.showHorizontalGridLines || false;
     let showVerticalGridLines = style.showVerticalGridLines || false;
@@ -43,13 +55,13 @@ export function linePlot(
     // let x = d3.scaleLinear()
     //     .domain([0, data.length])
     //     .range([0, width]);
-    let xExtent = d3.extent(data, xFunc);
+    let xExtent = multiDimensionalExtent(data, xFunc);
     xExtent[1] = Math.max(xExtent[1], new Date(performance.timing.domLoading));
     let x = d3.scaleTime()
         .domain(xExtent)
         .range([0, width]);
 
-    let yExtent = d3.extent(data, yFunc);
+    let yExtent = multiDimensionalExtent(data, yFunc);
     let y = d3.scaleLinear()
         .domain(yExtent)
         .range([height, 0]);
@@ -104,12 +116,16 @@ export function linePlot(
         .x(d => x(xFunc(d)))
         .y(d => y(yFunc(d)));
 
-    svg.append("path")
-        .datum(data)
-        .attr("fill", "none")
-        .attr("stroke", lineColor)
-        .attr("stroke-width", 1.5)
-        .attr("d", line);
+    let lineColors = style.lineColors || [];
+    for (let i = 0; i < data.length; ++i) {
+        let lineColor = lineColors[i] || "red";
+        svg.append("path")
+            .datum(data[i])
+            .attr("fill", "none")
+            .attr("stroke", lineColor)
+            .attr("stroke-width", 1.5)
+            .attr("d", line);
+    }
 
     if (0) {
         // Tooltip
