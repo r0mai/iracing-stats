@@ -37,17 +37,18 @@ function plotIRatingHistory(div, sessions, trackMap, category) {
     } else {
         linePlot(div, filtered, e => e["start_time"], e => e["new_irating"], {
             showHorizontalGridLines: true,
-            lineColors: ["red", "green", "blue"]
+            lineColors: ["red", "green", "blue"],
+            legendLabels: ["Road", "Sports Car", "Formula Car"]
         });
     }
 }
 
-function IRatingHistory({driverSessions, trackMap, categoryIndices}) {
+function IRatingHistory({driverSessions, trackMap, category}) {
     const ref = useD3(
         (root) => {
-            plotIRatingHistory(root, driverSessions, trackMap, categoryIndices);
+            plotIRatingHistory(root, driverSessions, trackMap, category);
         },
-        [driverSessions, categoryIndices]
+        [driverSessions, category]
     );
     
     return (

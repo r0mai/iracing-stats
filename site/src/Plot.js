@@ -26,7 +26,8 @@ export function linePlot(
     //    horizontalLanes: [{min: X, max: Y, color: C}, ...]
     //    lineColors: [color1, color2, ...]
     //    showHorizontalGridLines: bool,
-    //    showVerticalGridLines: bool
+    //    showVerticalGridLines: bool,
+    //    legendLabels: ["label1", "label2", ...]
     // }
     style, 
 ) {
@@ -35,12 +36,17 @@ export function linePlot(
     let showHorizontalGridLines = style.showHorizontalGridLines || false;
     let showVerticalGridLines = style.showVerticalGridLines || false;
 
+    let lineColors = style.lineColors || [];
+    for (let i = 0; i < data.length; ++i) {
+        lineColors[i] = lineColors[i] || "red";
+    }
+
     let margin = {top: 10, right: 30, bottom: 30, left: 60},
         width = 1200 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
     let fullWidth = width + margin.left + margin.right;
-    let fullHeight = height + margin.top + margin.bottom;
+    let fullHeight = height + margin.top + margin.bottom + 100; // + 100 for the labels
 
     // append the svg object to the body of the page
     let svg = d3.select(div)
@@ -116,15 +122,37 @@ export function linePlot(
         .x(d => x(xFunc(d)))
         .y(d => y(yFunc(d)));
 
-    let lineColors = style.lineColors || [];
     for (let i = 0; i < data.length; ++i) {
-        let lineColor = lineColors[i] || "red";
         svg.append("path")
             .datum(data[i])
             .attr("fill", "none")
-            .attr("stroke", lineColor)
+            .attr("stroke", lineColors[i])
             .attr("stroke-width", 1.5)
             .attr("d", line);
+    }
+
+    if (style.legendLabels !== undefined) {
+        let legendG = svg.append("g")
+            .attr("transform", svgTranslate(0, height + 25))
+        let y = 0;
+        for (let i = 0; i < data.length; ++i) {
+            let labelText = style.legendLabels[i] || "???";
+            legendG.append("line")
+                .attr("x1", 0)
+                .attr("y1", y)
+                .attr("x2", 12)
+                .attr("y2", y)
+                .style("stroke", lineColors[i])
+                .style("stroke-width", 1.5);
+            legendG.append("text")
+                .attr("x", 14)
+                .attr("y", y + 7)
+                .text(labelText)
+                .style("font-size", "14px")
+                .attr("alignment-baseline", "middle")
+                .attr("fill", theme.palette.text.primary)
+            y += 20;
+        }
     }
 
     if (0) {
