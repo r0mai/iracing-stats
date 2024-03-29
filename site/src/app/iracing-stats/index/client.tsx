@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { BrowserRouter } from 'react-router-dom'
  
-const App = dynamic(() => import('../../App'), { ssr: false })
+const App = dynamic(() => import('../../../App'), { ssr: false })
  
 export function ClientOnly() {
   // Completely prevent server side rendering:
