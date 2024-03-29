@@ -59,7 +59,13 @@ function DriverList({state, setState}) {
     return (
             <Grid container sx={{ flexGrow: 1, display: 'flex', height: '100%' }}>
                 <Grid item xs={2} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs value={currentIdx} onChange={updateTabIndex} orientation="vertical" variant="scrollable">
+                    <Tabs
+                        value={currentIdx}
+                        onChange={updateTabIndex}
+                        orientation="vertical"
+                        variant="scrollable"
+                        sx={{ borderRight: 1, borderColor: 'divider' }}
+                    >
                         {
                             driverViews.map((view) => 
                                 <Tab label={view.displayName} key={view.driver} sx={{ minHeight: 'auto', padding: '6px 6px' }} />
