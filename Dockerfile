@@ -19,7 +19,7 @@ RUN cargo install --path . --root /app
 
 # -----
 
-FROM node:18.4 AS node-builder
+FROM node:20.12 AS node-builder
 
 WORKDIR /iracing-stats-site
 COPY site .
@@ -35,7 +35,7 @@ RUN apt-get update && apt-get install -y ca-certificates curl procps
 
 # TODO it's a bit ugly to copy this to /usr/local
 COPY --from=rust-builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
-COPY --from=node-builder /iracing-stats-site/build /iracing-stats-site
+COPY --from=node-builder /iracing-stats-site/dist /iracing-stats-site
 
 COPY static-data /iracing-stats-static/static-data
 
