@@ -62,7 +62,7 @@ function DriverList({state, setState}) {
                     <Tabs value={currentIdx} onChange={updateTabIndex} orientation="vertical" variant="scrollable">
                         {
                             driverViews.map((view) => 
-                                <Tab label={view.displayName} key={view.driver} />
+                                <Tab label={view.displayName} key={view.driver} sx={{ minHeight: 'auto', padding: '6px 6px' }} />
                             )
                         }
                     </Tabs>
