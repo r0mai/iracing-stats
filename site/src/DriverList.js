@@ -57,7 +57,7 @@ function DriverList({state, setState}) {
     let updateTabIndex = (event, newIndex) => setState({...state, selected: driverViews[newIndex].driver}); 
 
     return (
-            <Grid container sx={{ flexGrow: 1, display: 'flex', height: '100%' }}>
+            <Grid container spacing={1} sx={{ flexGrow: 1, display: 'flex', height: '100%' }}>
                 <Grid item xs={2} sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs
                         value={currentIdx}
