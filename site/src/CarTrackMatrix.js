@@ -98,7 +98,7 @@ function plotCarTrackMatrix(div, matrix, xLabels, yLabels) {
         div.innerHTML = "No data";
     } else {
         let colorInterpolator = d3.interpolateYlOrBr;
-        let colorNum = 6;
+        let colorNum = 5;
         heatMap(
             div,
             matrix,
@@ -109,10 +109,9 @@ function plotCarTrackMatrix(div, matrix, xLabels, yLabels) {
                 thresholds: [
                     fromMinutes(1),
                     fromHours(1),
-                    fromHours(2),
-                    fromHours(5),
                     fromHours(10),
-                    fromHours(20)
+                    fromHours(25),
+                    fromHours(50)
                 ],
                 thresholdColors: [
                     colorInterpolator(0/colorNum),
@@ -121,7 +120,6 @@ function plotCarTrackMatrix(div, matrix, xLabels, yLabels) {
                     colorInterpolator(3/colorNum),
                     colorInterpolator(4/colorNum),
                     colorInterpolator(5/colorNum),
-                    colorInterpolator(6/colorNum)
                 ]
             });
     }
