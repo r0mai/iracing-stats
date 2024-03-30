@@ -370,6 +370,33 @@ function appendColorScaleLegend(parent, colorScale, width, height, maxValue, for
     return legendG;
 }
 
+function appendBinnedColorScaleLegend(parent, thresholds, thresholdColors, width, offsetY, formatValue) {
+    let legendG = parent.append("g");
+
+    for (let i = 0; i < thresholdColors.length; ++i) {
+        legendG.append("rect")
+            .attr("x", 0)
+            .attr("y", i * offsetY)
+            .attr("width", width)
+            .attr("height", width)
+            .attr("rx", width * 0.2)
+            .attr("fill", thresholdColors[i])
+            ;
+
+        if (i !== thresholdColors.length - 1) {
+            legendG.append("text")
+                .attr("x", width * 1.6)
+                .attr("y", (i + 0.72) * offsetY)
+                .attr("dy", "0.5em")
+                .attr("fill", theme.palette.text.primary)
+                .attr("font-size", width)
+                .text(formatValue(thresholds[i]))
+                ;
+        }
+    }
+    return legendG;
+}
+
 export function yearlyFrequencyMap(
     div,
     data,
@@ -598,12 +625,11 @@ export function heatMap(
         .attr("height", height * offsetY + topMargin)
         ;
 
-    // let colorScale = createColorScale(0, maxValue);
     let colorScale = d3.scaleThreshold()
         .domain(style.thresholds)
         .range(style.thresholdColors);
 
-    appendColorScaleLegend(svg, colorScale, rectW, offsetY * 5, maxValue, formatValue)
+    appendBinnedColorScaleLegend(svg, style.thresholds, style.thresholdColors, rectW, offsetY, formatValue)
         .attr("transform", svgTranslate(width * offsetX + leftMargin + offsetX, topMargin));
 
     let matrixG = svg.append("g")
