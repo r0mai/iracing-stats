@@ -1,5 +1,5 @@
 import { useD3 } from './hooks/useD3.js';
-import { heatMap } from './Plot.js';
+import { heatMap, plotColorInterpolator } from './Plot.js';
 import { fromMinutes, fromHours, formatTime, getTimeInSession } from './Utility.js';
 import * as d3 from 'd3';
 
@@ -97,7 +97,6 @@ function plotCarTrackMatrix(div, matrix, xLabels, yLabels) {
     if (matrix.length === 0 || matrix[0].length === 0) {
         div.innerHTML = "No data";
     } else {
-        let colorInterpolator = d3.interpolateYlOrBr;
         let colorNum = 5;
         heatMap(
             div,
@@ -114,12 +113,12 @@ function plotCarTrackMatrix(div, matrix, xLabels, yLabels) {
                     fromHours(50)
                 ],
                 thresholdColors: [
-                    colorInterpolator(0/colorNum),
-                    colorInterpolator(1/colorNum),
-                    colorInterpolator(2/colorNum),
-                    colorInterpolator(3/colorNum),
-                    colorInterpolator(4/colorNum),
-                    colorInterpolator(5/colorNum),
+                    plotColorInterpolator(0/colorNum),
+                    plotColorInterpolator(1/colorNum),
+                    plotColorInterpolator(2/colorNum),
+                    plotColorInterpolator(3/colorNum),
+                    plotColorInterpolator(4/colorNum),
+                    plotColorInterpolator(5/colorNum),
                 ]
             });
     }

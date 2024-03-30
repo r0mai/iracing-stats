@@ -17,6 +17,8 @@ function multiDimensionalExtent(marray, func) {
     return [min, max];
 }
 
+export let plotColorInterpolator = d3.interpolateYlOrBr;
+
 export function linePlot(
     div,
     data,  // array of values
