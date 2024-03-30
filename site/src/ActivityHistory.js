@@ -1,6 +1,6 @@
 import { useD3 } from './hooks/useD3.js';
-import { yearlyFrequencyMap } from './Plot.js';
-import { formatTime, getTimeInSession } from './Utility.js';
+import { colorsFromThresholds, yearlyFrequencyMap, plotColorInterpolator } from './Plot.js';
+import { fromMinutes, fromHours, formatTime, getTimeInSession } from './Utility.js';
 
 function ActivityHistory({driverSessions}) {
     const ref = useD3(
@@ -8,12 +8,22 @@ function ActivityHistory({driverSessions}) {
             if (driverSessions.length === 0) {
                 root.innerHTML = "No data";
             } else {
+                let thresholds = [
+                    fromHours(1),
+                    fromHours(3),
+                    fromHours(6),
+                    fromHours(12)
+                ];
                 yearlyFrequencyMap(
                     root,
                     driverSessions,
                     e => e["start_time"],
                     getTimeInSession,
-                    e => e === undefined ? "No Activity" : formatTime(e)
+                    e => e === undefined ? "No Activity" : formatTime(e),
+                    {
+                        thresholds: thresholds,
+                        thresholdColors: colorsFromThresholds(thresholds, plotColorInterpolator)
+                    }
                 );
             }
         },

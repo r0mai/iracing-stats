@@ -19,6 +19,15 @@ function multiDimensionalExtent(marray, func) {
 
 export let plotColorInterpolator = d3.interpolateYlOrBr;
 
+export function colorsFromThresholds(thresholds, colorInterpolator) {
+    let c = thresholds.length;
+    let colors = [];
+    for (let i = 0; i <= c; ++i) {
+        colors.push(colorInterpolator(i/c));
+    }
+    return colors;
+}
+
 export function linePlot(
     div,
     data,  // array of values
@@ -404,7 +413,12 @@ export function yearlyFrequencyMap(
     data,
     dateFunc,
     valueFunc,
-    formatValue)
+    formatValue,
+    // {
+    //    thresholds: [t1, t2, ..., tN]
+    //    thresholdColors: [c1, c2, ..., cN+1]
+    // }
+    style)
 {
     let dateExtent = d3.extent(data, dateFunc);
     let startYear = dateExtent[0].getUTCFullYear();
@@ -460,10 +474,12 @@ export function yearlyFrequencyMap(
         .attr("height", (endYear - startYear + 1) * yearOffsetY)
         ;
 
-    let colorScale = createColorScale(0, maxValue);
+    let colorScale = d3.scaleThreshold()
+        .domain(style.thresholds)
+        .range(style.thresholdColors);
 
     // legend
-    appendColorScaleLegend(svg, colorScale, rectW, offsetY * 5, maxValue, formatValue)
+    appendBinnedColorScaleLegend(svg, style.thresholds, style.thresholdColors, rectW, offsetY, formatValue)
         .attr("transform", svgTranslate(55 * offsetX + leftMargin + offsetX, offsetY));
 
     // tooltip
