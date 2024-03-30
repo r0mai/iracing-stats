@@ -22,7 +22,8 @@ function ActivityHistory({driverSessions}) {
                     e => e === undefined ? "No Activity" : formatTime(e),
                     {
                         thresholds: thresholds,
-                        thresholdColors: colorsFromThresholds(thresholds, plotColorInterpolator)
+                        // https://colorbrewer2.org/#type=sequential&scheme=OrRd&n=5
+                        thresholdColors: ['#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000']
                     }
                 );
             }
