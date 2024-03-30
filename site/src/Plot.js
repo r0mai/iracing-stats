@@ -558,6 +558,10 @@ export function heatMap(
     xLabels,
     yLabels,
     formatValue,
+    // {
+    //    thresholds: [t1, t2, ..., tN]
+    //    thresholdColors: [c1, c2, ..., cN+1]
+    // }
     style)
 {
     let width = matrix.length;
@@ -594,7 +598,10 @@ export function heatMap(
         .attr("height", height * offsetY + topMargin)
         ;
 
-    let colorScale = createColorScale(0, maxValue);
+    // let colorScale = createColorScale(0, maxValue);
+    let colorScale = d3.scaleThreshold()
+        .domain(style.thresholds)
+        .range(style.thresholdColors);
 
     appendColorScaleLegend(svg, colorScale, rectW, offsetY * 5, maxValue, formatValue)
         .attr("transform", svgTranslate(width * offsetX + leftMargin + offsetX, topMargin));

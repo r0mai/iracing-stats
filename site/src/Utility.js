@@ -2,6 +2,14 @@ export function toHours(interval) {
     return interval / 10000 / 60 / 60;
 }
 
+export function fromHours(hours) {
+    return hours * 10000 * 60 * 60;
+}
+
+export function fromMinutes(minutes) {
+    return minutes * 10000 * 60;
+}
+
 // https://stackoverflow.com/a/7343013
 export function round(value, precision) {
     var multiplier = Math.pow(10, precision || 0);
