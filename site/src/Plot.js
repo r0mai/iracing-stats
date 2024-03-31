@@ -340,9 +340,10 @@ function appendBinnedColorScaleLegend(parent, thresholds, thresholdColors, width
     let legendG = parent.append("g");
 
     for (let i = 0; i < thresholdColors.length; ++i) {
+        let y = (thresholdColors.length - i - 1) * offsetY;
         legendG.append("rect")
             .attr("x", 0)
-            .attr("y", i * offsetY)
+            .attr("y", y)
             .attr("width", width)
             .attr("height", width)
             .attr("rx", width * 0.2)
@@ -352,7 +353,7 @@ function appendBinnedColorScaleLegend(parent, thresholds, thresholdColors, width
         if (i !== thresholdColors.length - 1) {
             legendG.append("text")
                 .attr("x", width * 1.6)
-                .attr("y", (i + 0.72) * offsetY)
+                .attr("y", y - 0.28 * offsetY)
                 .attr("dy", "0.5em")
                 .attr("fill", theme.palette.text.primary)
                 .attr("font-size", width)
