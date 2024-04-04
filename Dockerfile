@@ -2,14 +2,6 @@ FROM rust:latest AS rust-builder
 
 WORKDIR /
 
-# https://stackoverflow.com/questions/23391839/clone-private-git-repo-with-dockerfile
-# ADD repo-key /
-# RUN \
-#     chmod 600 /repo-key && \
-#     echo "IdentityFile /repo-key" >> /etc/ssh/ssh_config && \  
-#     echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config && \ 
-#     git clone git@github.com:r0mai/iracing-stats.git
-
 COPY src /iracing-stats/src
 COPY Cargo.toml /iracing-stats/
 COPY Cargo.lock /iracing-stats/
