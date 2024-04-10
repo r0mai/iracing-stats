@@ -156,8 +156,9 @@ async fn tokio_main(args: &Args) {
     }
 
     if args.test_send_discord_update {
-        discord_hook::send_discord_update(vec![63740038, 61486453, 61145537, 13059307, 64483246], true).await;
+        // discord_hook::send_discord_update(vec![63740038, 61486453, 61145537, 13059307, 64483246], true).await;
         // discord_hook::send_discord_update(vec![16936417i64], true).await; // This one has a weird reason_out
+        discord_hook::send_discord_update(vec![68005625], true).await;
     }
 
     if args.sync_site_teams_to_db_partial {

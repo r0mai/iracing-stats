@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{db::{query_discord_report, create_db_connection, DiscordResultReport}, event_type::EventType};
+use crate::{category_type::CategoryType, db::{create_db_connection, query_discord_report, DiscordResultReport}, event_type::EventType};
 
 fn finish_reason_string(reason_out: &String) -> String {
     if reason_out == "Running" {
@@ -91,12 +91,28 @@ fn create_series_str(result: &DiscordResultReport) -> String {
     return format!("{} [{}]", session_name, result.license_category_id.to_nice_string());
 }
 
+fn create_link_line_str(team_name: &String, result: &DiscordResultReport) -> String {
+    let ir_history_category_str = match result.license_category_id {
+        CategoryType::Road | CategoryType::FormulaCar | CategoryType::SportsCar => "road",
+        CategoryType::Oval => "oval",
+        CategoryType::DirtRoad => "dirt-road",
+        CategoryType::DirtOval => "dirt-oval",
+    };
 
-fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
-    let r0mai_io_url = format!(
+    let encoded_team_name = urlencoding::encode(team_name.as_str());
+    let encoded_driver_name = urlencoding::encode(result.driver_name.as_str());
+
+    let session_list_url = format!(
         "https://r0mai.io/iracing-stats?team={}&type=session-list&selected={}",
-        urlencoding::encode(team_name.as_str()),
-        urlencoding::encode(result.driver_name.as_str())
+        encoded_team_name,
+        encoded_driver_name
+    );
+
+    let irating_history_link = format!(
+        "https://r0mai.io/iracing-stats?team={}&selected={}&type=irating-history&category={}",
+        encoded_team_name,
+        encoded_driver_name,
+        ir_history_category_str
     );
 
     let iracing_url = format!(
@@ -104,6 +120,15 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
         result.subsession_id
     );
 
+    return format!("[IRacing Result]({}) | [Latest Results]({}) | [IRating History]({})",
+        iracing_url,
+        session_list_url,
+        irating_history_link
+    );
+}
+
+fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
+    let link_line_str = create_link_line_str(team_name, result);
     let driver_str = create_driver_str(result);
     let incident_str = create_incident_str(result);
     let irating_str = create_irating_str(result);
@@ -126,10 +151,9 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
         lines.push(format!("**CPI:**           {}", incident_str));
     }
 
-    return format!(":checkered_flag:\n{}\n\n{}\n{}",
+    return format!(":checkered_flag:\n{}\n\n{}",
         lines.join("\n"),
-        r0mai_io_url,
-        iracing_url
+        link_line_str
     );
 }
 
