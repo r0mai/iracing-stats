@@ -18,7 +18,7 @@ function ReportSelector({state, setState}) {
         >
             <MenuItem value={ReportType.kSummary}>Summary</MenuItem>
             <MenuItem value={ReportType.kSessionList}>Session List</MenuItem>
-            <MenuItem value={ReportType.kIRacingHistory}>IR History</MenuItem>
+            <MenuItem value={ReportType.kIRatingHistory}>IR History</MenuItem>
             <MenuItem value={ReportType.kCPIHistory}>CPI History</MenuItem>
             <MenuItem value={ReportType.kTrackUsage}>Track Usage</MenuItem>
             <MenuItem value={ReportType.kCarUsage}>Car Usage</MenuItem>
@@ -64,7 +64,7 @@ function ReportSelector({state, setState}) {
 
     let hasCategorySelector = () => {
         let typeIdx = ReportType.findIndex(state.type);
-        return typeIdx === ReportType.kIRacingHistory || typeIdx === ReportType.kCPIHistory;
+        return typeIdx === ReportType.kIRatingHistory || typeIdx === ReportType.kCPIHistory;
     };
 
     return (

@@ -1,6 +1,6 @@
 let i = 0;
 export const kSummary = i++;
-export const kIRacingHistory = i++;
+export const kIRatingHistory = i++;
 export const kCPIHistory = i++;
 export const kTrackUsage = i++;
 export const kCarUsage = i++;
@@ -11,7 +11,7 @@ export const kReportTypeCount = i++;
 
 const kNames = [
     "summary",
-    "iracing-history",
+    "irating-history",
     "cpi-history",
     "track-usage",
     "car-usage",
