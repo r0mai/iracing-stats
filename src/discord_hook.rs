@@ -88,7 +88,7 @@ fn create_series_str(result: &DiscordResultReport) -> String {
         &result.session_name
     };
 
-    return format!("{} [{}]", session_name, result.license_category_id.to_nice_string());
+    return format!("{} ({})", session_name, result.license_category_id.to_nice_string());
 }
 
 fn create_link_line_str(team_name: &String, result: &DiscordResultReport) -> String {
