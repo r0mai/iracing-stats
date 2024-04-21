@@ -78,7 +78,7 @@ impl IRacingClient {
             }
 
             if status.is_server_error() {
-                println!("Request to {url} failed with {status}. Retrying...");
+                println!("Request to {url}, params {:?} failed with {status}. Retrying...", params);
                 continue;
             }
 

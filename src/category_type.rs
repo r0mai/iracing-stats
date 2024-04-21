@@ -1,4 +1,4 @@
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum CategoryType {
     Oval = 1,
     Road = 2,

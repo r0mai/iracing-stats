@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{category_type::CategoryType, db::{create_db_connection, query_discord_report, DiscordResultReport}, event_type::EventType};
+use crate::{category_type::CategoryType, db::{create_db_connection, get_highest_irating_before_date, query_discord_report, DiscordResultReport}, event_type::EventType};
 
 fn finish_reason_string(reason_out: &String) -> String {
     if reason_out == "Running" {
@@ -160,6 +160,9 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
 pub async fn send_discord_update(subsession_ids: Vec<i64>, dry: bool) {
     let connection = create_db_connection();
     let teams = query_discord_report(&connection, subsession_ids);
+
+    println!("Highest irating test: {}", get_highest_irating_before_date(
+        &connection, 701014, CategoryType::SportsCar, "2024-04-10 16:42:29+00:00".to_owned()));
 
     // TODO iracing_client also has a request::Client. maybe we should have only one
     let client = reqwest::Client::new();

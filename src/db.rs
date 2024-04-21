@@ -16,7 +16,7 @@ use sea_query::{
     Func
 };
 use crate::schema::{
-    is_event_type, is_main_event, is_simsession_type, Car, CarClass, CarClassResult, Driver, DriverResult, ReasonOut, SchemaUtils, Session, Simsession, SiteTeam, SiteTeamMember, Subsession, TrackConfig
+    is_category_type, is_category_type_with_road_fallback, is_cust_id, is_event_type, is_main_event, is_simsession_type, Car, CarClass, CarClassResult, Driver, DriverResult, ReasonOut, SchemaUtils, Session, Simsession, SiteTeam, SiteTeamMember, Subsession, TrackConfig
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
@@ -1109,6 +1109,36 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         team_entries.results.push(driver_result);
     }
     return DiscordReport{teams: teams.into_values().collect()};
+}
+
+pub fn get_highest_irating_before_date(
+    con: &Connection,
+    cust_id: i64,
+    category_type: CategoryType,
+    before_date_str: String) -> i64
+{
+    let (sql, params) = Query::select()
+        .expr(Expr::max(Expr::col((DriverResult::Table, DriverResult::NewiRating))))
+        .from(DriverResult::Table)
+        .join_driver_result_to_subsession()
+        .join_driver_result_to_simsession()
+        .join_subsession_to_session()
+        .and_where(is_main_event())
+        .and_where(is_cust_id(cust_id))
+        .and_where(is_event_type(EventType::Race))
+        .and_where(is_category_type_with_road_fallback(category_type))
+        .and_where(Expr::col((Subsession::Table, Subsession::StartTime)).lt(&before_date_str))
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let query_res = stmt.query_row(&*params.as_params(), |r| {
+        return r.get(0);
+    });
+    if let Ok(max_irating) = query_res {
+        return max_irating;
+    } else {
+        return -1;
+    }
 }
 
 pub struct SessionResult {

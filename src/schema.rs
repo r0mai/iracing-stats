@@ -339,6 +339,20 @@ pub fn is_category_type(category_type: CategoryType) -> SimpleExpr {
     return Expr::col((Subsession::Table, Subsession::LicenseCategoryId)).eq(category_type.to_db_type());
 }
 
+pub fn is_category_type_with_road_fallback(category_type: CategoryType) -> SimpleExpr {
+    if category_type == CategoryType::FormulaCar || category_type == CategoryType::SportsCar {
+        return Expr::col((Subsession::Table, Subsession::LicenseCategoryId)).eq(category_type.to_db_type()).or(
+            Expr::col((Subsession::Table, Subsession::LicenseCategoryId)).eq(CategoryType::Road.to_db_type())
+        );
+    } else {
+        return Expr::col((Subsession::Table, Subsession::LicenseCategoryId)).eq(category_type.to_db_type());
+    }
+}
+
 pub fn is_official() -> SimpleExpr {
     return Expr::col((Subsession::Table, Subsession::OfficialSession)).is(true);
+}
+
+pub fn is_cust_id(cust_id: i64) -> SimpleExpr {
+    return Expr::col((DriverResult::Table, DriverResult::CustId)).eq(cust_id);
 }
