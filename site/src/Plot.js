@@ -54,7 +54,7 @@ export function linePlot(
 
     let margin = {top: 10, right: 30, bottom: 30, left: 60},
         width = 1200 - margin.left - margin.right,
-        height = 400 - margin.top - margin.bottom;
+        height = 600 - margin.top - margin.bottom;
 
     let fullWidth = width + margin.left + margin.right;
     let fullHeight = height + margin.top + margin.bottom + 100; // + 100 for the labels
