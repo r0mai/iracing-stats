@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::hash::Hash;
 use std::{fs, path::PathBuf, path::Path, io::Write};
 use r2d2_sqlite::SqliteConnectionManager;
 use serde::{Deserialize, Serialize};
@@ -1478,50 +1479,90 @@ pub fn query_site_team_driver_pairings(
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct DriverTrackUsage {
+pub struct DriverContentUsage {
     // track name -> on track time
-    track_map: HashMap<String, i64>
+    track_map: HashMap<String, i64>,
+    // car name -> on track time
+    car_map: HashMap<String, i64>
+}
+
+impl DriverContentUsage {
+    pub fn new() -> Self {
+        return DriverContentUsage{
+            track_map: HashMap::new(),
+            car_map: HashMap::new()
+        };
+    }
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SiteTeamTrackUsage {
+pub struct SiteTeamContentUsage {
     // driver name -> track usage map
-    driver_map: HashMap<String, DriverTrackUsage>
+    driver_map: HashMap<String, DriverContentUsage>
 }
 
-pub fn query_site_team_track_usage(
+pub fn query_site_team_content_usage(
     con: &Connection,
-    site_team_name: String) -> SiteTeamTrackUsage
+    site_team_name: String) -> SiteTeamContentUsage
 {
-    let (sql, params) = Query::select()
-        .column((Driver::Table, Driver::DisplayName))
-        .column((TrackConfig::Table, TrackConfig::TrackName))
-        .expr_total_time()
-        .from(DriverResult::Table)
-        .join_driver_result_to_subsession()
-        .join_driver_result_to_driver()
-        .join_subsession_to_track_config()
-        .join_driver_to_site_team_member()
-        .join_site_team_member_to_site_team()
-        .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(&site_team_name))
-        .group_by_col((Driver::Table, Driver::CustId))
-        .group_by_col((TrackConfig::Table, TrackConfig::PackageId))
-        .build_rusqlite(SqliteQueryBuilder);
-
-    let mut stmt = con.prepare(sql.as_str()).unwrap();
-    let mut rows = stmt.query(&*params.as_params()).unwrap();
-
-    let mut result = SiteTeamTrackUsage{
+    let mut result = SiteTeamContentUsage{
         driver_map: HashMap::new()
     };
 
-    while let Some(row) = rows.next().unwrap() {
-        let driver_name: String = row.get(0).unwrap();
-        let track_name: String = row.get(1).unwrap();
-        let total_time: i64 = row.get(2).unwrap();
+    {
+        let (sql, params) = Query::select()
+            .column((Driver::Table, Driver::DisplayName))
+            .column((TrackConfig::Table, TrackConfig::TrackName))
+            .expr_total_time()
+            .from(DriverResult::Table)
+            .join_driver_result_to_subsession()
+            .join_driver_result_to_driver()
+            .join_subsession_to_track_config()
+            .join_driver_to_site_team_member()
+            .join_site_team_member_to_site_team()
+            .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(&site_team_name))
+            .group_by_col((Driver::Table, Driver::CustId))
+            .group_by_col((TrackConfig::Table, TrackConfig::PackageId))
+            .build_rusqlite(SqliteQueryBuilder);
 
-        let track_usage = result.driver_map.entry(driver_name).or_insert_with(|| DriverTrackUsage{ track_map: HashMap::new() });
-        track_usage.track_map.insert(track_name, total_time);
+        let mut stmt = con.prepare(sql.as_str()).unwrap();
+        let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+        while let Some(row) = rows.next().unwrap() {
+            let driver_name: String = row.get(0).unwrap();
+            let track_name: String = row.get(1).unwrap();
+            let total_time: i64 = row.get(2).unwrap();
+
+            let content_usage = result.driver_map.entry(driver_name).or_insert_with(|| DriverContentUsage::new() );
+            content_usage.track_map.insert(track_name, total_time);
+        }
+    }
+    {
+        let (sql, params) = Query::select()
+            .column((Driver::Table, Driver::DisplayName))
+            .column((Car::Table, Car::CarName))
+            .expr_total_time()
+            .from(DriverResult::Table)
+            .join_driver_result_to_driver()
+            .join_driver_result_to_car()
+            .join_driver_to_site_team_member()
+            .join_site_team_member_to_site_team()
+            .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(&site_team_name))
+            .group_by_col((Driver::Table, Driver::CustId))
+            .group_by_col((Car::Table, Car::CarId))
+            .build_rusqlite(SqliteQueryBuilder);
+
+        let mut stmt = con.prepare(sql.as_str()).unwrap();
+        let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+        while let Some(row) = rows.next().unwrap() {
+            let driver_name: String = row.get(0).unwrap();
+            let car_name: String = row.get(1).unwrap();
+            let total_time: i64 = row.get(2).unwrap();
+
+            let content_usage = result.driver_map.entry(driver_name).or_insert_with(|| DriverContentUsage::new() );
+            content_usage.car_map.insert(car_name, total_time);
+        }
     }
 
     return result;

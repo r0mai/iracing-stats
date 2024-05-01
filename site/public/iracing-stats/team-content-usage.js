@@ -1,5 +1,5 @@
 async function buildSite(container, teamName) {
-    let response = await fetch(`/api/v1/site-team-track-usage?site_team=${teamName}`);
+    let response = await fetch(`/api/v1/site-team-content-usage?site_team=${teamName}`);
     let json = await response.json();
 
     let table = document.createElement("table");
