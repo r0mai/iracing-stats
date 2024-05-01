@@ -31,16 +31,22 @@ async function buildSite(container, teamName) {
         let row = table.insertRow();
         let leftCell = row.insertCell();
         leftCell.style.textAlign = "right";
-        leftCell.appendChild(document.createTextNode(track));
 
+        let count = 0;
         for (let driver of drivers) {
             let trackUsage = json["driver_map"][driver]["track_map"];
             let cell = row.insertCell();
             cell.style.border = "1px solid #000";
             if (trackUsage[track] !== undefined) {
                 cell.style.backgroundColor = "green";
+                ++count;
             }
         }
+        if (count == drivers.length) {
+            leftCell.style.fontWeight = "bold";
+        }
+
+        leftCell.appendChild(document.createTextNode(`${track} [${count}/${drivers.length}]`));
     }
 }
 
