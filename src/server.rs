@@ -9,16 +9,7 @@ use rusqlite::Connection;
 use crate::dirs::get_static_dir;
 use crate::driverid::DriverId;
 use crate::db::{
-    DbPool,
-    CustomerName,
-    create_r2d2_db_connection_pool,
-    query_track_data,
-    query_car_data,
-    query_customer_names,
-    query_customer_cust_ids,
-    query_driver_sessions,
-    query_site_team_members,
-    query_team_results, query_session_result, SessionResult, TrackData, query_site_team_report, query_site_team_driver_pairings
+    create_r2d2_db_connection_pool, query_car_data, query_customer_cust_ids, query_customer_names, query_driver_sessions, query_session_result, query_site_team_driver_pairings, query_site_team_members, query_site_team_report, query_site_team_track_usage, query_team_results, query_track_data, CustomerName, DbPool, SessionResult, TrackData
 };
 use serde_json::{Value, json};
 use crate::iracing_client::IRacingClient;
@@ -445,6 +436,17 @@ async fn api_v1_season_team_standings(
     return serde_json::to_value(points_per_week).unwrap();
 }
 
+#[get("/api/v1/site-team-track-usage?<site_team>")]
+async fn api_v1_site_team_track_usage(
+    site_team: String,
+    db_pool: &State<DbPool>) -> serde_json::Value
+{
+    let con = db_pool.get().unwrap();
+    let data = query_site_team_track_usage(&con, site_team);
+
+    return serde_json::to_value(&data).unwrap();
+}
+
 pub async fn start_rocket_server(enable_https: bool) {
     const SITE_DIR_ENV_VAR: &str = "IRACING_STATS_SITE_DIR";
     const LOG_FILE_ENV_VAR: &str = "IRACING_STATS_LOG_FILE";
@@ -483,6 +485,7 @@ pub async fn start_rocket_server(enable_https: bool) {
             api_v1_site_team_report,
             api_v1_site_team_pairings,
             api_v1_season_team_standings,
+            api_v1_site_team_track_usage
         ])
         .manage(IRacingClient::new())
         .manage(db_pool)

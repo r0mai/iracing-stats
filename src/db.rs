@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::{fs, path::PathBuf, path::Path, io::Write};
 use r2d2_sqlite::SqliteConnectionManager;
+use serde::{Deserialize, Serialize};
 use serde_json::{self, Value};
 use rusqlite::{self, named_params};
 use rusqlite::Connection;
@@ -1471,6 +1472,56 @@ pub fn query_site_team_driver_pairings(
             driver2: key.driver2,
             total_time: value
         });
+    }
+
+    return result;
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct DriverTrackUsage {
+    // track name -> on track time
+    track_map: HashMap<String, i64>
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SiteTeamTrackUsage {
+    // driver name -> track usage map
+    driver_map: HashMap<String, DriverTrackUsage>
+}
+
+pub fn query_site_team_track_usage(
+    con: &Connection,
+    site_team_name: String) -> SiteTeamTrackUsage
+{
+    let (sql, params) = Query::select()
+        .column((Driver::Table, Driver::DisplayName))
+        .column((TrackConfig::Table, TrackConfig::TrackName))
+        .expr_total_time()
+        .from(DriverResult::Table)
+        .join_driver_result_to_subsession()
+        .join_driver_result_to_driver()
+        .join_subsession_to_track_config()
+        .join_driver_to_site_team_member()
+        .join_site_team_member_to_site_team()
+        .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(&site_team_name))
+        .group_by_col((Driver::Table, Driver::CustId))
+        .group_by_col((TrackConfig::Table, TrackConfig::PackageId))
+        .build_rusqlite(SqliteQueryBuilder);
+
+    let mut stmt = con.prepare(sql.as_str()).unwrap();
+    let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+    let mut result = SiteTeamTrackUsage{
+        driver_map: HashMap::new()
+    };
+
+    while let Some(row) = rows.next().unwrap() {
+        let driver_name: String = row.get(0).unwrap();
+        let track_name: String = row.get(1).unwrap();
+        let total_time: i64 = row.get(2).unwrap();
+
+        let track_usage = result.driver_map.entry(driver_name).or_insert_with(|| DriverTrackUsage{ track_map: HashMap::new() });
+        track_usage.track_map.insert(track_name, total_time);
     }
 
     return result;
