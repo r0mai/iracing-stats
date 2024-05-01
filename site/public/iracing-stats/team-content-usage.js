@@ -1,21 +1,18 @@
-async function buildSite(container, teamName) {
-    let response = await fetch(`/api/v1/site-team-content-usage?site_team=${teamName}`);
-    let json = await response.json();
-
+function buildTable(container, json, contentKey) {
     let table = document.createElement("table");
     table.style.border = "1px solid #000";
     container.appendChild(table);
 
-    let trackSet = new Set();
+    let contentSet = new Set();
     let drivers = [];
     for (let driverName in json["driver_map"]) {
         drivers.push(driverName);
-        for (let trackName in json["driver_map"][driverName]["track_map"]) {
-            trackSet.add(trackName)
+        for (let contentName in json["driver_map"][driverName][contentKey]) {
+            contentSet.add(contentName)
         }
     }
 
-    let tracks = Array.from(trackSet).sort();
+    let contents = Array.from(contentSet).sort();
 
     let topRow = table.insertRow();
     topRow.insertCell(); // skip top left corner
@@ -27,17 +24,17 @@ async function buildSite(container, teamName) {
         cell.appendChild(document.createTextNode(driver));
     }
 
-    for (let track of tracks) {
+    for (let content of contents) {
         let row = table.insertRow();
         let leftCell = row.insertCell();
         leftCell.style.textAlign = "right";
 
         let count = 0;
         for (let driver of drivers) {
-            let trackUsage = json["driver_map"][driver]["track_map"];
+            let contentUsage = json["driver_map"][driver][contentKey];
             let cell = row.insertCell();
             cell.style.border = "1px solid #000";
-            if (trackUsage[track] !== undefined) {
+            if (contentUsage[content] !== undefined) {
                 cell.style.backgroundColor = "green";
                 ++count;
             }
@@ -46,12 +43,22 @@ async function buildSite(container, teamName) {
             leftCell.style.fontWeight = "bold";
         }
 
-        leftCell.appendChild(document.createTextNode(`${track} [${count}/${drivers.length}]`));
+        leftCell.appendChild(document.createTextNode(`${content} [${count}/${drivers.length}]`));
     }
+}
+
+async function buildSite(teamName) {
+    let response = await fetch(`/api/v1/site-team-content-usage?site_team=${teamName}`);
+    let json = await response.json();
+
+    let trackContainer = document.querySelector("#track_container");
+    let carContainer = document.querySelector("#car_container");
+
+    buildTable(trackContainer, json, "track_map");
+    buildTable(carContainer, json, "car_map");
 }
 
 window.onload = async function() {
     let teamName = new URLSearchParams(location.search).get("team") || "rsmr";
-    let container = document.querySelector("#container");
-    await buildSite(container, teamName);
+    await buildSite(teamName);
 }
