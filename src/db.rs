@@ -1157,6 +1157,7 @@ pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_tea
         .and_where(is_main_event())
         .and_where(is_event_type(EventType::Race))
         .and_where(Expr::col((SiteTeam::Table, SiteTeam::SiteTeamName)).eq(site_team_name))
+        .and_where(Expr::col((DriverResult::Table, DriverResult::LapsComplete)).gt(0))
         .order_by((Subsession::Table, Subsession::SubsessionId), Order::Asc)
         .order_by((DriverResult::Table, DriverResult::TeamId), Order::Asc)
         .order_by((DriverResult::Table, DriverResult::CustId), Order::Asc)
