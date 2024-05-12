@@ -1,8 +1,7 @@
 use std::{
-    collections::HashMap,
-    collections::HashSet,
-    sync::atomic::AtomicI64,
-    sync::atomic::Ordering,
+    collections::{HashMap, HashSet},
+    sync::atomic::{AtomicI64, Ordering},
+    thread::current,
 };
 use chrono::{Utc, DateTime, Days, NaiveDateTime, NaiveDate, FixedOffset, TimeZone, NaiveTime};
 use serde_json;
@@ -110,6 +109,7 @@ impl IRacingClient {
             println!("Response body {}", text);
             panic!("Failed a request :(");
         }
+        println!("Params: {:?}", params);
         panic!("Failed after several retries :(");
     }
 
@@ -237,9 +237,21 @@ impl IRacingClient {
         // hosted
         let mut current_date = start_date;
         let last_date = cached_now().checked_add_days(Days::new(1)).unwrap();
+
+        // let bad_date = Utc.with_ymd_and_hms(2023, 12, 31, 0, 0, 0).unwrap();
+        let bad_date = Utc.with_ymd_and_hms(2024, 1, 31, 23, 59, 59).unwrap();
+
         while current_date < last_date {
+
             // max range allowed is 90. be safe with 89
-            let next_date = current_date.checked_add_days(Days::new(89)).unwrap();
+            let mut next_date = current_date.checked_add_days(Days::new(89)).unwrap();
+
+            // https://forums.iracing.com/discussion/comment/523280/#Comment_523280
+            // https://forums.iracing.com/discussion/comment/531430/#Comment_531430
+            let includes_bad_date = current_date <= bad_date && next_date >= bad_date;
+            if includes_bad_date {
+                next_date = bad_date.checked_sub_signed(chrono::Duration::seconds(1)).unwrap();
+            }
 
             {
                 println!("Query hosted {current_date} -> {next_date}");
@@ -255,7 +267,11 @@ impl IRacingClient {
                 subsession_ids.append(&mut new_ids);
             }
             
-            current_date = next_date;
+            if includes_bad_date {
+                current_date = bad_date.checked_add_signed(chrono::Duration::seconds(1)).unwrap();
+            } else {
+                current_date = next_date;
+            }
         }
 
         return subsession_ids;
