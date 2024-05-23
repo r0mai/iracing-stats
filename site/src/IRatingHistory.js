@@ -37,7 +37,7 @@ function plotIRatingHistory(div, sessions, trackMap, category) {
     } else {
         linePlot(div, filtered, e => e["start_time"], e => e["new_irating"], {
             showHorizontalGridLines: true,
-            lineColors: ["red", "green", "blue"],
+            lineColors: ["#cc8", "red", "green"],
             legendLabels: ["Road", "Sports Car", "Formula Car"]
         });
     }
