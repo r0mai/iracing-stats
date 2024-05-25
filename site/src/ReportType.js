@@ -23,7 +23,7 @@ const kNames = [
 export function findIndex(reportName) {
     let idx = kNames.indexOf(reportName);
     if (idx === -1) {
-        return kSummary;
+        return kIRatingHistory; // revert this to kSummary
     } else {
         return idx;
     }
@@ -31,8 +31,8 @@ export function findIndex(reportName) {
 
 export function findName(reportIdx) {
     if (reportIdx < 0 || reportIdx >= kReportTypeCount) {
-        return kNames[0];
+        return kNames[1];// revert this to 0
     } else {
-        return kNames[reportIdx];
+        return kNames[reportIdx]; 
     }
 }

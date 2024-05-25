@@ -19,7 +19,11 @@ function DriverList({state, setState}) {
     let suffix = "";
     if (drivers) {
         suffix = "?drivers=" + drivers;
-    } else if (team) {
+    } else {
+        if (!team) {
+            team = "rsmr";
+            setState({...state, team: team});
+        }
         suffix = "?team=" + team;
     }
 
