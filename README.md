@@ -3,6 +3,7 @@
 ### To build and run the server
 
 ```sh
+cd server
 cargo run -- --server
 ```
 

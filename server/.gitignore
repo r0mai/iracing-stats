@@ -1,0 +1,19 @@
+/data
+/node_modules
+/stats.db
+/stats.db-journal
+/__pycache__
+/.venv
+/repo-key
+/repo-key.pub
+/iracing-stats.img
+/tmp
+/server.log
+
+/static-data
+/motec
+/motec.zip
+
+# Added by cargo
+/target
+

@@ -473,7 +473,7 @@ pub async fn start_rocket_server(enable_https: bool) {
 
     let site_dir = match env::var(SITE_DIR_ENV_VAR) {
         Ok(value) => value,
-        Err(_error) => "site/dist".to_owned()
+        Err(_error) => "../site/dist".to_owned()
     };
 
     let log_file = match env::var(LOG_FILE_ENV_VAR) {

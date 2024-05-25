@@ -2,9 +2,9 @@ FROM rust:latest AS rust-builder
 
 WORKDIR /
 
-COPY src /iracing-stats/src
-COPY Cargo.toml /iracing-stats/
-COPY Cargo.lock /iracing-stats/
+COPY server/src /iracing-stats/src
+COPY server/Cargo.toml /iracing-stats/
+COPY server/Cargo.lock /iracing-stats/
 
 WORKDIR /iracing-stats
 RUN cargo install --path . --root /app
