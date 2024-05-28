@@ -42,7 +42,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
             width: 90,
             renderCell: params => {
                 return (
-                    <a href={"https://members.iracing.com/membersite/member/EventResult.do?&subsessionid=" + params.value}>
+                    <a href={"https://members-ng.iracing.com/racing/results-stats/results?subsessionid=" + params.value}>
                         {params.value}
                     </a>
                 );
