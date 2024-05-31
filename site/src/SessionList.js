@@ -89,7 +89,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
         {
             field: "cpi",
             headerName: "CPI",
-            width: 60,
+            width: 80,
             valueFormatter: params => {
                 return isFinite(params.value) ? round(params.value, 1) : "∞";
             }
@@ -97,7 +97,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
         {
             field: "irating_delta",
             headerName: "IR Δ",
-            width: 60,
+            width: 80,
             valueFormatter: params => {
                 return (params.value > 0 ? "+" : "") + params.value;
             },
@@ -114,7 +114,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
         {
             field: "new_irating",
             headerName: "New IR",
-            width: 60,
+            width: 80,
         },
         // {
         //     field: "track_category",
