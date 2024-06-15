@@ -239,7 +239,11 @@ impl IRacingClient {
         let last_date = cached_now().checked_add_days(Days::new(1)).unwrap();
 
         // let bad_date = Utc.with_ymd_and_hms(2023, 12, 31, 0, 0, 0).unwrap();
-        let bad_date = Utc.with_ymd_and_hms(2024, 1, 31, 23, 59, 59).unwrap();
+        // let bad_date = Utc.with_ymd_and_hms(2024, 1, 31, 23, 59, 59).unwrap();
+        let bad_dates = vec![
+            Utc.with_ymd_and_hms(2024, 2, 29, 0, 0, 0).unwrap(),
+            Utc.with_ymd_and_hms(2024, 3, 1, 0, 0, 0).unwrap()
+        ];
 
         while current_date < last_date {
 
@@ -248,9 +252,17 @@ impl IRacingClient {
 
             // https://forums.iracing.com/discussion/comment/523280/#Comment_523280
             // https://forums.iracing.com/discussion/comment/531430/#Comment_531430
-            let includes_bad_date = current_date <= bad_date && next_date >= bad_date;
-            if includes_bad_date {
-                next_date = bad_date.checked_sub_signed(chrono::Duration::seconds(1)).unwrap();
+            let mut bad_date = Option::None;            
+
+            for date in &bad_dates {
+                if current_date <= *date && next_date >= *date {
+                    bad_date = Some(date);
+                    break;
+                }
+            }
+
+            if let Some(date) = bad_date {
+                next_date = date.checked_sub_signed(chrono::Duration::seconds(1)).unwrap();
             }
 
             {
@@ -267,8 +279,8 @@ impl IRacingClient {
                 subsession_ids.append(&mut new_ids);
             }
             
-            if includes_bad_date {
-                current_date = bad_date.checked_add_signed(chrono::Duration::seconds(1)).unwrap();
+            if let Some(date) = bad_date {
+                current_date = date.checked_add_signed(chrono::Duration::seconds(1)).unwrap();
             } else {
                 current_date = next_date;
             }
