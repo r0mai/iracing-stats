@@ -9,9 +9,13 @@ function replaceAll(str, search, replacement) {
 }
 
 async function refreshText() {
-    const regexp1 = /https:\/\/members.iracing.com\/membersite\/member\/EventResult\.do\?&?subsessionid=([0-9]+)/g;
-    const regexp2 = /https:\/\/members-ng.iracing.com\/racing\/home\/dashboard\?subsessionid=([0-9]+)/g;
-    let matches = [...textarea.value.matchAll(regexp1), ...textarea.value.matchAll(regexp2)];
+    let regexps = [
+        /https:\/\/members.iracing.com\/membersite\/member\/EventResult\.do\?&?subsessionid=([0-9]+)/g,
+        /https:\/\/members-ng.iracing.com\/racing\/home\/dashboard\?subsessionid=([0-9]+)/g,
+        /https:\/\/members-ng.iracing.com\/racing\/official\/series-list\?subsessionid=([0-9]+)/g,
+    ];
+
+    let matches = regexps.map(reg => [...textarea.value.matchAll(reg)]).flat();
     let subsession_ids = matches.map(e => e[1]);
     if (subsession_ids.length === 0) {
         return;
