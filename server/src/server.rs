@@ -346,7 +346,7 @@ async fn api_v1_session_result(
             driver_result.start_time.format("%Y.%m.%d"),
             driver_result.track_id,
             driver_result.car_id,
-            driver_result.driver_name,
+            driver_result.cust_id,
             driver_result.laps_complete,
             driver_result.incidents,
             position_str(&driver_result),

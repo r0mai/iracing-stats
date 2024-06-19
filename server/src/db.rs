@@ -1119,7 +1119,7 @@ pub struct SessionResult {
     pub start_time: chrono::DateTime<chrono::Utc>,
     pub track_id: i64,
     pub car_id: i64,
-    pub driver_name: String,
+    pub cust_id: i64,
     pub laps_complete: i64,
     pub incidents: i64,
     pub finish_position_in_class: i64,
@@ -1136,7 +1136,7 @@ pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_tea
         .column((Subsession::Table, Subsession::StartTime))
         .column((Subsession::Table, Subsession::TrackId))
         .column((DriverResult::Table, DriverResult::CarId))
-        .column((Driver::Table, Driver::DisplayName))
+        .column((DriverResult::Table, DriverResult::CustId))
         .column((DriverResult::Table, DriverResult::LapsComplete))
         .column((DriverResult::Table, DriverResult::Incidents))
         .column((DriverResult::Table, DriverResult::FinishPositionInClass))
@@ -1147,8 +1147,8 @@ pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_tea
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
-        .join_driver_result_to_driver()
         .join_subsession_to_session()
+        .join_driver_result_to_driver()
         .join_driver_to_site_team_member()
         .join_site_team_member_to_site_team()
         .join_driver_result_to_reason_out()
@@ -1175,7 +1175,7 @@ pub fn query_session_result(con: &Connection, subsession_ids: Vec<i64>, site_tea
             start_time: row.get(2).unwrap(),
             track_id: row.get(3).unwrap(), 
             car_id: row.get(4).unwrap(), 
-            driver_name: row.get(5).unwrap(), 
+            cust_id: row.get(5).unwrap(), 
             laps_complete: row.get(6).unwrap(), 
             incidents: row.get(7).unwrap(), 
             finish_position_in_class: row.get(8).unwrap(),
