@@ -24,7 +24,6 @@ use crate::event_type::EventType;
 use crate::category_type::CategoryType;
 use crate::driverid::DriverId;
 use crate::simsession_type::SimsessionType;
-use crate::sof_calculator::SofCalculators;
 
 use crate::dirs::{
     get_base_dir,
@@ -417,22 +416,24 @@ fn add_driver_result_to_db(
     add_reason_out_to_db(ctx, reason_out_id, driver_result["reason_out"].as_str().unwrap_or(""));
 }
 
-fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value) {
-    let simsession_number = simsession["simsession_number"].as_i64().unwrap();
+struct EntryInfo {
+    sof: i64,
+    num_entries: i64
+}
 
-    let mut sof_calculator = SofCalculators::new();
+fn add_simsession_db(
+    ctx: &mut DbContext,
+    subsession_id: i64,
+    simsession: &Value,
+    event_entry_info: &EntryInfo,
+    class_entry_infos: &HashMap<i64, EntryInfo>)
+{
+    let simsession_number = simsession["simsession_number"].as_i64().unwrap();
 
     for participant in simsession["results"].as_array().unwrap() {
         if participant["cust_id"].as_i64().is_some() {
             add_driver_result_to_db(ctx, subsession_id, simsession_number, -1, "", participant);
-
-            sof_calculator.add_solo_driver(
-                participant["car_class_id"].as_i64().unwrap(),
-                participant["oldi_rating"].as_i64().unwrap()
-            );
         } else { // team
-            sof_calculator.begin_team(participant["car_class_id"].as_i64().unwrap());
-
             // example where neither team_id nor cust_id is present: 22275743
             let mut team_id = -1;
             let mut team_name = "";
@@ -442,19 +443,17 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value
             }
             for driver in participant["driver_results"].as_array().unwrap() {
                 add_driver_result_to_db(ctx, subsession_id, simsession_number, team_id, team_name, driver);
-                sof_calculator.add_team_driver(driver["oldi_rating"].as_i64().unwrap());
             }
-            sof_calculator.end_team();
         }
     }
 
-    for (class_id, class_sof_calculator) in &sof_calculator.class_sof_calculators {
+    for (class_id, class_entry_info) in class_entry_infos {
         ctx.insert_car_class_result_statement.execute((
             class_id,
             subsession_id,
             simsession_number,
-            class_sof_calculator.get_team_count(),
-            class_sof_calculator.calc_sof()
+            class_entry_info.num_entries,
+            class_entry_info.sof 
         )).unwrap();
     }
 
@@ -462,8 +461,8 @@ fn add_simsession_db(ctx: &mut DbContext, subsession_id: i64, simsession: &Value
         subsession_id,
         simsession_number,
         simsession["simsession_type"].as_i64().unwrap(),
-        sof_calculator.total_sof_calculator.get_team_count(),
-        sof_calculator.total_sof_calculator.calc_sof()
+        event_entry_info.num_entries,
+        event_entry_info.sof
     )).unwrap();
 }
 
@@ -487,8 +486,25 @@ fn add_subsession_to_db(ctx: &mut DbContext, subsession: &Value) {
         subsession["session_name"].as_str(), // kept as optional to allow null inserts
     )).unwrap();
 
+    // extract sofs
+    let event_entry_info = EntryInfo {
+        sof: subsession["event_strength_of_field"].as_i64().unwrap(),
+        num_entries: subsession["event_num_entries"].as_i64().unwrap()
+    };
+
+    let mut class_entry_infos = HashMap::new();
+    for class in subsession["car_classes"].as_array().unwrap() {
+        class_entry_infos.insert(
+            class["car_class_id"].as_i64().unwrap(),
+            EntryInfo {
+                sof: class["strength_of_field"].as_i64().unwrap(),
+                num_entries: class["num_entries"].as_i64().unwrap(),
+            }
+        );
+    }
+
     for simsession in subsession["session_results"].as_array().unwrap() {
-        add_simsession_db(ctx, subsession_id, simsession);
+        add_simsession_db(ctx, subsession_id, simsession, &event_entry_info, &class_entry_infos);
     }
 }
 
