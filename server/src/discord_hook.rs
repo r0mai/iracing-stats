@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use itertools::Itertools;
 
-use crate::{category_type::CategoryType, db::{create_db_connection, query_discord_report, DiscordResultReport}, event_type::EventType};
+use crate::{category_type::CategoryType, db::{create_db_connection, query_discord_report, DiscordRaceResultReport, DiscordTeamRaceResultReport}, event_type::EventType};
 
 fn finish_reason_string(reason_out: &String) -> String {
     if reason_out == "Running" {
@@ -14,7 +15,7 @@ fn finish_reason_string(reason_out: &String) -> String {
     return format!(" ({})", reason_out);
 }
 
-fn create_placement_str(result: &DiscordResultReport) -> String {
+fn create_placement_str(result: &DiscordRaceResultReport) -> String {
     let mut position = result.finish_position_in_class;
     position += 1;
     let emoji = match position {
@@ -34,7 +35,7 @@ fn forced_sign(n: i32) -> String {
     };
 }
 
-fn create_driver_str(result: &DiscordResultReport) -> String {
+fn create_driver_str(result: &DiscordRaceResultReport) -> String {
     if result.team_name.is_empty() {
         return result.driver_name.clone();
     } else {
@@ -42,7 +43,7 @@ fn create_driver_str(result: &DiscordResultReport) -> String {
     }
 }
 
-fn create_irating_str(result: &DiscordResultReport) -> Option<String> {
+fn create_irating_str(result: &DiscordRaceResultReport) -> Option<String> {
     if result.event_type != EventType::Race {
         return None;
     }
@@ -51,7 +52,7 @@ fn create_irating_str(result: &DiscordResultReport) -> Option<String> {
     return Some(format!("{} ({})", result.newi_rating, forced_sign(irating_gain)));
 }
 
-fn create_incident_str(result: &DiscordResultReport) -> Option<String> {
+fn create_incident_str(result: &DiscordRaceResultReport) -> Option<String> {
     if result.event_type != EventType::Race {
         return None;
     }
@@ -65,7 +66,7 @@ fn create_incident_str(result: &DiscordResultReport) -> Option<String> {
     return Some(format!("{} ({}x)", cpi_str, result.incidents));
 }
 
-fn create_track_str(result: &DiscordResultReport) -> String {
+fn create_track_str(result: &DiscordRaceResultReport) -> String {
     if result.config_name.is_empty() {
         return result.track_name.clone();
     } else {
@@ -73,7 +74,7 @@ fn create_track_str(result: &DiscordResultReport) -> String {
     }
 }
 
-fn create_car_str(result: &DiscordResultReport) -> String {
+fn create_car_str(result: &DiscordRaceResultReport) -> String {
     if result.car_class_name.is_empty() {
         return result.car_name.clone();
     } else {
@@ -81,7 +82,7 @@ fn create_car_str(result: &DiscordResultReport) -> String {
     }
 }
 
-fn create_series_str(result: &DiscordResultReport) -> String {
+fn create_series_str(result: &DiscordRaceResultReport) -> String {
     let session_name = if result.session_name.is_empty() {
         &result.series_name
     } else {
@@ -91,7 +92,14 @@ fn create_series_str(result: &DiscordResultReport) -> String {
     return format!("{} ({})", session_name, result.license_category_id.to_nice_string());
 }
 
-fn create_link_line_str(team_name: &String, result: &DiscordResultReport) -> String {
+fn create_iracing_result_url(subsession_id: i64) -> String {
+    return format!(
+        "https://members.iracing.com/membersite/member/EventResult.do?&subsessionid={}",
+        subsession_id
+    );
+}
+
+fn create_link_line_str(team_name: &String, result: &DiscordRaceResultReport) -> String {
     let ir_history_category_str = match result.license_category_id {
         CategoryType::Road | CategoryType::FormulaCar | CategoryType::SportsCar => "road",
         CategoryType::Oval => "oval",
@@ -115,10 +123,7 @@ fn create_link_line_str(team_name: &String, result: &DiscordResultReport) -> Str
         ir_history_category_str
     );
 
-    let iracing_url = format!(
-        "https://members.iracing.com/membersite/member/EventResult.do?&subsessionid={}",
-        result.subsession_id
-    );
+    let iracing_url = create_iracing_result_url(result.subsession_id);
 
     return format!("[IRacing Result]({}) | [Latest Results]({}) | [IRating History]({})",
         iracing_url,
@@ -127,7 +132,7 @@ fn create_link_line_str(team_name: &String, result: &DiscordResultReport) -> Str
     );
 }
 
-fn create_result_message_string(team_name: &String, result: &DiscordResultReport) -> String {
+fn create_result_message_string(team_name: &String, result: &DiscordRaceResultReport) -> String {
     let link_line_str = create_link_line_str(team_name, result);
     let driver_str = create_driver_str(result);
     let incident_str = create_incident_str(result);
@@ -157,17 +162,42 @@ fn create_result_message_string(team_name: &String, result: &DiscordResultReport
     );
 }
 
+fn create_team_report_message_strings(reports: &Vec<DiscordTeamRaceResultReport>) -> Vec<String> {
+    let mut messages = Vec::new();
+    for (key, chunk) in &reports.into_iter().chunk_by(|report| (report.subsession_id, report.team_id, report.team_name.clone())) {
+        let (subsession_id, _team_id, team_name) = key;
+
+        let mut drivers = Vec::new();
+        let iracing_url = create_iracing_result_url(subsession_id);
+
+        for report in chunk {
+            drivers.push(report.driver_name.clone());
+        }
+
+        let drivers_str = drivers.join(", ");
+
+        messages.push(format!("**{}** ({})\n{}", team_name, drivers_str, iracing_url));
+    }
+    return messages;
+}
+
 pub async fn send_discord_update(subsession_ids: Vec<i64>, dry: bool) {
     let connection = create_db_connection();
-    let teams = query_discord_report(&connection, subsession_ids);
+    let report = query_discord_report(&connection, subsession_ids);
 
     // TODO iracing_client also has a request::Client. maybe we should have only one
     let client = reqwest::Client::new();
 
-    for team in &teams.teams {
+    for team in &report.individual_reports {
         for result in &team.results {
             let msg = create_result_message_string(&team.site_team_name, result);
             send_discord_message(&client, &team.hook_url, &msg, dry).await;
+        }
+    }
+
+    for team in &report.team_reports {
+        for message in create_team_report_message_strings(&team.results) {
+            send_discord_message(&client, &team.hook_url, &message, dry).await;
         }
     }
 }

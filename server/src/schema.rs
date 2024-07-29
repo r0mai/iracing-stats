@@ -182,6 +182,9 @@ pub trait SchemaUtils {
     fn join_subsession_to_session(&mut self) -> &mut Self;
     fn join_subsession_to_track_config(&mut self) -> &mut Self;
     fn join_site_team_to_site_team_member(&mut self) -> &mut Self;
+    fn join_site_team_to_site_team_team(&mut self) -> &mut Self;
+    fn join_site_team_team_to_site_team(&mut self) -> &mut Self;
+    fn join_driver_result_to_site_team_team(&mut self) -> &mut Self;
     fn join_site_team_member_to_site_team(&mut self) -> &mut Self;
     fn join_site_team_member_to_driver(&mut self) -> &mut Self;
     fn join_driver_to_site_team_member(&mut self) -> &mut Self;
@@ -287,12 +290,29 @@ impl SchemaUtils for SelectStatement {
         );
     }
 
+    fn join_site_team_to_site_team_team(&mut self) -> &mut Self {
+        return self.inner_join(SiteTeamTeam::Table,
+            Expr::col((SiteTeamTeam::Table, SiteTeamTeam::SiteTeamId)).equals((SiteTeam::Table, SiteTeam::SiteTeamId))
+        );
+    }
+
+    fn join_site_team_team_to_site_team(&mut self) -> &mut Self {
+        return self.inner_join(SiteTeam::Table,
+            Expr::col((SiteTeam::Table, SiteTeam::SiteTeamId)).equals((SiteTeamTeam::Table, SiteTeamTeam::SiteTeamId))
+        );
+    }
+
+    fn join_driver_result_to_site_team_team(&mut self) -> &mut Self {
+        return self.inner_join(SiteTeamTeam::Table,
+            Expr::col((DriverResult::Table, DriverResult::TeamId)).equals((SiteTeamTeam::Table, SiteTeamTeam::TeamId))
+        );
+    }
+
     fn join_site_team_member_to_site_team(&mut self) -> &mut Self {
         return self.inner_join(SiteTeam::Table,
             Expr::col((SiteTeam::Table, SiteTeam::SiteTeamId)).equals((SiteTeamMember::Table, SiteTeamMember::SiteTeamId))
         );
     }
-
 
     fn join_driver_to_site_team_member(&mut self) -> &mut Self {
         return self.inner_join(SiteTeamMember::Table,

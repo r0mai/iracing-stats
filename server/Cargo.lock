@@ -1041,6 +1041,7 @@ dependencies = [
  "clap",
  "csv",
  "futures",
+ "itertools",
  "lazy_static",
  "r2d2",
  "r2d2_sqlite",
@@ -1069,6 +1070,15 @@ dependencies = [
  "hermit-abi",
  "rustix",
  "windows-sys",
+]
+
+[[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
 ]
 
 [[package]]

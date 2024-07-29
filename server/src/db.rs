@@ -18,7 +18,7 @@ use sea_query::{
     Func
 };
 use crate::schema::{
-    is_event_type, is_main_event, is_simsession_type, Car, CarClass, CarClassResult, Driver, DriverResult, ReasonOut, SchemaUtils, Session, Simsession, SiteTeam, SiteTeamMember, Subsession, TrackConfig
+    is_event_type, is_main_event, is_simsession_type, Car, CarClass, CarClassResult, Driver, DriverResult, ReasonOut, SchemaUtils, Session, Simsession, SiteTeam, SiteTeamMember, SiteTeamTeam, Subsession, TrackConfig
 };
 use crate::event_type::EventType;
 use crate::category_type::CategoryType;
@@ -1054,7 +1054,7 @@ pub fn query_all_site_team_members(con: &Connection) -> Vec<i64> {
     return cust_ids;
 }
 
-pub struct DiscordResultReport {
+pub struct DiscordRaceResultReport {
     pub subsession_id: i64,
     pub driver_name: String,
     pub team_name: String,
@@ -1077,123 +1077,263 @@ pub struct DiscordResultReport {
     pub license_category_id: CategoryType
 }
 
-pub struct DiscordSiteTeamReport {
+pub struct DiscordRaceResultSiteTeamReport {
     pub site_team_name: String,
     pub hook_url: String,
-    pub results: Vec<DiscordResultReport>,
+    pub results: Vec<DiscordRaceResultReport>,
+}
+
+pub struct DiscordTeamRaceResultReport {
+    pub subsession_id: i64,
+    pub driver_name: String,
+    pub team_name: String,
+    pub team_id: i64,
+}
+
+pub struct DiscordTeamRaceResultSiteTeamReport {
+    pub site_team_name: String,
+    pub hook_url: String,
+    pub results: Vec<DiscordTeamRaceResultReport>,
 }
 
 pub struct DiscordReport {
-    pub teams: Vec<DiscordSiteTeamReport>,
+    pub individual_reports: Vec<DiscordRaceResultSiteTeamReport>,
+    pub team_reports: Vec<DiscordTeamRaceResultSiteTeamReport>,
 }
 
+impl DiscordReport {
+    pub fn new() -> Self {
+        return DiscordReport{
+            individual_reports: Vec::new(),
+            team_reports: Vec::new()
+        };
+    }
+}
 
 pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> DiscordReport {
-    let (sql, params) = Query::select()
-        .column((SiteTeam::Table, SiteTeam::SiteTeamName))
-        .column((SiteTeam::Table, SiteTeam::DiscordHookUrl))
-        .column((Driver::Table, Driver::DisplayName))
-        .column((Subsession::Table, Subsession::SubsessionId))
-        .column((Session::Table, Session::SeriesName))
-        .column((Session::Table, Session::SessionName))
-        .column((Car::Table, Car::CarName))
-        .column((TrackConfig::Table, TrackConfig::TrackName))
-        .column((TrackConfig::Table, TrackConfig::ConfigName))
-        .column((TrackConfig::Table, TrackConfig::CornersPerLap))
-        .column((DriverResult::Table, DriverResult::FinishPositionInClass))
-        .column((DriverResult::Table, DriverResult::Incidents))
-        .column((DriverResult::Table, DriverResult::OldiRating))
-        .column((DriverResult::Table, DriverResult::NewiRating))
-        .column((DriverResult::Table, DriverResult::LapsComplete))
-        .column((Subsession::Table, Subsession::EventType))
-        .column((ReasonOut::Table, ReasonOut::ReasonOut))
-        .column((CarClassResult::Table, CarClassResult::EntriesInClass))
-        .column((DriverResult::Table, DriverResult::TeamName))
-        .expr(Expr::case(
-            Expr::col((CarClass::Table, CarClass::CarClassId)).eq(0).or( // 0 is Hosted All Cars
-            Expr::col((CarClass::Table, CarClass::CarClassId)).eq(-1)).or( // -1 is not car class
-            Expr::col((CarClass::Table, CarClass::CarClassSize)).lte(1)
-        ), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
-        .column((CarClassResult::Table, CarClassResult::ClassSof))
-        .column((Subsession::Table, Subsession::LicenseCategoryId))
-        .from(DriverResult::Table)
-        .join_driver_result_to_subsession()
-        .join_driver_result_to_simsession()
-        .join_driver_result_to_driver()
-        .join_driver_result_to_car()
-        .join_driver_result_to_reason_out()
-        .join_subsession_to_session()
-        .join_subsession_to_track_config()
-        .join_driver_to_site_team_member()
-        .join_site_team_member_to_site_team()
-        .join_driver_result_to_car_class_result()
-        .join_driver_result_to_car_class()
-        .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
-        .and_where(is_simsession_type(SimsessionType::Race))
-        .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
-        // .and_where(is_official())
-        .build_rusqlite(SqliteQueryBuilder);
+    let mut report = DiscordReport::new();
 
-    let mut stmt = con.prepare(sql.as_str()).unwrap();
-    let mut rows = stmt.query(&*params.as_params()).unwrap();
+    // individual result
+    {
+        let (sql, params) = Query::select()
+            .column((SiteTeam::Table, SiteTeam::SiteTeamName))
+            .column((SiteTeam::Table, SiteTeam::DiscordHookUrl))
+            .column((Driver::Table, Driver::DisplayName))
+            .column((Subsession::Table, Subsession::SubsessionId))
+            .column((Session::Table, Session::SeriesName))
+            .column((Session::Table, Session::SessionName))
+            .column((Car::Table, Car::CarName))
+            .column((TrackConfig::Table, TrackConfig::TrackName))
+            .column((TrackConfig::Table, TrackConfig::ConfigName))
+            .column((TrackConfig::Table, TrackConfig::CornersPerLap))
+            .column((DriverResult::Table, DriverResult::FinishPositionInClass))
+            .column((DriverResult::Table, DriverResult::Incidents))
+            .column((DriverResult::Table, DriverResult::OldiRating))
+            .column((DriverResult::Table, DriverResult::NewiRating))
+            .column((DriverResult::Table, DriverResult::LapsComplete))
+            .column((Subsession::Table, Subsession::EventType))
+            .column((ReasonOut::Table, ReasonOut::ReasonOut))
+            .column((CarClassResult::Table, CarClassResult::EntriesInClass))
+            .column((DriverResult::Table, DriverResult::TeamName))
+            .expr(Expr::case(
+                Expr::col((CarClass::Table, CarClass::CarClassId)).eq(0).or( // 0 is Hosted All Cars
+                Expr::col((CarClass::Table, CarClass::CarClassId)).eq(-1)).or( // -1 is no car class
+                Expr::col((CarClass::Table, CarClass::CarClassSize)).lte(1)
+            ), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
+            .column((CarClassResult::Table, CarClassResult::ClassSof))
+            .column((Subsession::Table, Subsession::LicenseCategoryId))
+            .from(DriverResult::Table)
+            .join_driver_result_to_subsession()
+            .join_driver_result_to_simsession()
+            .join_driver_result_to_driver()
+            .join_driver_result_to_car()
+            .join_driver_result_to_reason_out()
+            .join_subsession_to_session()
+            .join_subsession_to_track_config()
+            .join_driver_to_site_team_member()
+            .join_site_team_member_to_site_team()
+            .join_driver_result_to_car_class_result()
+            .join_driver_result_to_car_class()
+            .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids.clone()))
+            .and_where(is_simsession_type(SimsessionType::Race))
+            .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
+            // .and_where(is_official())
+            .build_rusqlite(SqliteQueryBuilder);
 
-    let mut teams = HashMap::new();
-    while let Some(row) = rows.next().unwrap() {
-        let site_team_name: String = row.get(0).unwrap();
-        let hook_url: String = row.get(1).unwrap();
-        let driver_name: String = row.get(2).unwrap();
-        let subsession_id: i64 = row.get(3).unwrap();
-        let series_name: String = row.get(4).unwrap();
-        let session_name: String = row.get(5).unwrap_or(String::new());
-        let car_name: String = row.get(6).unwrap();
-        let track_name: String = row.get(7).unwrap();
-        let config_name: String = row.get(8).unwrap();
-        let corners_per_lap: i32 = row.get(9).unwrap();
-        let finish_position_in_class: i32 = row.get(10).unwrap();
-        let incidents: i32 = row.get(11).unwrap();
-        let oldi_rating: i32 = row.get(12).unwrap();
-        let newi_rating: i32 = row.get(13).unwrap();
-        let laps_complete: i32 = row.get(14).unwrap();
-        let event_type = EventType::from_i32(row.get(15).unwrap()).unwrap();
-        let reason_out: String = row.get(16).unwrap();
-        let entries_in_class: i32 = row.get(17).unwrap();
-        let team_name: String = row.get(18).unwrap_or_default();
-        let car_class_name: String = row.get(19).unwrap();
-        let car_class_sof: i64 = row.get(20).unwrap();
-        let license_category_id = CategoryType::from_i32(row.get(21).unwrap()).unwrap();
+        let mut stmt = con.prepare(sql.as_str()).unwrap();
+        let mut rows = stmt.query(&*params.as_params()).unwrap();
 
-        let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordSiteTeamReport{
-            site_team_name,
-            hook_url,
-            results: Vec::new()
-        });
+        let mut teams = HashMap::new();
+        while let Some(row) = rows.next().unwrap() {
+            let site_team_name: String = row.get(0).unwrap();
+            let hook_url: String = row.get(1).unwrap();
+            let driver_name: String = row.get(2).unwrap();
+            let subsession_id: i64 = row.get(3).unwrap();
+            let series_name: String = row.get(4).unwrap();
+            let session_name: String = row.get(5).unwrap_or(String::new());
+            let car_name: String = row.get(6).unwrap();
+            let track_name: String = row.get(7).unwrap();
+            let config_name: String = row.get(8).unwrap();
+            let corners_per_lap: i32 = row.get(9).unwrap();
+            let finish_position_in_class: i32 = row.get(10).unwrap();
+            let incidents: i32 = row.get(11).unwrap();
+            let oldi_rating: i32 = row.get(12).unwrap();
+            let newi_rating: i32 = row.get(13).unwrap();
+            let laps_complete: i32 = row.get(14).unwrap();
+            let event_type = EventType::from_i32(row.get(15).unwrap()).unwrap();
+            let reason_out: String = row.get(16).unwrap();
+            let entries_in_class: i32 = row.get(17).unwrap();
+            let team_name: String = row.get(18).unwrap_or_default();
+            let car_class_name: String = row.get(19).unwrap();
+            let car_class_sof: i64 = row.get(20).unwrap();
+            let license_category_id = CategoryType::from_i32(row.get(21).unwrap()).unwrap();
 
-        let driver_result = DiscordResultReport{
-            subsession_id,
-            driver_name,
-            series_name,
-            session_name,
-            car_name,
-            track_name,
-            config_name,
-            corners_per_lap,
-            finish_position_in_class,
-            incidents,
-            oldi_rating,
-            newi_rating,
-            laps_complete,
-            event_type,
-            reason_out,
-            entries_in_class,
-            team_name,
-            car_class_name,
-            car_class_sof,
-            license_category_id
-        };
+            let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordRaceResultSiteTeamReport{
+                site_team_name,
+                hook_url,
+                results: Vec::new()
+            });
 
-        team_entries.results.push(driver_result);
+            let driver_result = DiscordRaceResultReport{
+                subsession_id,
+                driver_name,
+                series_name,
+                session_name,
+                car_name,
+                track_name,
+                config_name,
+                corners_per_lap,
+                finish_position_in_class,
+                incidents,
+                oldi_rating,
+                newi_rating,
+                laps_complete,
+                event_type,
+                reason_out,
+                entries_in_class,
+                team_name,
+                car_class_name,
+                car_class_sof,
+                license_category_id
+            };
+
+            team_entries.results.push(driver_result);
+        }
+        report.individual_reports = teams.into_values().collect();
     }
-    return DiscordReport{teams: teams.into_values().collect()};
+
+    // team result
+    {
+        let (sql, params) = Query::select()
+            .column((SiteTeam::Table, SiteTeam::SiteTeamName))
+            .column((SiteTeam::Table, SiteTeam::TeamReportDiscordHookUrl))
+            .column((Driver::Table, Driver::DisplayName))
+            .column((Subsession::Table, Subsession::SubsessionId))
+            .column((Session::Table, Session::SeriesName))
+            .column((Session::Table, Session::SessionName))
+            .column((Car::Table, Car::CarName))
+            .column((TrackConfig::Table, TrackConfig::TrackName))
+            .column((TrackConfig::Table, TrackConfig::ConfigName))
+            .column((TrackConfig::Table, TrackConfig::CornersPerLap))
+            .column((DriverResult::Table, DriverResult::FinishPositionInClass))
+            .column((DriverResult::Table, DriverResult::Incidents))
+            .column((DriverResult::Table, DriverResult::OldiRating))
+            .column((DriverResult::Table, DriverResult::NewiRating))
+            .column((DriverResult::Table, DriverResult::LapsComplete))
+            .column((Subsession::Table, Subsession::EventType))
+            .column((ReasonOut::Table, ReasonOut::ReasonOut))
+            .column((CarClassResult::Table, CarClassResult::EntriesInClass))
+            .column((DriverResult::Table, DriverResult::TeamName))
+            .expr(Expr::case(
+                Expr::col((CarClass::Table, CarClass::CarClassId)).eq(0).or( // 0 is Hosted All Cars
+                Expr::col((CarClass::Table, CarClass::CarClassId)).eq(-1)).or( // -1 is no car class
+                Expr::col((CarClass::Table, CarClass::CarClassSize)).lte(1)
+            ), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
+            .column((CarClassResult::Table, CarClassResult::ClassSof))
+            .column((Subsession::Table, Subsession::LicenseCategoryId))
+            .column((DriverResult::Table, DriverResult::TeamId))
+            .from(DriverResult::Table)
+            .join_driver_result_to_subsession()
+            .join_driver_result_to_simsession()
+            .join_driver_result_to_driver()
+            .join_driver_result_to_car()
+            .join_driver_result_to_reason_out()
+            .join_subsession_to_session()
+            .join_subsession_to_track_config()
+            .join_driver_result_to_site_team_team()
+            .join_site_team_team_to_site_team()
+            .join_driver_result_to_car_class_result()
+            .join_driver_result_to_car_class()
+            .and_where(Expr::col((DriverResult::Table, DriverResult::SubsessionId)).is_in(subsession_ids))
+            .and_where(is_simsession_type(SimsessionType::Race))
+            .and_where(Expr::col((SiteTeam::Table, SiteTeam::TeamReportDiscordHookUrl)).is_not_null())
+            // .and_where(is_official())
+            .build_rusqlite(SqliteQueryBuilder);
+
+        let mut stmt = con.prepare(sql.as_str()).unwrap();
+        let mut rows = stmt.query(&*params.as_params()).unwrap();
+
+        let mut teams = HashMap::new();
+        while let Some(row) = rows.next().unwrap() {
+            let site_team_name: String = row.get(0).unwrap();
+            let team_result_hook_url: String = row.get(1).unwrap();
+            let driver_name: String = row.get(2).unwrap();
+            let subsession_id: i64 = row.get(3).unwrap();
+            let series_name: String = row.get(4).unwrap();
+            let session_name: String = row.get(5).unwrap_or(String::new());
+            let car_name: String = row.get(6).unwrap();
+            let track_name: String = row.get(7).unwrap();
+            let config_name: String = row.get(8).unwrap();
+            let corners_per_lap: i32 = row.get(9).unwrap();
+            let finish_position_in_class: i32 = row.get(10).unwrap();
+            let incidents: i32 = row.get(11).unwrap();
+            let oldi_rating: i32 = row.get(12).unwrap();
+            let newi_rating: i32 = row.get(13).unwrap();
+            let laps_complete: i32 = row.get(14).unwrap();
+            let event_type = EventType::from_i32(row.get(15).unwrap()).unwrap();
+            let reason_out: String = row.get(16).unwrap();
+            let entries_in_class: i32 = row.get(17).unwrap();
+            let team_name: String = row.get(18).unwrap_or_default();
+            let car_class_name: String = row.get(19).unwrap();
+            let car_class_sof: i64 = row.get(20).unwrap();
+            let license_category_id = CategoryType::from_i32(row.get(21).unwrap()).unwrap();
+            let team_id: i64 = row.get(22).unwrap();
+
+            let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordTeamRaceResultSiteTeamReport{
+                site_team_name,
+                hook_url: team_result_hook_url,
+                results: Vec::new()
+            });
+
+            let driver_result = DiscordTeamRaceResultReport{
+                subsession_id,
+                driver_name,
+                // series_name,
+                // session_name,
+                // car_name,
+                // track_name,
+                // config_name,
+                // corners_per_lap,
+                // finish_position_in_class,
+                // incidents,
+                // oldi_rating,
+                // newi_rating,
+                // laps_complete,
+                // event_type,
+                // reason_out,
+                // entries_in_class,
+                team_name,
+                // car_class_name,
+                // car_class_sof,
+                // license_category_id
+                team_id,
+            };
+
+            team_entries.results.push(driver_result);
+        }
+        report.team_reports = teams.into_values().collect();
+    }
+    return report;
 }
 
 pub struct SessionResult {
