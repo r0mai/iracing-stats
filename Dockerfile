@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y ca-certificates curl procps
 COPY --from=rust-builder /app/bin/iracing-stats /usr/local/bin/iracing-stats
 COPY --from=node-builder /iracing-stats-site/dist /iracing-stats-site
 
-COPY static-data /iracing-stats-static/static-data
+COPY server/static-data /iracing-stats-static/static-data
 
 ARG IRACING_USER
 ENV IRACING_USER=${IRACING_USER}
