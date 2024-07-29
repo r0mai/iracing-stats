@@ -149,6 +149,7 @@ pub enum SiteTeam {
     SiteTeamId,
     SiteTeamName,
     DiscordHookUrl,
+    TeamReportDiscordHookUrl,
 }
 
 #[derive(Iden)]
@@ -156,6 +157,13 @@ pub enum SiteTeamMember {
     Table,
     SiteTeamId,
     CustId
+}
+
+#[derive(Iden)]
+pub enum SiteTeamTeam {
+    Table,
+    SiteTeamId,
+    TeamId
 }
 
 pub trait SchemaUtils {

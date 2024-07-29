@@ -110,10 +110,16 @@ CREATE TABLE car(
 CREATE TABLE site_team(
     site_team_id INTEGER PRIMARY KEY NOT NULL,
     site_team_name TEXT NOT NULL,
-    discord_hook_url TEXT /* may be null */
+    discord_hook_url TEXT, /* may be null */
+    team_report_discord_hook_url TEXT /* may be null */
 );
 
 CREATE TABLE site_team_member(
     site_team_id INTEGER NOT NULL,
     cust_id INTEGER NOT NULL
 );
+
+CREATE TABLE site_team_team(
+    site_team_id INTEGER NOT NULL,
+    team_id INTEGER NOT NULL
+)

@@ -113,6 +113,7 @@ pub struct DbContext<'a> {
     insert_season_statement: rusqlite::Statement<'a>,
     insert_site_team_statement: rusqlite::Statement<'a>,
     insert_site_team_member_statement: rusqlite::Statement<'a>,
+    insert_site_team_team_statement: rusqlite::Statement<'a>,
     insert_reason_out_statement: rusqlite::Statement<'a>,
 }
 
@@ -222,12 +223,18 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         INSERT INTO site_team VALUES(
             ?, /* site_team_id */
             ?, /* site_team_name */
-            ?  /* discord_hook_url */
+            ?, /* discord_hook_url */
+            ?  /* team_report_discord_hook_url */
     );"#).unwrap();
     let insert_site_team_member_statement = tx.prepare(r#"
         INSERT INTO site_team_member VALUES(
             ?, /* site_team_id */
             ?  /* cust_id */
+    );"#).unwrap();
+    let insert_site_team_team_statement = tx.prepare(r#"
+        INSERT INTO site_team_team VALUES(
+            ?, /* site_team_id */
+            ?  /* team_id */
     );"#).unwrap();
     let insert_reason_out_statement = tx.prepare(r#"
         INSERT OR IGNORE INTO reason_out VALUES(
@@ -249,6 +256,7 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         insert_season_statement,
         insert_site_team_statement,
         insert_site_team_member_statement,
+        insert_site_team_team_statement,
         insert_reason_out_statement,
     };
 }
@@ -361,12 +369,15 @@ fn add_site_team_member_list_to_db(
     id: usize,
     name: &str,
     discord_hook_url: Option<&str>,
-    members: &Vec<Value>) 
+    team_report_discord_hook_url: Option<&str>,
+    members: &Vec<Value>,
+    teams: &Option<&Vec<Value>>)
 {
     ctx.insert_site_team_statement.execute((
         id,
         name,
         discord_hook_url,
+        team_report_discord_hook_url,
     )).unwrap();
 
     for member in members {
@@ -375,17 +386,30 @@ fn add_site_team_member_list_to_db(
             member["cust_id"].as_i64().unwrap()
         )).unwrap();
     }
+
+    if let Some(teams) = *teams {
+        for team in teams {
+            ctx.insert_site_team_team_statement.execute((
+                id,
+                team["team_id"].as_i64().unwrap()
+            )).unwrap();
+        }
+    }
 }
 
 fn add_site_team_to_db(ctx: &mut DbContext, id: &mut usize, team: &Value) {
     let members = team["members"].as_array().unwrap();
+    let teams = team["teams"].as_array();
 
     add_site_team_member_list_to_db(
         ctx,
         *id,
         team["name"].as_str().unwrap(), 
         team["discord_hook_url"].as_str(), // kept as optional to allow NULL inserts
-        &members);
+        team["team_report_discord_hook_url"].as_str(), // kept as optional to allow NULL inserts
+        &members,
+        &teams
+    );
 
     *id += 1;
 
@@ -398,7 +422,10 @@ fn add_site_team_to_db(ctx: &mut DbContext, id: &mut usize, team: &Value) {
                 *id,
                 alias.as_str().unwrap(), 
                 None,
-                &members);
+                None,
+                &members,
+                &teams
+            );
         }
 
         *id += 1;
