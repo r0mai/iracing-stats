@@ -619,10 +619,10 @@ fn rebuild_sessions(ctx: &mut DbContext) {
 
 fn rebuild_site_teams(ctx: &mut DbContext) {
     let contents = fs::read_to_string(get_site_teams_data_file()).unwrap();
-    let teams: Value = serde_json::from_str(&contents).unwrap();
+    let root: Value = serde_json::from_str(&contents).unwrap();
 
     let mut site_team_id = 1;
-    for team in teams.as_array().unwrap() {
+    for team in root["site_teams"].as_array().unwrap() {
         add_site_team_to_db(ctx, &mut site_team_id, team);
     }
 }
