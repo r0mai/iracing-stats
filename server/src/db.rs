@@ -486,22 +486,27 @@ fn add_subsession_to_db(ctx: &mut DbContext, subsession: &Value) {
         subsession["session_name"].as_str(), // kept as optional to allow null inserts
     )).unwrap();
 
-    // extract sofs
-    let event_entry_info = EntryInfo {
-        sof: subsession["event_strength_of_field"].as_i64().unwrap(),
-        num_entries: subsession["event_num_entries"].as_i64().unwrap()
-    };
+    let mut event_num_entries = 0;
 
     let mut class_entry_infos = HashMap::new();
     for class in subsession["car_classes"].as_array().unwrap() {
+        let class_num_entries = class["num_entries"].as_i64().unwrap();
+        event_num_entries += class_num_entries;
+
         class_entry_infos.insert(
             class["car_class_id"].as_i64().unwrap(),
             EntryInfo {
                 sof: class["strength_of_field"].as_i64().unwrap(),
-                num_entries: class["num_entries"].as_i64().unwrap(),
+                num_entries: class_num_entries,
             }
         );
     }
+
+    // extract sofs
+    let event_entry_info = EntryInfo {
+        sof: subsession["event_strength_of_field"].as_i64().unwrap(),
+        num_entries: event_num_entries
+    };
 
     for simsession in subsession["session_results"].as_array().unwrap() {
         add_simsession_db(ctx, subsession_id, simsession, &event_entry_info, &class_entry_infos);
