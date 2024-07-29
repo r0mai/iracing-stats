@@ -356,18 +356,52 @@ fn add_season_to_db(ctx: &mut DbContext, season: &Value) {
     )).unwrap();
 }
 
-fn add_site_team_to_db(ctx: &mut DbContext, id: usize, team: &Value) {
+fn add_site_team_member_list_to_db(
+    ctx: &mut DbContext,
+    id: usize,
+    name: &str,
+    discord_hook_url: Option<&str>,
+    members: &Vec<Value>) 
+{
     ctx.insert_site_team_statement.execute((
         id,
-        team["name"].as_str().unwrap(),
-        team["discord_hook_url"].as_str(), // kept as optional to allow NULL inserts
+        name,
+        discord_hook_url,
     )).unwrap();
 
-    for member in team["members"].as_array().unwrap() {
+    for member in members {
         ctx.insert_site_team_member_statement.execute((
             id,
             member["cust_id"].as_i64().unwrap()
         )).unwrap();
+    }
+}
+
+fn add_site_team_to_db(ctx: &mut DbContext, id: &mut usize, team: &Value) {
+    let members = team["members"].as_array().unwrap();
+
+    add_site_team_member_list_to_db(
+        ctx,
+        *id,
+        team["name"].as_str().unwrap(), 
+        team["discord_hook_url"].as_str(), // kept as optional to allow NULL inserts
+        &members);
+
+    *id += 1;
+
+    let aliases = team["aliases"].as_array();
+    if let Some(aliases) = aliases {
+        // insert aliases without hook url
+        for alias in aliases {
+            add_site_team_member_list_to_db(
+                ctx,
+                *id,
+                alias.as_str().unwrap(), 
+                None,
+                &members);
+        }
+
+        *id += 1;
     }
 }
 
@@ -587,8 +621,9 @@ fn rebuild_site_teams(ctx: &mut DbContext) {
     let contents = fs::read_to_string(get_site_teams_data_file()).unwrap();
     let teams: Value = serde_json::from_str(&contents).unwrap();
 
-    for (id, team) in teams.as_array().unwrap().into_iter().enumerate() {
-        add_site_team_to_db(ctx, id, team);
+    let mut site_team_id = 1;
+    for team in teams.as_array().unwrap() {
+        add_site_team_to_db(ctx, &mut site_team_id, team);
     }
 }
 
