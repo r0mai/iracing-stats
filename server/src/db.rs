@@ -1054,6 +1054,7 @@ pub fn query_all_site_team_members(con: &Connection) -> Vec<i64> {
     return cust_ids;
 }
 
+#[derive(Clone)]
 pub struct DiscordRaceResultReport {
     pub subsession_id: i64,
     pub driver_name: String,
@@ -1074,7 +1075,8 @@ pub struct DiscordRaceResultReport {
     pub entries_in_class: i32,
     pub car_class_name: String,
     pub car_class_sof: i64,
-    pub license_category_id: CategoryType
+    pub license_category_id: CategoryType,
+    pub team_id: i64,
 }
 
 pub struct DiscordRaceResultSiteTeamReport {
@@ -1142,6 +1144,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             ), "").finally(Expr::col((CarClass::Table, CarClass::CarClassName))))
             .column((CarClassResult::Table, CarClassResult::ClassSof))
             .column((Subsession::Table, Subsession::LicenseCategoryId))
+            .column((DriverResult::Table, DriverResult::TeamId))
             .from(DriverResult::Table)
             .join_driver_result_to_subsession()
             .join_driver_result_to_simsession()
@@ -1187,6 +1190,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             let car_class_name: String = row.get(19).unwrap();
             let car_class_sof: i64 = row.get(20).unwrap();
             let license_category_id = CategoryType::from_i32(row.get(21).unwrap()).unwrap();
+            let team_id: i64 = row.get(22).unwrap();
 
             let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordRaceResultSiteTeamReport{
                 site_team_name,
@@ -1214,7 +1218,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
                 team_name,
                 car_class_name,
                 car_class_sof,
-                license_category_id
+                license_category_id,
+                team_id
             };
 
             team_entries.results.push(driver_result);
