@@ -1054,7 +1054,7 @@ pub fn query_all_site_team_members(con: &Connection) -> Vec<i64> {
     return cust_ids;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DiscordRaceResultReport {
     pub subsession_id: i64,
     pub driver_name: String,
@@ -1161,6 +1161,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             .and_where(is_simsession_type(SimsessionType::Race))
             .and_where(Expr::col((SiteTeam::Table, SiteTeam::DiscordHookUrl)).is_not_null())
             // .and_where(is_official())
+            .order_by((Subsession::Table, Subsession::SubsessionId), Order::Asc)
+            .order_by((DriverResult::Table, DriverResult::TeamId), Order::Asc)
             .build_rusqlite(SqliteQueryBuilder);
 
         let mut stmt = con.prepare(sql.as_str()).unwrap();
@@ -1273,6 +1275,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             .and_where(is_simsession_type(SimsessionType::Race))
             .and_where(Expr::col((SiteTeam::Table, SiteTeam::TeamReportDiscordHookUrl)).is_not_null())
             // .and_where(is_official())
+            .order_by((Subsession::Table, Subsession::SubsessionId), Order::Asc)
+            .order_by((DriverResult::Table, DriverResult::TeamId), Order::Asc)
             .build_rusqlite(SqliteQueryBuilder);
 
         let mut stmt = con.prepare(sql.as_str()).unwrap();

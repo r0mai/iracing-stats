@@ -235,29 +235,37 @@ fn create_result_message_strings(team_name: &String, reports: &Vec<DiscordRaceRe
         let track_str = create_track_str(&group[0]);
         let car_str = create_car_str(&group[0]);
         let series_str = create_series_str(&group[0]);
+        let incident_str = create_incident_str(&group[0]);
+        let irating_str = create_irating_str(&group[0]);
+
+        let is_team = group.len() > 1;
+
+        if !is_team {
+            let driver_str = create_driver_str(&group[0]);
+
+            lines.push(format!("**Driver:**      {}", driver_str));
+            lines.push(format!("**Position:**  {}", placement_str));
+        }
 
         lines.push(format!("**Series:**      {}", series_str));
         lines.push(format!("**Track:**       {}", track_str));
         lines.push(format!("**Car:**           {}", car_str));
         lines.push(format!("**SoF:**           {}", group[0].car_class_sof));
-        lines.push(format!("**Position:**  {}", placement_str));
 
-        if group.len() == 1 {
-            let driver_str = create_driver_str(&group[0]);
-            let incident_str = create_incident_str(&group[0]);
-            let irating_str = create_irating_str(&group[0]);
+        if is_team {
+            lines.push(format!("**Position:**  {}", placement_str));
+            lines.push(format!("**Team:**        {}", group[0].team_name));
+            for item in group {
+                lines.push(format!("  {}", create_single_line_driver_str(&item)));
+            }
+        }
 
-            lines.push(format!("**Driver:**      {}", driver_str));
+        if !is_team {
             if let Some(irating_str) = irating_str {
                 lines.push(format!("**IRating:**    {}", irating_str));
             }
             if let Some(incident_str) = incident_str {
                 lines.push(format!("**CPI:**           {}", incident_str));
-            }
-        } else {
-            lines.push(format!("**Team:**        {}", group[0].team_name));
-            for item in group {
-                lines.push(format!("  {}", create_single_line_driver_str(&item)));
             }
         }
 
