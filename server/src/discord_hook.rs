@@ -4,7 +4,7 @@ use unidecode::unidecode;
 
 use crate::{category_type::CategoryType, db::{create_db_connection, query_discord_report, DiscordRaceResultReport, DiscordTeamRaceResultReport}, event_type::EventType};
 
-fn finish_reason_string(reason_out: &String) -> String {
+fn create_finish_reason_string(reason_out: &String) -> String {
     if reason_out == "Running" {
         return "".to_string();
     }
@@ -16,6 +16,22 @@ fn finish_reason_string(reason_out: &String) -> String {
     return format!(" ({})", reason_out);
 }
 
+fn create_division_str(division: i32) -> String {
+    return match division {
+        0..=9 => format!("Div {}", division+1),
+        10 => "Rookie".to_owned(),
+        _ => "Unknown".to_owned()
+    };
+}
+
+fn create_points_str(result: &DiscordRaceResultReport) -> Option<String> {
+    if result.champ_points == 0 {
+        return None;
+    }
+
+    return Some(format!("{} ({})", result.champ_points, create_division_str(result.division)));
+}
+
 fn create_placement_str(result: &DiscordRaceResultReport) -> String {
     let mut position = result.finish_position_in_class;
     position += 1;
@@ -25,7 +41,12 @@ fn create_placement_str(result: &DiscordRaceResultReport) -> String {
         3 => " :third_place:",
         _ => ""
     };
-    return format!("P{}/{}{}{}", position, result.entries_in_class, emoji, finish_reason_string(&result.reason_out));
+    return format!("P{}/{}{}{}",
+        position,
+        result.entries_in_class,
+        emoji,
+        create_finish_reason_string(&result.reason_out)
+    );
 }
 
 fn forced_sign(n: i32) -> String {
@@ -237,6 +258,7 @@ fn create_result_message_strings(team_name: &String, reports: &Vec<DiscordRaceRe
         let series_str = create_series_str(&group[0]);
         let incident_str = create_incident_str(&group[0]);
         let irating_str = create_irating_str(&group[0]);
+        let points_str = create_points_str(&group[0]);
 
         let is_team = group.len() > 1;
 
@@ -245,15 +267,21 @@ fn create_result_message_strings(team_name: &String, reports: &Vec<DiscordRaceRe
 
             lines.push(format!("**Driver:**      {}", driver_str));
             lines.push(format!("**Position:**  {}", placement_str));
+            if let Some(points_str) = &points_str {
+                lines.push(format!("**Points:**     {}", points_str));
+            }
         }
 
         lines.push(format!("**Series:**      {}", series_str));
         lines.push(format!("**Track:**       {}", track_str));
         lines.push(format!("**Car:**           {}", car_str));
-        lines.push(format!("**SoF:**           {}", group[0].car_class_sof));
+        lines.push(format!("**SoF:**          {}", group[0].car_class_sof));
 
         if is_team {
             lines.push(format!("**Position:**  {}", placement_str));
+            if let Some(points_str) = &points_str {
+                lines.push(format!("**Points:**     {}", points_str));
+            }
             lines.push(format!("**Team:**        {}", group[0].team_name));
             for item in group {
                 lines.push(format!("  {}", create_single_line_driver_str(&item)));
@@ -287,6 +315,7 @@ fn create_result_message_string(team_name: &String, result: &DiscordRaceResultRe
     let track_str = create_track_str(result);
     let car_str = create_car_str(result);
     let series_str = create_series_str(result);
+    let points_str = create_points_str(result);
 
     let mut lines = Vec::new();
     lines.push(format!("**Driver:**      {}", driver_str));

@@ -74,6 +74,8 @@ pub enum DriverResult {
     FinishPosition,
     FinishPositionInClass,
     ReasonOutId,
+    ChampPoints,
+    Division,
 }
 
 #[derive(Iden)]
