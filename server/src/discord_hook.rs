@@ -354,9 +354,11 @@ pub async fn send_discord_message(client: &reqwest::Client, hook_url: &String, m
         let mut body = HashMap::new();
         body.insert("content", msg);
 
-        client.post(hook_url)
+        let response = client.post(hook_url)
             .json(&body)
             .send()
             .await.unwrap();
+
+        println!("Sending Discord message ({}):\n{}\n->\n{}", response.status().as_u16(), msg, hook_url);
     }
 }
