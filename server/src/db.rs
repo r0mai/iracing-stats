@@ -1294,6 +1294,8 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let mut stmt = con.prepare(sql.as_str()).unwrap();
         let mut rows = stmt.query(&*params.as_params()).unwrap();
 
+        println!("{}", sql.as_str());
+
         let mut teams = HashMap::new();
         while let Some(row) = rows.next().unwrap() {
             let site_team_name: String = row.get(0).unwrap();
@@ -1880,6 +1882,7 @@ pub fn rebuild_site_teams_in_db() {
     {
         tx.execute("DELETE FROM site_team", ()).unwrap(); // deletes all rows
         tx.execute("DELETE FROM site_team_member", ()).unwrap(); // deletes all rows
+        tx.execute("DELETE FROM site_team_team", ()).unwrap(); // deletes all rows
 
         let mut ctx = create_db_context(&mut tx);
         rebuild_site_teams(&mut ctx);
