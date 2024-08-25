@@ -113,7 +113,7 @@ impl IRacingClient {
         panic!("Failed after several retries :(");
     }
 
-    async fn get_and_read(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
+    pub async fn get_and_read(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
         let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await?;
         return self.get_with_retry(String::from(pointer_json["link"].as_str().unwrap()), params).await;
     }
@@ -139,14 +139,14 @@ impl IRacingClient {
     }
 
     // For those requests that have .data.chunk_info directly
-    async fn get_and_read_chunked(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
+    pub async fn get_and_read_chunked(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
         let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await?;
         let chunk_info = &pointer_json["data"]["chunk_info"];
         return self.get_and_read_chunked_helper(chunk_info).await;
     }
 
     // For those requests that have .chunk_info after reading the first s3 url (one extra redirect)
-    async fn get_and_read_chunked2(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
+    pub async fn get_and_read_chunked2(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
         let pointer_json = self.get_and_read(suffix, params).await?;
         let chunk_info = &pointer_json["chunk_info"];
         return self.get_and_read_chunked_helper(chunk_info).await;

@@ -16,6 +16,7 @@ mod dirs;
 mod sof_calculator;
 
 use clap::Parser;
+use std::collections::HashMap;
 use std::fs;
 use sha2::Digest;
 use sha2::Sha256;
@@ -121,6 +122,10 @@ struct Args {
     /// PW for iracing token
     #[arg(long)]
     gen_pw: Option<String>,
+
+    /// Query iracing API
+    #[arg(long)]
+    query_iracing_api: Option<String>,
 }
 
 fn has_async(args: &Args) -> bool {
@@ -136,7 +141,8 @@ fn has_async(args: &Args) -> bool {
         args.sync_car_infos_to_db ||
         args.sync_track_infos_to_db ||
         args.sync_season_infos_to_db ||
-        args.test_send_discord_update;
+        args.test_send_discord_update ||
+        args.query_iracing_api.is_some()
 }
 
 async fn tokio_main(args: &Args) {
@@ -196,6 +202,12 @@ async fn tokio_main(args: &Args) {
 
     if args.sync_season_infos_to_db {
         iracing_client::sync_season_infos_to_db(&mut client).await;
+    }
+
+    if let Some(suffix) = &args.query_iracing_api {
+        // TODO maybe create a get_and_read_smart that can determine which kind of reader to use
+        let json = client.get_and_read_chunked(&suffix, &HashMap::new()).await;
+        println!("{}", serde_json::to_string_pretty(&json).unwrap());
     }
 }
 
