@@ -46,6 +46,10 @@ struct Args {
     #[arg(short = 'd', long)]
     sync_drivers_to_db_partial: Vec<String>,
 
+    /// Sync specific subsession id to db
+    #[arg(long)]
+    sync_subsession_ids_to_db: Vec<i64>,
+
     /// Sync cust_ids to db 
     #[arg(short = 'C', long)]
     sync_cust_ids_to_db: Vec<i64>,
@@ -125,6 +129,7 @@ fn has_async(args: &Args) -> bool {
         !args.sync_cust_ids_to_db.is_empty() ||
         !args.sync_drivers_to_db_partial.is_empty() ||
         !args.sync_cust_ids_to_db_partial.is_empty() ||
+        !args.sync_subsession_ids_to_db.is_empty() ||
         args.sync_site_teams_to_db ||
         args.sync_site_teams_to_db_partial ||
         args.season_year.is_some() ||
@@ -149,6 +154,10 @@ async fn tokio_main(args: &Args) {
 
     if !args.sync_cust_ids_to_db.is_empty() || !args.sync_cust_ids_to_db_partial.is_empty() {
         iracing_client::sync_cust_ids_to_db(&mut client, &args.sync_cust_ids_to_db, &args.sync_cust_ids_to_db_partial).await;
+    }
+
+    if !args.sync_subsession_ids_to_db.is_empty() {
+        iracing_client::sync_subsessions_to_db(&mut client, &args.sync_subsession_ids_to_db).await;
     }
 
     if args.sync_site_teams_to_db {

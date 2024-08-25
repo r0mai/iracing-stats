@@ -424,6 +424,13 @@ async fn sync_subsessions(client: &mut IRacingClient, subsession_ids: &Vec<i64>)
     return synced_subsession_ids;
 }
 
+pub async fn sync_subsessions_to_db(client: &mut IRacingClient, subsession_ids: &Vec<i64>) -> Vec<i64> {
+    let synced_subsession_ids = sync_subsessions(client, &subsession_ids).await;
+
+    add_subsessions_to_db(&synced_subsession_ids);
+    return synced_subsession_ids;
+}
+
 fn add_subsessions_to_db(subsession_ids: &Vec<i64>) {
     let mut con = crate::db::create_db_connection();
     let mut tx = con.transaction().unwrap();
@@ -483,10 +490,8 @@ pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>
     }
 
     let subsession_ids_vec = Vec::from_iter(subsession_ids.into_iter());
-    let synced_subsession_ids = sync_subsessions(client, &subsession_ids_vec).await;
 
-    add_subsessions_to_db(&synced_subsession_ids);
-    return synced_subsession_ids;
+    return sync_subsessions_to_db(client, &subsession_ids_vec).await;
 }
 
 pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<String>, driver_names_partial: &Vec<String>) {
@@ -508,6 +513,5 @@ pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<S
 
 pub async fn sync_season_to_db(client: &mut IRacingClient, year: i32, quarter: i32, week: Option<i32>) {
     let subsession_ids = find_non_cached_subsessions_for_season(client, year, quarter, week).await;
-    let synced_subsession_ids = sync_subsessions(client, &subsession_ids).await;
-    add_subsessions_to_db(&synced_subsession_ids);
+    sync_subsessions_to_db(client, &subsession_ids).await;
 }
