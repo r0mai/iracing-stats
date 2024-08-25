@@ -149,9 +149,12 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
         );"#).unwrap();
     let insert_session_statement = tx.prepare(r#"
         INSERT OR IGNORE INTO session VALUES(
-            ?,  /* session_id */
-            ?,  /* series_name */
-            ?   /* session_name */
+            ?, /* session_id */
+            ?, /* series_name */
+            ?, /* session_name */
+            ?, /* season_year */
+            ?, /* season_quarter */
+            ?  /* series_id */
     );"#).unwrap();
     let insert_simsession_statement = tx.prepare(r#"
         INSERT INTO simsession VALUES(
@@ -206,7 +209,9 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* finish_position_in_class */
             ?, /* reason_out_id */
             ?, /* champ_points */
-            ?  /* division */
+            ?, /* division */
+            ?, /* livery_sponsor_1 */
+            ?  /* livery_sponsor_2 */
     );"#).unwrap();
     let insert_season_statement = tx.prepare(r#"
         INSERT INTO season VALUES(
@@ -455,6 +460,7 @@ fn add_driver_result_to_db(
 
     let reason_out_id = driver_result["reason_out_id"].as_i64().unwrap();
 
+    let livery = &driver_result["livery"];
     ctx.insert_driver_result_statement.execute(rusqlite::params![
         driver_result["cust_id"].as_i64().unwrap(), 
         team_id,
@@ -475,6 +481,8 @@ fn add_driver_result_to_db(
         reason_out_id,
         driver_result["champ_points"].as_i64().unwrap(),
         driver_result["division"].as_i64().unwrap(),
+        livery["sponsor1"].as_i64().unwrap(),
+        livery["sponsor2"].as_i64().unwrap(),
     ]).unwrap();
 
     // The reason_out textual representation is often missing
@@ -549,6 +557,9 @@ fn add_subsession_to_db(ctx: &mut DbContext, subsession: &Value) {
         session_id,
         subsession["series_name"].as_str().unwrap(),
         subsession["session_name"].as_str(), // kept as optional to allow null inserts
+        subsession["season_year"].as_i64().unwrap(),
+        subsession["season_quarter"].as_i64().unwrap(),
+        subsession["series_id"].as_i64().unwrap(),
     )).unwrap();
 
     let mut event_num_entries = 0;

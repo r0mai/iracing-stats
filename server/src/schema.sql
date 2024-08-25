@@ -19,7 +19,10 @@ CREATE TABLE season(
 CREATE TABLE session(
     session_id INTEGER PRIMARY KEY NOT NULL,
     series_name TEXT NOT NULL,
-    session_name TEXT /* may be null; only exists for Hosted races */
+    session_name TEXT, /* may be null; only exists for Hosted races */
+    season_year INTEGER NOT NULL,
+    season_quarter INTEGER NOT NULL, /* 1 based */
+    series_id INTEGER NOT NULL 
 );
 
 CREATE TABLE subsession(
@@ -52,6 +55,8 @@ CREATE TABLE driver_result(
     reason_out_id INTEGER NOT NULL,
     champ_points INTEGER NOT NULL,
     division INTEGER NOT NULL, /* 0 -> Division 1, etc */
+    livery_sponsor1 INTEGER NOT NULL,
+    livery_sponsor2 INTEGER NOT NULL,
     PRIMARY KEY(cust_id, team_id, subsession_id, simsession_number)
 );
 

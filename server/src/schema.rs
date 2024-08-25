@@ -40,6 +40,9 @@ pub enum Session {
     SessionId,
     SeriesName,
     SessionName,
+    SeasonYear,
+    SeasonQuarter,
+    SeriesId,
 }
 
 #[derive(Iden)]
@@ -76,6 +79,8 @@ pub enum DriverResult {
     ReasonOutId,
     ChampPoints,
     Division,
+    LiverySponsor1, // TODO check if formatting of this name is correct
+    LiverySponsor2, // TODO check if formatting of this name is correct
 }
 
 #[derive(Iden)]
