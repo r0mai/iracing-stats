@@ -370,14 +370,6 @@ fn filter_non_cached(subsessions: Vec<i64>) -> Vec<i64> {
     return res;
 }
 
-async fn find_non_cached_subsessions_for_driver(client: &mut IRacingClient, cust_id: i64, partial: bool) -> Vec<i64> {
-    return filter_non_cached(client.find_subsessions_for_driver(cust_id, partial).await);
-}
-
-async fn find_non_cached_subsessions_for_season(client: &mut IRacingClient, year: i32, quarter: i32, week: Option<i32>) -> Vec<i64> {
-    return filter_non_cached(client.find_subsessions_for_season(year, quarter, week).await);
-}
-
 async fn sync_subsession(client: &mut IRacingClient, subsession_id: i64, prefix: &str) -> bool {
     if crate::db::is_session_cached(subsession_id) {
         return true;
@@ -424,8 +416,8 @@ async fn sync_subsessions(client: &mut IRacingClient, subsession_ids: &Vec<i64>)
     return synced_subsession_ids;
 }
 
-pub async fn sync_subsessions_to_db(client: &mut IRacingClient, subsession_ids: &Vec<i64>) -> Vec<i64> {
-    let synced_subsession_ids = sync_subsessions(client, &subsession_ids).await;
+pub async fn sync_subsessions_to_db(client: &mut IRacingClient, subsession_ids: Vec<i64>) -> Vec<i64> {
+    let synced_subsession_ids = sync_subsessions(client, &filter_non_cached(subsession_ids)).await;
 
     add_subsessions_to_db(&synced_subsession_ids);
     return synced_subsession_ids;
@@ -483,15 +475,15 @@ pub async fn sync_cust_ids_to_db(client: &mut IRacingClient, cust_ids: &Vec<i64>
     let mut subsession_ids = HashSet::<i64>::new();
 
     for cust_id in cust_ids {
-        subsession_ids.extend(&mut find_non_cached_subsessions_for_driver(client, *cust_id, false).await.iter());
+        subsession_ids.extend(client.find_subsessions_for_driver(*cust_id, false).await);
     }
     for cust_id in cust_ids_partial {
-        subsession_ids.extend(&mut find_non_cached_subsessions_for_driver(client, *cust_id, true).await.iter());
+        subsession_ids.extend(client.find_subsessions_for_driver(*cust_id, true).await);
     }
 
     let subsession_ids_vec = Vec::from_iter(subsession_ids.into_iter());
 
-    return sync_subsessions_to_db(client, &subsession_ids_vec).await;
+    return sync_subsessions_to_db(client, subsession_ids_vec).await;
 }
 
 pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<String>, driver_names_partial: &Vec<String>) {
@@ -512,6 +504,6 @@ pub async fn sync_drivers_to_db(client: &mut IRacingClient, driver_names: &Vec<S
 }
 
 pub async fn sync_season_to_db(client: &mut IRacingClient, year: i32, quarter: i32, week: Option<i32>) {
-    let subsession_ids = find_non_cached_subsessions_for_season(client, year, quarter, week).await;
-    sync_subsessions_to_db(client, &subsession_ids).await;
+    let subsession_ids = client.find_subsessions_for_season(year, quarter, week).await;
+    sync_subsessions_to_db(client, subsession_ids).await;
 }

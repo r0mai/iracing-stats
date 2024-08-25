@@ -163,7 +163,7 @@ async fn tokio_main(args: &Args) {
     }
 
     if !args.sync_subsession_ids_to_db.is_empty() {
-        iracing_client::sync_subsessions_to_db(&mut client, &args.sync_subsession_ids_to_db).await;
+        iracing_client::sync_subsessions_to_db(&mut client, args.sync_subsession_ids_to_db.clone()).await;
     }
 
     if args.sync_site_teams_to_db {
