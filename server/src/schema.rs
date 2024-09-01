@@ -74,13 +74,15 @@ pub enum DriverResult {
     AverageLap,
     CarId,
     CarClassId,
-    FinishPosition,
-    FinishPositionInClass,
+    FinishPosition, // 0 based
+    FinishPositionInClass, // 0 based
     ReasonOutId,
     ChampPoints,
     Division,
     LiverySponsor1, // TODO check if formatting of this name is correct
     LiverySponsor2, // TODO check if formatting of this name is correct
+    StartingPosition, // 0 based
+    StartingPositionInClass, // 0 based
 }
 
 #[derive(Iden)]

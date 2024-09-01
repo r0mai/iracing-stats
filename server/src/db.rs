@@ -211,7 +211,9 @@ pub fn create_db_context<'a>(tx: &'a mut rusqlite::Transaction) -> DbContext<'a>
             ?, /* champ_points */
             ?, /* division */
             ?, /* livery_sponsor_1 */
-            ?  /* livery_sponsor_2 */
+            ?, /* livery_sponsor_2 */
+            ?, /* starting_position */
+            ?  /* starting_position_in_class */
     );"#).unwrap();
     let insert_season_statement = tx.prepare(r#"
         INSERT INTO season VALUES(
@@ -483,6 +485,8 @@ fn add_driver_result_to_db(
         driver_result["division"].as_i64().unwrap(),
         livery["sponsor1"].as_i64().unwrap(),
         livery["sponsor2"].as_i64().unwrap(),
+        driver_result["starting_position"].as_i64().unwrap(),
+        driver_result["starting_position_in_class"].as_i64().unwrap(),
     ]).unwrap();
 
     // The reason_out textual representation is often missing
@@ -1093,7 +1097,8 @@ pub struct DiscordRaceResultReport {
     pub license_category_id: CategoryType,
     pub team_id: i64,
     pub champ_points: i32,
-    pub division: i32
+    pub division: i32,
+    pub starting_position_in_class: i32,
 }
 
 pub struct DiscordRaceResultSiteTeamReport {
@@ -1164,6 +1169,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             .column((DriverResult::Table, DriverResult::TeamId))
             .column((DriverResult::Table, DriverResult::ChampPoints))
             .column((DriverResult::Table, DriverResult::Division))
+            .column((DriverResult::Table, DriverResult::StartingPositionInClass))
             .from(DriverResult::Table)
             .join_driver_result_to_subsession()
             .join_driver_result_to_simsession()
@@ -1214,6 +1220,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
             let team_id: i64 = row.get(22).unwrap();
             let champ_points: i32 = row.get(23).unwrap();
             let division: i32 = row.get(24).unwrap();
+            let starting_position_in_class: i32 = row.get(25).unwrap();
 
             let team_entries = teams.entry(site_team_name.clone()).or_insert_with(|| DiscordRaceResultSiteTeamReport{
                 site_team_name,
@@ -1245,6 +1252,7 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
                 team_id,
                 champ_points,
                 division,
+                starting_position_in_class,
             };
 
             team_entries.results.push(driver_result);

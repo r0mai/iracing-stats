@@ -18,9 +18,9 @@ fn create_finish_reason_string(reason_out: &String) -> String {
 
 fn create_division_str(division: i32) -> String {
     return match division {
-        0..=9 => format!("Div {}", division+1),
-        10 => "Rookie".to_owned(),
-        _ => "Unknown".to_owned()
+        0..=9 => format!(" (Div {})", division+1),
+        10 => " (Rookie)".to_owned(),
+        _ => "".to_owned()
     };
 }
 
@@ -29,23 +29,35 @@ fn create_points_str(result: &DiscordRaceResultReport) -> Option<String> {
         return None;
     }
 
-    return Some(format!("{} ({})", result.champ_points, create_division_str(result.division)));
+    return Some(format!("{}{}", result.champ_points, create_division_str(result.division)));
 }
 
 fn create_placement_str(result: &DiscordRaceResultReport) -> String {
-    let mut position = result.finish_position_in_class;
-    position += 1;
-    let emoji = match position {
+    let finish_position = result.finish_position_in_class + 1;
+    let starting_position = result.starting_position_in_class + 1;
+    let emoji = match finish_position {
         1 => " :first_place:",
         2 => " :second_place:",
         3 => " :third_place:",
         _ => ""
     };
-    return format!("P{}/{}{}{}",
-        position,
+
+    if false {
+        return format!("P{}/{}{}{} (Starting position: P{})",
+            finish_position,
+            result.entries_in_class,
+            emoji,
+            create_finish_reason_string(&result.reason_out),
+            starting_position,
+        );
+    }
+
+    return format!("P{} → P{}/{}{}{}",
+        starting_position,
+        finish_position,
         result.entries_in_class,
         emoji,
-        create_finish_reason_string(&result.reason_out)
+        create_finish_reason_string(&result.reason_out),
     );
 }
 

@@ -57,6 +57,8 @@ CREATE TABLE driver_result(
     division INTEGER NOT NULL, /* 0 -> Division 1, etc */
     livery_sponsor1 INTEGER NOT NULL,
     livery_sponsor2 INTEGER NOT NULL,
+    starting_position INTEGER NOT NULL,
+    starting_position_in_class INTEGER NOT NULL,
     PRIMARY KEY(cust_id, team_id, subsession_id, simsession_number)
 );
 
