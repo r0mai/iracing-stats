@@ -42,17 +42,7 @@ fn create_placement_str(result: &DiscordRaceResultReport) -> String {
         _ => ""
     };
 
-    if false {
-        return format!("P{}/{}{}{} (Starting position: P{})",
-            finish_position,
-            result.entries_in_class,
-            emoji,
-            create_finish_reason_string(&result.reason_out),
-            starting_position,
-        );
-    }
-
-    return format!("P{} → P{}/{}{}{}",
+    return format!("Start: P{}, Finish: P{}/{}{}{}",
         starting_position,
         finish_position,
         result.entries_in_class,
