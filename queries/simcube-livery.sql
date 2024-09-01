@@ -1,7 +1,8 @@
 SELECT
     dr.cust_id,
     d.display_name,
-    COUNT(DISTINCT dr.subsession_id) AS subsession_count
+    COUNT(DISTINCT dr.subsession_id) AS subsession_count,
+    SUM(dr.laps_complete * dr.average_lap) / 10000 / 60
     /* GROUP_CONCAT(DISTINCT dr.subsession_id) AS subsession_ids */
 FROM
     driver_result dr
