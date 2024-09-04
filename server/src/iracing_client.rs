@@ -52,7 +52,7 @@ impl IRacingClient {
         return v.to_str().unwrap().parse::<i64>().unwrap();
     }
 
-    async fn get_with_retry(&self, url: String, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
+    async fn get_with_retry(&self, mut url: String, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
         for _ in 0..10 {
             let response_res = self.client.get(&url).query(&params).send().await;
             if let Err(error) = response_res {
@@ -115,7 +115,7 @@ impl IRacingClient {
 
     pub async fn get_and_read(&self, suffix: &str, params: &HashMap<&str, String>) -> Option<serde_json::Value> {
         let pointer_json = self.get_with_retry(format!("{BASEURL}{suffix}"), params).await?;
-        return self.get_with_retry(String::from(pointer_json["link"].as_str().unwrap()), params).await;
+        return self.get_with_retry(String::from(pointer_json["link"].as_str().unwrap()), &HashMap::new()).await;
     }
 
     async fn get_and_read_chunked_helper(&self, chunk_info: &serde_json::Value) -> Option<serde_json::Value> {
