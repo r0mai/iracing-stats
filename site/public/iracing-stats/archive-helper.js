@@ -13,6 +13,7 @@ async function refreshText() {
         /https:\/\/members.iracing.com\/membersite\/member\/EventResult\.do\?&?subsessionid=([0-9]+)/g,
         /https:\/\/members-ng.iracing.com\/racing\/home\/dashboard\?subsessionid=([0-9]+)/g,
         /https:\/\/members-ng.iracing.com\/racing\/official\/series-list\?subsessionid=([0-9]+)/g,
+        /https:\/\/members-ng.iracing.com\/racing\/results-stats\/results\?subsessionid=([0-9]+)/g,
     ];
 
     let matches = regexps.map(reg => [...textarea.value.matchAll(reg)]).flat();
