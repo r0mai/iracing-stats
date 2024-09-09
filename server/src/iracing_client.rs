@@ -248,8 +248,11 @@ impl IRacingClient {
         //      Utc.with_ymd_and_hms(2024, 3, 31, 0, 0, 0).unwrap(),
         //      Utc.with_ymd_and_hms(2024, 3, 31, 23, 59, 59).unwrap(),
         // ];
+        // let bad_dates = vec![
+        //      Utc.with_ymd_and_hms(2024, 4, 30, 23, 59, 59).unwrap(),
+        // ];
         let bad_dates = vec![
-             Utc.with_ymd_and_hms(2024, 4, 30, 23, 59, 59).unwrap(),
+              Utc.with_ymd_and_hms(2024, 5, 31, 23, 59, 59).unwrap(),
         ];
 
         while current_date < last_date {
