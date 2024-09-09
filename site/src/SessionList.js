@@ -15,7 +15,7 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
             return {
                 "id": session["subsession_id"],
                 "simsession_number": session["simsession_number"],
-                "start_time": session["start_time"],
+                "start_time": session["start_time"].toLocaleString(),
                 // hosted sessions have session_name, for official ones we use series_name
                 "series_name": session["session_name"] || session["series_name"],
                 "car": carMap[session["car_id"]]["car_name"],
@@ -52,9 +52,6 @@ function SessionList({driverSessions, trackMap, carMap}) {
             field: "start_time",
             headerName: "Date",
             width: 200,
-            valueFormatter: params => {
-                return params.value.toLocaleString();
-            }
         },
         {
             field: "series_name",
@@ -63,7 +60,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
         },
         {
             field: "license_category",
-            headerName: "Cat",
+            headerName: "Category",
             width: 100
         },
         {
