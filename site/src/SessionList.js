@@ -3,6 +3,15 @@ import './SessionList.css';
 import * as Category from './LicenseCategory.js';
 import { calcSessionCPI, isRace, round } from './Utility';
 
+function formatStartTime(session) {
+    let year = session["season_year"];
+    // default year is 2000 for 'non-seasoned' sesssions
+    if (year === 2000) {
+        return session["start_time"].toLocaleString();
+    }
+    return session["start_time"].toLocaleString() + " [" + (year - 2000) + "S" + session["season_quarter"] + "]";
+}
+
 function preprocessSessions(driverSessions, trackMap, carMap) {
     return (driverSessions 
         .filter(session => {
@@ -15,7 +24,7 @@ function preprocessSessions(driverSessions, trackMap, carMap) {
             return {
                 "id": session["subsession_id"],
                 "simsession_number": session["simsession_number"],
-                "start_time": session["start_time"].toLocaleString(),
+                "start_time": formatStartTime(session),
                 // hosted sessions have session_name, for official ones we use series_name
                 "series_name": session["session_name"] || session["series_name"],
                 "car": carMap[session["car_id"]]["car_name"],
@@ -51,7 +60,7 @@ function SessionList({driverSessions, trackMap, carMap}) {
         {
             field: "start_time",
             headerName: "Date",
-            width: 200,
+            width: 220,
         },
         {
             field: "series_name",
