@@ -743,6 +743,8 @@ pub struct DriverSession {
     pub simsession_number: i32,
     pub simsession_type: i32,
     pub official_session: bool,
+    pub season_year: i32,
+    pub season_quarter: i32,
 }
 
 pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<Vec<DriverSession>> {
@@ -767,6 +769,8 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
         .column((Simsession::Table, Simsession::SimsessionNumber))
         .column((Simsession::Table, Simsession::SimsessionType))
         .column((Subsession::Table, Subsession::OfficialSession))
+        .column((Session::Table, Session::SeasonYear))
+        .column((Session::Table, Session::SeasonQuarter))
         .from(DriverResult::Table)
         .join_driver_result_to_subsession()
         .join_driver_result_to_simsession()
@@ -802,6 +806,8 @@ pub fn query_driver_sessions(con: &Connection, driver_id: &DriverId) -> Option<V
             simsession_number: row.get(17).unwrap(),
             simsession_type: row.get(18).unwrap(),
             official_session: row.get(19).unwrap(),
+            season_year: row.get(20).unwrap(),
+            season_quarter: row.get(21).unwrap(),
         });
     }
 

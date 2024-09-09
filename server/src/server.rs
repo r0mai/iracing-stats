@@ -56,6 +56,8 @@ async fn api_v1_driver_info(
             "simsession_number": data.simsession_number,
             "simsession_type": data.simsession_type,
             "official_session": data.official_session,
+            "season_year": data.season_year,
+            "season_quarter": data.season_quarter
         })).collect();
 
         return Some(json!({
