@@ -1319,8 +1319,6 @@ pub fn query_discord_report(con: &Connection, subsession_ids: Vec<i64>) -> Disco
         let mut stmt = con.prepare(sql.as_str()).unwrap();
         let mut rows = stmt.query(&*params.as_params()).unwrap();
 
-        println!("{}", sql.as_str());
-
         let mut teams = HashMap::new();
         while let Some(row) = rows.next().unwrap() {
             let site_team_name: String = row.get(0).unwrap();
