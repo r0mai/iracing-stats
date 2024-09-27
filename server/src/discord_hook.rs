@@ -169,7 +169,7 @@ fn create_series_str(result: &DiscordRaceResultReport) -> String {
 
 fn create_iracing_result_url(subsession_id: i64) -> String {
     return format!(
-        "https://members.iracing.com/membersite/member/EventResult.do?&subsessionid={}",
+        "https://members-ng.iracing.com/racing/results-stats/results?subsessionid={}",
         subsession_id
     );
 }
